@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Punk Remaster Tool</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 { text-align: center; color: #fff; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 30px; }
+
+        .input-section {
+            max-width: 400px;
+            margin: 0 auto 40px;
+            text-align: center;
+        }
+        .input-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+        }
+        input[type="number"] {
+            padding: 12px 16px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            background: #2a2a4e;
+            color: #fff;
+            font-size: 16px;
+            width: 150px;
+            text-align: center;
+        }
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #6a4a9e;
+        }
+        button {
+            padding: 12px 24px;
+            border-radius: 4px;
+            border: none;
+            background: #6a4a9e;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background: #7a5aae; }
+        button:disabled {
+            background: #444;
+            cursor: not-allowed;
+        }
+
+        .message {
+            text-align: center;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 600px;
+            border-radius: 8px;
+            display: none;
+        }
+        .message.info {
+            background: #2a2a4e;
+            color: #aaa;
+            display: block;
+        }
+        .message.success {
+            background: #1a3a2e;
+            color: #4a9;
+            display: block;
+        }
+        .message.error {
+            background: #3a1a1a;
+            color: #e66;
+            display: block;
+        }
+
+        .comparison {
+            display: none;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+        .comparison.visible { display: flex; }
+
+        .punk-view { text-align: center; }
+        .punk-view h3 { margin-bottom: 10px; color: #aaa; font-size: 14px; }
+        .canvas-container {
+            background: #638596;
+            padding: 0;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        canvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            display: block;
+        }
+
+        .arrow {
+            font-size: 32px;
+            color: #6a4a9e;
+            display: flex;
+            align-items: center;
+            padding-top: 20px;
+        }
+
+        .traits-info {
+            margin-top: 20px;
+            text-align: center;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .traits-info h4 {
+            color: #888;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin: 15px 0 8px;
+        }
+        .trait-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+        }
+        .trait-item {
+            background: #3a3a6e;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .trait-item.remastered {
+            background: #6a4a9e;
+        }
+
+        .punk-info {
+            text-align: center;
+            color: #888;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Punk Remaster Tool</h1>
+    <p class="subtitle">Enter a punk ID to see if it has traits that can be remastered</p>
+
+    <div class="input-section">
+        <div class="input-row">
+            <input type="number" id="punkIdInput" min="0" max="9999" placeholder="0-9999" />
+            <button id="remasterBtn" disabled>Remaster</button>
+        </div>
+    </div>
+
+    <div id="messageArea" class="message"></div>
+
+    <div id="comparisonArea" class="comparison">
+        <div class="punk-view">
+            <h3>Original</h3>
+            <div class="canvas-container">
+                <canvas id="originalCanvas"></canvas>
+            </div>
+            <div class="punk-info" id="punkInfo"></div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="punk-view">
+            <h3>Remastered</h3>
+            <div class="canvas-container">
+                <canvas id="remasteredCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div id="traitsInfo" class="traits-info" style="display: none;"></div>
+
+    <script>
+        const SPRITE_SIZE = 24;
+        const SPRITESHEET_COLS = 25;
+        const PUNKS_COLS = 100;
+        const ZOOM = 8;
+
+        // Cropping: 2px from top, 1px from sides
+        const CROP_TOP = 2;
+        const CROP_LEFT = 1;
+        const CROPPED_SIZE = 22;
+
+        // Sprite IDs - Female versions (f, s)
+        const FEMALE_SPRITE_IDS = {
+            // Base heads by skin tone
+            'base_Light': 24, 'base_Medium': 23, 'base_Dark': 22, 'base_Albino': 25,
+            // Eyewear
+            'Regular Shades': 317,
+            '3D Glasses': 302,
+            'Big Shades': 304,
+            'Classic Shades': 306,
+            'Eye Mask': 308,
+            'Eye Patch': 310,
+            'Horned Rim Glasses': 312,
+            'Nerd Glasses': 314,
+            'Small Shades': 319,
+            'VR': 321,
+            'Welding Goggles': 322,
+            // Eyes
+            'Blue Eye Shadow': 334,
+            'Green Eye Shadow': 335,
+            'Purple Eye Shadow': 337,
+            'Clown Eyes Blue': 339,
+            'Clown Eyes Green': 341,
+            // Blemish
+            'Mole': 345,
+            'Rosy Cheeks': 347,
+            'Spots': 349,
+            // Earring
+            'Earring': 357,
+            // Mouth
+            'Black Lipstick': 363,
+            'Hot Lipstick': 364,
+            'Purple Lipstick': 365,
+            // MouthProp
+            'Cigarette': 369,
+            'Medical Mask': 371,
+            'Pipe': 373,
+            'Vape': 375,
+            // Neck
+            'Choker': 380,
+            'Gold Chain': 382,
+            'Silver Chain': 384,
+            // Headgear
+            'Bandana': 404,
+            'Headband': 416,
+            'Knitted Cap': 422,
+            'Pilot Helmet': 423,
+            'Tassle Hat': 426,
+            'Tiara': 427,
+            'Cap': 548,
+            'Do-rag': 412,
+            'Beanie': 406,
+            'Cap Forward': 408,
+            'Cowboy Hat': 410,
+            'Fedora': 414,
+            'Police Cap': 425,
+            'Top Hat': 429,
+            'Hoodie': 420,
+            // Hair
+            'Blonde Short': 633,
+            'Crazy Hair': 635,
+            'Dark Hair': 637,
+            'Frumpy Hair': 639,
+            'Half Shaved': 640,
+            'Messy Hair': 642,
+            'Mohawk': 644,
+            'Mohawk Dark': 646,
+            'Mohawk Thin': 648,
+            'Orange Side': 649,
+            'Pigtails': 651,
+            'Pink With Hat': 652,
+            'Red Mohawk': 655,
+            'Straight Hair': 658,
+            'Straight Hair Blonde': 659,
+            'Straight Hair Dark': 660,
+            'Stringy Hair': 662,
+            'Wild Blonde': 664,
+            'Wild Hair': 666,
+            'Wild White Hair': 668,
+            'Blonde Bob': 749,
+            'Clown Hair Green': 810,
+            'Purple Hair': 654,
+            'Shaved Head': 657,
+        };
+
+        // Sprite IDs - Male versions (u, l or m, l)
+        const MALE_SPRITE_IDS = {
+            // Base heads by skin tone
+            'base_Light': 7, 'base_Medium': 6, 'base_Dark': 5, 'base_Albino': 8,
+            // Eyewear
+            'Regular Shades': 315,
+            '3D Glasses': 301,
+            'Big Shades': 303,
+            'Classic Shades': 305,
+            'Eye Mask': 307,
+            'Eye Patch': 309,
+            'Horned Rim Glasses': 311,
+            'Nerd Glasses': 313,
+            'Small Shades': 318,
+            'VR': 320,
+            // Eyes
+            'Clown Eyes Blue': 338,
+            'Clown Eyes Green': 340,
+            // Blemish
+            'Mole': 344,
+            'Rosy Cheeks': 346,
+            'Spots': 348,
+            // Earring
+            'Earring': 356,
+            // Mouth
+            'Buck Teeth': 360,
+            'Frown': 361,
+            'Smile': 362,
+            // MouthProp
+            'Cigarette': 368,
+            'Medical Mask': 370,
+            'Pipe': 372,
+            'Vape': 374,
+            // Neck
+            'Gold Chain': 381,
+            'Silver Chain': 383,
+            // Beard (male-only)
+            'Big Beard': 387,
+            'Chinstrap': 388,
+            'Front Beard': 389,
+            'Front Beard Dark': 390,
+            'Goat': 391,
+            'Handlebars': 392,
+            'Luxurious Beard': 393,
+            'Mustache': 396,
+            'Muttonchops': 397,
+            'Normal Beard': 398,
+            'Normal Beard Black': 399,
+            'Shadow Beard': 401,
+            // Headgear
+            'Bandana': 403,
+            'Headband': 415,
+            'Knitted Cap': 421,
+            'Cap': 547,
+            'Do-rag': 411,
+            'Beanie': 405,
+            'Cap Forward': 407,
+            'Cowboy Hat': 409,
+            'Fedora': 413,
+            'Police Cap': 424,
+            'Top Hat': 428,
+            'Hoodie': 418,
+            // Hair
+            'Crazy Hair': 634,
+            'Frumpy Hair': 638,
+            'Messy Hair': 641,
+            'Mohawk': 643,
+            'Mohawk Dark': 645,
+            'Mohawk Thin': 647,
+            'Stringy Hair': 661,
+            'Wild Hair': 665,
+            'Peak Spike': 650,
+            'Purple Hair': 653,
+            'Shaved Head': 656,
+            'Vampire Hair': 663,
+            'Clown Hair Green': 795,
+        };
+
+        // Layer order for compositing
+        const LAYER_ORDER = ['base', 'cheeks', 'blemish', 'hair', 'beard', 'eyes', 'eyewear', 'nose', 'mouth', 'mouthprop', 'earring', 'headgear', 'neck'];
+
+        // Map trait names to layers
+        const TRAIT_TO_LAYER = {
+            'Rosy Cheeks': 'cheeks',
+            'Mole': 'blemish', 'Spots': 'blemish',
+            'Blonde Bob': 'hair', 'Blonde Short': 'hair', 'Clown Hair Green': 'hair',
+            'Crazy Hair': 'hair', 'Dark Hair': 'hair', 'Frumpy Hair': 'hair',
+            'Half Shaved': 'hair', 'Messy Hair': 'hair', 'Mohawk': 'hair',
+            'Mohawk Dark': 'hair', 'Mohawk Thin': 'hair', 'Orange Side': 'hair',
+            'Pigtails': 'hair', 'Pink With Hat': 'hair', 'Red Mohawk': 'hair',
+            'Straight Hair': 'hair', 'Straight Hair Blonde': 'hair',
+            'Straight Hair Dark': 'hair', 'Stringy Hair': 'hair',
+            'Wild Blonde': 'hair', 'Wild Hair': 'hair', 'Wild White Hair': 'hair',
+            'Peak Spike': 'hair', 'Purple Hair': 'hair', 'Shaved Head': 'hair', 'Vampire Hair': 'hair',
+            'Front Beard': 'beard', 'Front Beard Dark': 'beard',
+            'Big Beard': 'beard', 'Chinstrap': 'beard', 'Goat': 'beard', 'Handlebars': 'beard',
+            'Luxurious Beard': 'beard', 'Mustache': 'beard', 'Muttonchops': 'beard',
+            'Normal Beard': 'beard', 'Normal Beard Black': 'beard', 'Shadow Beard': 'beard',
+            'Buck Teeth': 'mouth', 'Frown': 'mouth', 'Smile': 'mouth',
+            'Blue Eye Shadow': 'eyes', 'Green Eye Shadow': 'eyes',
+            'Purple Eye Shadow': 'eyes', 'Clown Eyes Blue': 'eyes', 'Clown Eyes Green': 'eyes',
+            'Regular Shades': 'eyewear', 'Big Shades': 'eyewear',
+            'Classic Shades': 'eyewear', 'Nerd Glasses': 'eyewear',
+            'Horned Rim Glasses': 'eyewear', '3D Glasses': 'eyewear',
+            'VR': 'eyewear', 'Welding Goggles': 'eyewear', 'Small Shades': 'eyewear',
+            'Eye Mask': 'eyewear', 'Eye Patch': 'eyewear',
+            'Clown Nose': 'nose',
+            'Hot Lipstick': 'mouth', 'Black Lipstick': 'mouth', 'Purple Lipstick': 'mouth',
+            'Cigarette': 'mouthprop', 'Pipe': 'mouthprop', 'Vape': 'mouthprop', 'Medical Mask': 'mouthprop',
+            'Earring': 'earring',
+            'Bandana': 'headgear', 'Headband': 'headgear', 'Cap': 'headgear',
+            'Knitted Cap': 'headgear', 'Pilot Helmet': 'headgear',
+            'Tassle Hat': 'headgear', 'Tiara': 'headgear',
+            'Do-rag': 'headgear', 'Beanie': 'headgear', 'Cap Forward': 'headgear',
+            'Cowboy Hat': 'headgear', 'Fedora': 'headgear', 'Police Cap': 'headgear',
+            'Top Hat': 'headgear', 'Hoodie': 'headgear',
+            'Choker': 'neck', 'Gold Chain': 'neck', 'Silver Chain': 'neck',
+        };
+
+        // Hairstyles where ear is visible (need ear remaster) - FEMALE ONLY
+        const EAR_VISIBLE_HAIRSTYLES = new Set([
+            'Mohawk', 'Mohawk Dark', 'Mohawk Thin', 'Red Mohawk',
+            'Bandana', 'Headband', 'Cap', 'Knitted Cap', 'Tiara',
+            'Welding Goggles',
+            'Blonde Bob', 'Blonde Short', 'Crazy Hair', 'Messy Hair',
+            'Orange Side', 'Pigtails', 'Stringy Hair',
+            'Wild Blonde', 'Wild White Hair', 'Clown Hair Green'
+        ]);
+
+        // Skin colors
+        const SKIN_COLORS = {
+            'Light': {r: 219, g: 177, b: 128, shadowR: 201, shadowG: 175, shadowB: 145},
+            'Medium': {r: 174, g: 139, b: 97, shadowR: 156, shadowG: 124, shadowB: 88},
+            'Dark': {r: 113, g: 63, b: 29, shadowR: 96, shadowG: 53, shadowB: 24},
+            'Albino': {r: 234, g: 217, b: 217, shadowR: 223, shadowG: 206, shadowB: 206},
+        };
+
+        // Fill colors for traits that cover the ear area
+        const TRAIT_FILL_COLORS = {
+            'Headband': {fills: [
+                {x: 7, y: 0, r: 0, g: 0, b: 0},
+                {x: 7, y: 2, useSkinColor: true},
+                {x: 7, y: 3, useSkinColor: true},
+            ]},
+            'Blonde Bob': {fills: [
+                {x: 7, y: 0, r: 255, g: 246, b: 142},
+                {x: 7, y: 2, useSkinColor: true},
+                {x: 7, y: 3, useSkinColor: true},
+            ], extraEarSkin: true},
+            'Blonde Short': {fills: [
+                {x: 7, r: 0, g: 0, b: 0},
+                {x: 7, y: 1, r: 255, g: 246, b: 142},
+                {x: 7, y: 2, useSkinColor: true},
+                {x: 6, y: 3, r: 255, g: 246, b: 142},
+                {x: 6, y: 4, r: 0, g: 0, b: 0},
+                {x: 7, y: 4, r: 255, g: 246, b: 142},
+                {x: 6, y: 5, r: 99, g: 133, b: 150},
+                {x: 7, y: 5, r: 0, g: 0, b: 0},
+            ], extraEarSkin: true, shiftPixel: {x: 7, y: 14}},
+            'Crazy Hair': {fills: [
+                {x: 6, r: 226, g: 38, b: 38},
+                {x: 7, r: 0, g: 0, b: 0},
+                {x: 7, y: -1, r: 226, g: 38, b: 38},
+            ]},
+            'Orange Side': {fills: [
+                {x: 6, r: 99, g: 133, b: 150},
+                {x: 6, y: 4, r: 99, g: 133, b: 150},
+            ]},
+            'Wild Blonde': {fills: [
+                {x: 6, r: 255, g: 246, b: 142},
+                {x: 7, r: 255, g: 246, b: 142},
+            ]},
+            'Clown Hair Green': {fills: [
+                {x: 6, r: 21, g: 112, b: 4},
+                {x: 7, r: 0, g: 0, b: 0},
+                {x: 7, y: -1, r: 21, g: 112, b: 4},
+            ]},
+        };
+
+        let spriteSheet = null;
+        let punksComposite = null;
+        let punkData = {}; // Parsed CSV data
+
+        async function loadImage(src) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = src;
+            });
+        }
+
+        async function loadCSV() {
+            const response = await fetch('../data/punks-attributes/original/cryptopunks.csv');
+            const text = await response.text();
+            // Handle both \r\n and \n line endings
+            const lines = text.trim().replace(/\r\n/g, '\n').split('\n');
+
+            // Skip header
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                // Parse: id, type, gender, skin tone, count, accessories
+                const match = line.match(/^(\d+),\s*(\w+),\s*(\w+),\s*(\w+),\s*(\d+),\s*(.*)$/);
+                if (match) {
+                    const id = parseInt(match[1]);
+                    const type = match[2];
+                    const gender = match[3];
+                    const skinTone = match[4];
+                    const accessoriesStr = match[6].trim();
+                    const accessories = accessoriesStr ? accessoriesStr.split(' / ').map(a => a.trim()) : [];
+
+                    punkData[id] = { type, gender, skinTone, accessories };
+                }
+            }
+        }
+
+        function extractSprite(spriteId) {
+            const row = Math.floor(spriteId / SPRITESHEET_COLS);
+            const col = spriteId % SPRITESHEET_COLS;
+            const canvas = document.createElement('canvas');
+            canvas.width = SPRITE_SIZE;
+            canvas.height = SPRITE_SIZE;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(spriteSheet, col * SPRITE_SIZE, row * SPRITE_SIZE, SPRITE_SIZE, SPRITE_SIZE, 0, 0, SPRITE_SIZE, SPRITE_SIZE);
+            return canvas;
+        }
+
+        function extractPunk(punkId) {
+            const row = Math.floor(punkId / PUNKS_COLS);
+            const col = punkId % PUNKS_COLS;
+            const canvas = document.createElement('canvas');
+            canvas.width = SPRITE_SIZE;
+            canvas.height = SPRITE_SIZE;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(punksComposite, col * SPRITE_SIZE, row * SPRITE_SIZE, SPRITE_SIZE, SPRITE_SIZE, 0, 0, SPRITE_SIZE, SPRITE_SIZE);
+            return canvas;
+        }
+
+        function shiftSpriteDown(canvas, pixels) {
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+            const shifted = ctx.createImageData(SPRITE_SIZE, SPRITE_SIZE);
+
+            for (let y = 0; y < SPRITE_SIZE - pixels; y++) {
+                for (let x = 0; x < SPRITE_SIZE; x++) {
+                    const srcIdx = (y * SPRITE_SIZE + x) * 4;
+                    const dstIdx = ((y + pixels) * SPRITE_SIZE + x) * 4;
+                    shifted.data[dstIdx] = imageData.data[srcIdx];
+                    shifted.data[dstIdx + 1] = imageData.data[srcIdx + 1];
+                    shifted.data[dstIdx + 2] = imageData.data[srcIdx + 2];
+                    shifted.data[dstIdx + 3] = imageData.data[srcIdx + 3];
+                }
+            }
+
+            const result = document.createElement('canvas');
+            result.width = SPRITE_SIZE;
+            result.height = SPRITE_SIZE;
+            result.getContext('2d').putImageData(shifted, 0, 0);
+            return result;
+        }
+
+        function shiftSinglePixel(spriteCanvas, px, py) {
+            const canvas = document.createElement('canvas');
+            canvas.width = SPRITE_SIZE;
+            canvas.height = SPRITE_SIZE;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(spriteCanvas, 0, 0);
+
+            const imageData = ctx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+            const data = imageData.data;
+
+            const srcIdx = (py * SPRITE_SIZE + px) * 4;
+            const r = data[srcIdx], g = data[srcIdx + 1], b = data[srcIdx + 2], a = data[srcIdx + 3];
+
+            data[srcIdx] = 0;
+            data[srcIdx + 1] = 0;
+            data[srcIdx + 2] = 0;
+            data[srcIdx + 3] = 0;
+
+            const dstIdx = ((py + 1) * SPRITE_SIZE + px) * 4;
+            data[dstIdx] = r;
+            data[dstIdx + 1] = g;
+            data[dstIdx + 2] = b;
+            data[dstIdx + 3] = a;
+
+            ctx.putImageData(imageData, 0, 0);
+            return canvas;
+        }
+
+        function shiftEarOnBase(baseCanvas, fillColor = {r: 0, g: 0, b: 0, x: 7}) {
+            const canvas = document.createElement('canvas');
+            canvas.width = SPRITE_SIZE;
+            canvas.height = SPRITE_SIZE;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(baseCanvas, 0, 0);
+
+            const imageData = ctx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+            const data = imageData.data;
+
+            const BG = {r: 99, g: 133, b: 150};
+            const earPixels = [];
+            let topEarY = 24;
+
+            for (let x = 6; x <= 7; x++) {
+                for (let y = 11; y <= 14; y++) {
+                    const idx = (y * SPRITE_SIZE + x) * 4;
+                    const r = data[idx], g = data[idx+1], b = data[idx+2], a = data[idx+3];
+
+                    if (a === 0) continue;
+                    if (Math.abs(r - BG.r) < 10 && Math.abs(g - BG.g) < 10 && Math.abs(b - BG.b) < 10) continue;
+
+                    if (x === 7) {
+                        if (y !== 12 && y !== 13 && y !== 14) continue;
+                    }
+
+                    earPixels.push({x, y, r, g, b, a});
+                    if (x === 6 && y < topEarY) topEarY = y;
+                }
+            }
+
+            for (const p of earPixels) {
+                const idx = (p.y * SPRITE_SIZE + p.x) * 4;
+                data[idx] = BG.r;
+                data[idx+1] = BG.g;
+                data[idx+2] = BG.b;
+                data[idx+3] = 255;
+            }
+
+            for (const p of earPixels) {
+                const newY = p.y + 1;
+                if (newY < SPRITE_SIZE) {
+                    const idx = (newY * SPRITE_SIZE + p.x) * 4;
+                    data[idx] = p.r;
+                    data[idx+1] = p.g;
+                    data[idx+2] = p.b;
+                    data[idx+3] = p.a;
+                }
+            }
+
+            if (topEarY < 24 && !fillColor.noFill) {
+                if (fillColor.fills) {
+                    for (const fill of fillColor.fills) {
+                        const fillY = fill.y !== undefined ? topEarY + fill.y : topEarY;
+                        const idx = (fillY * SPRITE_SIZE + fill.x) * 4;
+                        data[idx] = fill.r;
+                        data[idx+1] = fill.g;
+                        data[idx+2] = fill.b;
+                        data[idx+3] = 255;
+                    }
+                } else {
+                    const fillX = fillColor.x !== undefined ? fillColor.x : 7;
+                    const idx = (topEarY * SPRITE_SIZE + fillX) * 4;
+                    data[idx] = fillColor.r;
+                    data[idx+1] = fillColor.g;
+                    data[idx+2] = fillColor.b;
+                    data[idx+3] = 255;
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+            return canvas;
+        }
+
+        // Get list of remasters applicable to a punk
+        function getRemasters(punk) {
+            const remasters = [];
+            const isFemale = punk.gender === 'Female';
+            const isMale = punk.gender === 'Male';
+
+            if (isFemale) {
+                // Check for ear-visible hairstyles
+                const earVisibleTrait = punk.accessories.find(a => EAR_VISIBLE_HAIRSTYLES.has(a));
+                if (earVisibleTrait) {
+                    remasters.push({type: 'ear', trait: earVisibleTrait, description: 'Ear shifted down 1px'});
+
+                    // If Regular Shades present, shift it too
+                    if (punk.accessories.includes('Regular Shades')) {
+                        remasters.push({type: 'shades', trait: 'Regular Shades', description: 'Regular Shades shifted down 1px'});
+                    }
+
+                    // If Earring present, shift it too
+                    if (punk.accessories.includes('Earring')) {
+                        remasters.push({type: 'earring', trait: 'Earring', description: 'Earring shifted down 1px'});
+                    }
+                }
+
+                // Choker remaster
+                if (punk.accessories.includes('Choker')) {
+                    remasters.push({type: 'choker', trait: 'Choker', description: 'Choker replaced with 3 centered pixels'});
+                }
+            }
+
+            if (isMale) {
+                // Front Beard remaster
+                if (punk.accessories.includes('Front Beard')) {
+                    remasters.push({type: 'frontBeard', trait: 'Front Beard', description: 'Added beard pixels at chin'});
+                }
+                if (punk.accessories.includes('Front Beard Dark')) {
+                    remasters.push({type: 'frontBeardDark', trait: 'Front Beard Dark', description: 'Added beard pixels at chin'});
+                }
+
+                // Small Shades remaster
+                if (punk.accessories.includes('Small Shades')) {
+                    remasters.push({type: 'smallShades', trait: 'Small Shades', description: 'Added nose bridge pixels'});
+                }
+            }
+
+            return remasters;
+        }
+
+        // Composite a punk with remastering
+        function compositePunk(punk, applyRemasters = false) {
+            const canvas = document.createElement('canvas');
+            canvas.width = SPRITE_SIZE;
+            canvas.height = SPRITE_SIZE;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#638596';
+            ctx.fillRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+
+            const isFemale = punk.gender === 'Female';
+            const spriteIds = isFemale ? FEMALE_SPRITE_IDS : MALE_SPRITE_IDS;
+            const baseKey = `base_${punk.skinTone}`;
+            let baseSprite = extractSprite(spriteIds[baseKey]);
+
+            // Fix eye shadow pixels for female
+            if (isFemale && SKIN_COLORS[punk.skinTone]) {
+                const baseCtx = baseSprite.getContext('2d');
+                const imageData = baseCtx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+                const shadow = SKIN_COLORS[punk.skinTone];
+
+                let idx = (13 * SPRITE_SIZE + 10) * 4;
+                imageData.data[idx] = shadow.shadowR;
+                imageData.data[idx + 1] = shadow.shadowG;
+                imageData.data[idx + 2] = shadow.shadowB;
+                imageData.data[idx + 3] = 255;
+
+                idx = (13 * SPRITE_SIZE + 15) * 4;
+                imageData.data[idx] = shadow.shadowR;
+                imageData.data[idx + 1] = shadow.shadowG;
+                imageData.data[idx + 2] = shadow.shadowB;
+                imageData.data[idx + 3] = 255;
+
+                baseCtx.putImageData(imageData, 0, 0);
+            }
+
+            const remasters = applyRemasters ? getRemasters(punk) : [];
+            const earRemaster = remasters.find(r => r.type === 'ear');
+
+            // Apply ear shift if needed
+            if (earRemaster && isFemale) {
+                let fillColor = TRAIT_FILL_COLORS[earRemaster.trait] || {r: 0, g: 0, b: 0};
+
+                if (fillColor.fills && SKIN_COLORS[punk.skinTone]) {
+                    const skin = SKIN_COLORS[punk.skinTone];
+                    fillColor = {...fillColor, fills: fillColor.fills.map(fill =>
+                        fill.useSkinColor ? {...fill, r: skin.r, g: skin.g, b: skin.b} : fill
+                    )};
+                }
+
+                baseSprite = shiftEarOnBase(baseSprite, fillColor);
+
+                if (fillColor.extraEarSkin && SKIN_COLORS[punk.skinTone]) {
+                    const baseCtx = baseSprite.getContext('2d');
+                    const skin = SKIN_COLORS[punk.skinTone];
+                    const imageData = baseCtx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+                    for (const y of [15, 16]) {
+                        const idx = (y * SPRITE_SIZE + 7) * 4;
+                        imageData.data[idx] = skin.r;
+                        imageData.data[idx + 1] = skin.g;
+                        imageData.data[idx + 2] = skin.b;
+                        imageData.data[idx + 3] = 255;
+                    }
+                    baseCtx.putImageData(imageData, 0, 0);
+                }
+            }
+
+            ctx.drawImage(baseSprite, 0, 0);
+
+            // Sort accessories by layer order
+            const sortedAccessories = [...punk.accessories].sort((a, b) => {
+                const layerA = TRAIT_TO_LAYER[a] || 'unknown';
+                const layerB = TRAIT_TO_LAYER[b] || 'unknown';
+                return LAYER_ORDER.indexOf(layerA) - LAYER_ORDER.indexOf(layerB);
+            });
+
+            // Draw each accessory
+            for (const acc of sortedAccessories) {
+                // Skip Choker if we're remastering it (we'll draw it differently)
+                if (applyRemasters && acc === 'Choker' && remasters.find(r => r.type === 'choker')) {
+                    continue;
+                }
+
+                // Get sprite ID from the appropriate gender-specific lookup
+                let spriteId = spriteIds[acc];
+
+                if (!spriteId) {
+                    console.warn('No sprite found for:', acc, 'gender:', punk.gender);
+                    continue;
+                }
+
+                let sprite = extractSprite(spriteId);
+
+                // Apply remaster modifications
+                if (applyRemasters) {
+                    // Shift Regular Shades if ear is visible
+                    if (acc === 'Regular Shades' && remasters.find(r => r.type === 'shades')) {
+                        sprite = shiftSpriteDown(sprite, 1);
+                    }
+
+                    // Shift Earring if ear is visible
+                    if (acc === 'Earring' && remasters.find(r => r.type === 'earring')) {
+                        sprite = shiftSpriteDown(sprite, 1);
+                    }
+
+                    // Add pixels to Small Shades
+                    if (acc === 'Small Shades' && remasters.find(r => r.type === 'smallShades')) {
+                        const spriteCtx = sprite.getContext('2d');
+                        const imageData = spriteCtx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+                        const data = imageData.data;
+                        for (const y of [12, 13]) {
+                            const idx = (y * SPRITE_SIZE + 11) * 4;
+                            data[idx] = 0;
+                            data[idx + 1] = 0;
+                            data[idx + 2] = 0;
+                            data[idx + 3] = 255;
+                        }
+                        spriteCtx.putImageData(imageData, 0, 0);
+                    }
+
+                    // Add pixels to Front Beard
+                    if ((acc === 'Front Beard' && remasters.find(r => r.type === 'frontBeard')) ||
+                        (acc === 'Front Beard Dark' && remasters.find(r => r.type === 'frontBeardDark'))) {
+                        const spriteCtx = sprite.getContext('2d');
+                        const imageData = spriteCtx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+                        const data = imageData.data;
+                        const beardColor = acc === 'Front Beard Dark'
+                            ? {r: 53, g: 31, b: 12}  // Dark beard color
+                            : {r: 168, g: 103, b: 55}; // Regular beard color
+                        for (const x of [10, 14]) {
+                            const idx = (20 * SPRITE_SIZE + x) * 4;
+                            data[idx] = beardColor.r;
+                            data[idx + 1] = beardColor.g;
+                            data[idx + 2] = beardColor.b;
+                            data[idx + 3] = 255;
+                        }
+                        spriteCtx.putImageData(imageData, 0, 0);
+                    }
+
+                    // Handle shifted pixel for certain hairstyles
+                    const fillConfig = TRAIT_FILL_COLORS[acc];
+                    if (fillConfig && fillConfig.shiftPixel && earRemaster) {
+                        sprite = shiftSinglePixel(sprite, fillConfig.shiftPixel.x, fillConfig.shiftPixel.y);
+                    }
+                }
+
+                ctx.drawImage(sprite, 0, 0);
+            }
+
+            // Apply post-sprite fills for ear remaster
+            if (applyRemasters && earRemaster && TRAIT_FILL_COLORS[earRemaster.trait]) {
+                const fillColor = TRAIT_FILL_COLORS[earRemaster.trait];
+                if (fillColor.fills) {
+                    const imageData = ctx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+                    const data = imageData.data;
+                    const topEarY = 11;
+                    for (const fill of fillColor.fills) {
+                        if (fill.y !== undefined && fill.y !== 0) {
+                            const fillY = topEarY + fill.y;
+                            let r = fill.r, g = fill.g, b = fill.b;
+                            if (fill.useSkinColor && SKIN_COLORS[punk.skinTone]) {
+                                const skin = SKIN_COLORS[punk.skinTone];
+                                r = skin.r; g = skin.g; b = skin.b;
+                            }
+                            const idx = (fillY * SPRITE_SIZE + fill.x) * 4;
+                            data[idx] = r;
+                            data[idx + 1] = g;
+                            data[idx + 2] = b;
+                            data[idx + 3] = 255;
+                        }
+                    }
+                    ctx.putImageData(imageData, 0, 0);
+                }
+            }
+
+            // Draw remastered Choker
+            if (applyRemasters && remasters.find(r => r.type === 'choker')) {
+                const imageData = ctx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+                const data = imageData.data;
+                for (const x of [9, 10, 11]) {
+                    const idx = (22 * SPRITE_SIZE + x) * 4;
+                    data[idx] = 0;
+                    data[idx + 1] = 0;
+                    data[idx + 2] = 0;
+                    data[idx + 3] = 255;
+                }
+                ctx.putImageData(imageData, 0, 0);
+            }
+
+            return canvas;
+        }
+
+        function drawZoomed(sourceCanvas, targetCanvas) {
+            targetCanvas.width = CROPPED_SIZE * ZOOM;
+            targetCanvas.height = CROPPED_SIZE * ZOOM;
+            const ctx = targetCanvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(sourceCanvas, CROP_LEFT, CROP_TOP, CROPPED_SIZE, CROPPED_SIZE, 0, 0, CROPPED_SIZE * ZOOM, CROPPED_SIZE * ZOOM);
+        }
+
+        function showMessage(text, type = 'info') {
+            const msgArea = document.getElementById('messageArea');
+            msgArea.textContent = text;
+            msgArea.className = `message ${type}`;
+        }
+
+        function hideMessage() {
+            document.getElementById('messageArea').className = 'message';
+        }
+
+        function renderPunk(punkId) {
+            const punk = punkData[punkId];
+
+            if (!punk) {
+                showMessage(`Punk #${punkId} not found`, 'error');
+                document.getElementById('comparisonArea').classList.remove('visible');
+                document.getElementById('traitsInfo').style.display = 'none';
+                return;
+            }
+
+            const remasters = getRemasters(punk);
+
+            if (remasters.length === 0) {
+                showMessage(`Punk #${punkId} has no traits to remaster`, 'info');
+                document.getElementById('comparisonArea').classList.remove('visible');
+                document.getElementById('traitsInfo').style.display = 'none';
+
+                // Still show the original punk
+                const original = extractPunk(punkId);
+                drawZoomed(original, document.getElementById('originalCanvas'));
+                document.getElementById('punkInfo').textContent = `${punk.gender} / ${punk.skinTone}`;
+                document.getElementById('comparisonArea').classList.add('visible');
+                document.querySelector('.arrow').style.display = 'none';
+                document.querySelectorAll('.punk-view')[1].style.display = 'none';
+                return;
+            }
+
+            hideMessage();
+            document.querySelector('.arrow').style.display = 'flex';
+            document.querySelectorAll('.punk-view')[1].style.display = 'block';
+
+            // Original from composite image
+            const original = extractPunk(punkId);
+            drawZoomed(original, document.getElementById('originalCanvas'));
+
+            // Remastered
+            const remastered = compositePunk(punk, true);
+            drawZoomed(remastered, document.getElementById('remasteredCanvas'));
+
+            document.getElementById('punkInfo').textContent = `${punk.gender} / ${punk.skinTone}`;
+            document.getElementById('comparisonArea').classList.add('visible');
+
+            // Show traits info
+            const traitsInfo = document.getElementById('traitsInfo');
+            traitsInfo.style.display = 'block';
+            traitsInfo.innerHTML = `
+                <h4>Accessories</h4>
+                <div class="trait-list">
+                    ${punk.accessories.map(a => {
+                        const isRemastered = remasters.some(r => r.trait === a);
+                        return `<span class="trait-item${isRemastered ? ' remastered' : ''}">${a}</span>`;
+                    }).join('')}
+                </div>
+                <h4>Remasters Applied</h4>
+                <div class="trait-list">
+                    ${remasters.map(r => `<span class="trait-item remastered">${r.description}</span>`).join('')}
+                </div>
+            `;
+        }
+
+        async function init() {
+            const input = document.getElementById('punkIdInput');
+            const btn = document.getElementById('remasterBtn');
+
+            try {
+                showMessage('Loading assets...', 'info');
+
+                [spriteSheet, punksComposite] = await Promise.all([
+                    loadImage('../data/cryptopunks-assets/punks/config/punks-24x24.png'),
+                    loadImage('../data/punks.png')
+                ]);
+
+                await loadCSV();
+
+                btn.disabled = false;
+                showMessage('Enter a punk ID (0-9999) to check for remasters', 'info');
+
+                btn.addEventListener('click', () => {
+                    const punkId = parseInt(input.value);
+                    if (isNaN(punkId) || punkId < 0 || punkId > 9999) {
+                        showMessage('Please enter a valid punk ID (0-9999)', 'error');
+                        return;
+                    }
+                    renderPunk(punkId);
+                });
+
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        btn.click();
+                    }
+                });
+
+            } catch (err) {
+                console.error('Init failed:', err);
+                showMessage(`Error loading: ${err.message}`, 'error');
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
