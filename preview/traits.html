@@ -333,6 +333,7 @@
         // Sprite IDs - all female traits
         const SPRITE_IDS = {
             'base_Light': 24, 'base_Medium': 23, 'base_Dark': 22, 'base_Albino': 25,
+            'base_male_Light': 5, 'base_male_Medium': 6, 'base_male_Dark': 7, 'base_male_Albino': 8,
             // Eyewear
             'Regular Shades': 317,
             '3D Glasses': 302,
@@ -853,6 +854,26 @@
             });
         }
 
+        // Composite on male base
+        function compositeOnMaleBase(skinTone, sprites) {
+            const canvas = document.createElement('canvas');
+            canvas.width = SPRITE_SIZE;
+            canvas.height = SPRITE_SIZE;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#638596';
+            ctx.fillRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+
+            const base = extractSprite(SPRITE_IDS[`base_male_${skinTone}`]);
+            ctx.drawImage(base, 0, 0);
+
+            for (const sprite of sprites) {
+                ctx.drawImage(sprite, 0, 0);
+            }
+
+            return canvas;
+        }
+
         // Render Front Beard: add beard pixels at (10,20) and (14,20)
         function renderFrontBeardComparison() {
             const container = document.getElementById('frontBeardComparison');
@@ -861,11 +882,11 @@
             for (const skinTone of SKIN_TONES) {
                 const trait = extractSprite(SPRITE_IDS['Front Beard']);
 
-                // Original
-                const original = compositeOnBase(skinTone, [trait], false);
+                // Original (male base)
+                const original = compositeOnMaleBase(skinTone, [trait]);
 
                 // Remastered: add beard pixels
-                const remastered = compositeOnBase(skinTone, [trait], false);
+                const remastered = compositeOnMaleBase(skinTone, [trait]);
                 const ctx = remastered.getContext('2d');
                 const imageData = ctx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
                 const data = imageData.data;
@@ -918,15 +939,17 @@
         // Render Small Shades: add black pixels at (11,13) and (11,12)
         function renderSmallShadesComparison() {
             const container = document.getElementById('smallShadesComparison');
+            // Use male sprite ID 318 for Small Shades
+            const SMALL_SHADES_MALE = 318;
 
             for (const skinTone of SKIN_TONES) {
-                const trait = extractSprite(SPRITE_IDS['Small Shades']);
+                const trait = extractSprite(SMALL_SHADES_MALE);
 
-                // Original
-                const original = compositeOnBase(skinTone, [trait], false);
+                // Original (male base)
+                const original = compositeOnMaleBase(skinTone, [trait]);
 
                 // Remastered: add black pixels
-                const remasteredTrait = extractSprite(SPRITE_IDS['Small Shades']);
+                const remasteredTrait = extractSprite(SMALL_SHADES_MALE);
                 const traitCtx = remasteredTrait.getContext('2d');
                 const imageData = traitCtx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
                 const data = imageData.data;
@@ -941,7 +964,7 @@
                 }
                 traitCtx.putImageData(imageData, 0, 0);
 
-                const remastered = compositeOnBase(skinTone, [remasteredTrait], false);
+                const remastered = compositeOnMaleBase(skinTone, [remasteredTrait]);
                 container.appendChild(createComparison(skinTone, original, remastered));
             }
         }
