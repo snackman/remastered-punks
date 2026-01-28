@@ -13,12 +13,13 @@ export async function loadPunkData(csvPath) {
     if (!line) continue;
 
     // Parse: id, type, gender, skin tone, count, accessories
-    const match = line.match(/^(\d+),\s*(\w+),\s*(\w+),\s*(\w+),\s*(\d+),\s*(.*)$/);
+    // Skin tone can be empty for Zombie/Ape/Alien types
+    const match = line.match(/^(\d+),\s*(\w+),\s*(\w+),\s*(\w*),\s*(\d+),\s*(.*)$/);
     if (match) {
       const id = parseInt(match[1]);
       const type = match[2];
       const gender = match[3];
-      const skinTone = match[4];
+      const skinTone = match[4] || null;
       const accessoriesStr = match[6].trim();
       const accessories = accessoriesStr ? accessoriesStr.split(' / ').map(a => a.trim()) : [];
 

@@ -15,16 +15,18 @@ function PunkCard({ punk, showRemastered = true }) {
   useEffect(() => {
     if (!originalRef.current) return;
 
-    // Draw original
-    const originalCanvas = extractPunk(punk.id);
+    // Clear and draw original
     const origCtx = originalRef.current.getContext('2d');
+    origCtx.clearRect(0, 0, SPRITE_SIZE * ZOOM, SPRITE_SIZE * ZOOM);
+    const originalCanvas = extractPunk(punk.id);
     origCtx.imageSmoothingEnabled = false;
     origCtx.drawImage(originalCanvas, 0, 0, SPRITE_SIZE, SPRITE_SIZE, 0, 0, SPRITE_SIZE * ZOOM, SPRITE_SIZE * ZOOM);
 
-    // Draw remastered if applicable
+    // Clear and draw remastered if applicable
     if (hasRemasters && showRemastered && remasteredRef.current) {
-      const remasteredCanvas = compositePunk(punk, true);
       const remCtx = remasteredRef.current.getContext('2d');
+      remCtx.clearRect(0, 0, SPRITE_SIZE * ZOOM, SPRITE_SIZE * ZOOM);
+      const remasteredCanvas = compositePunk(punk, true);
       remCtx.imageSmoothingEnabled = false;
       remCtx.drawImage(remasteredCanvas, 0, 0, SPRITE_SIZE, SPRITE_SIZE, 0, 0, SPRITE_SIZE * ZOOM, SPRITE_SIZE * ZOOM);
     }
