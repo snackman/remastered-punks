@@ -421,9 +421,14 @@
             ]},
             'Blonde Bob': {fills: [
                 {x: 7, y: 0, r: 249, g: 242, b: 161}, // Blonde at top
-                {x: 7, y: 2, useSkinColor: true}, // Skin color 2 below
+                {x: 7, y: 2, useSkinColor: true}, // Skin color 2 below (y=13)
+                {x: 7, y: 3, useSkinColor: true}, // Skin color at y=14 (10 from bottom)
             ], extraEarSkin: true},
-            'Blonde Short': {r: 0, g: 0, b: 0, x: 7, extraEarSkin: true, shiftPixel: {x: 7, y: 14}}, // Black fill + extra ear skin + shift specific pixel
+            'Blonde Short': {fills: [
+                {x: 7, r: 0, g: 0, b: 0}, // Black at x=7, y=11
+                {x: 6, y: 3, r: 249, g: 242, b: 161}, // Blonde at x=6, y=14 (10 from bottom)
+                {x: 7, y: 5, r: 0, g: 0, b: 0}, // Black at x=7, y=16 (8 from bottom)
+            ], extraEarSkin: true, shiftPixel: {x: 7, y: 14}},
             'Crazy Hair': {fills: [
                 {x: 6, r: 226, g: 38, b: 38}, // Crazy Hair red #e22626 at x=6
                 {x: 7, r: 0, g: 0, b: 0}, // Black at x=7, y=11
