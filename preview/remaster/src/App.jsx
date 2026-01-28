@@ -1,0 +1,136 @@
+import { useState, useEffect } from 'react';
+import '@rainbow-me/rainbowkit/styles.css';
+import {
+  getDefaultConfig,
+  RainbowKitProvider,
+  ConnectButton,
+} from '@rainbow-me/rainbowkit';
+import { WagmiProvider, useAccount } from 'wagmi';
+import { mainnet } from 'wagmi/chains';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+import { loadAssets } from './lib/sprites';
+import { loadPunkData, loadEligiblePunks } from './lib/data';
+import PunkGrid from './components/PunkGrid';
+import ManualLookup from './components/ManualLookup';
+
+import './App.css';
+
+const config = getDefaultConfig({
+  appName: 'Remastered Punks',
+  projectId: 'YOUR_WALLETCONNECT_PROJECT_ID', // Get from cloud.walletconnect.com
+  chains: [mainnet],
+});
+
+const queryClient = new QueryClient();
+
+function AppContent({ punkData, eligiblePunks, assetsLoaded }) {
+  const { address, isConnected } = useAccount();
+  const [activeTab, setActiveTab] = useState('wallet');
+
+  if (!assetsLoaded) {
+    return <div className="loading">Loading assets...</div>;
+  }
+
+  return (
+    <div className="app">
+      <header>
+        <h1>Remastered Punks</h1>
+        <p className="subtitle">View your CryptoPunks with remastered traits</p>
+        <div className="connect-wrapper">
+          <ConnectButton />
+        </div>
+      </header>
+
+      <div className="tabs">
+        <button
+          className={activeTab === 'wallet' ? 'active' : ''}
+          onClick={() => setActiveTab('wallet')}
+        >
+          My Punks
+        </button>
+        <button
+          className={activeTab === 'lookup' ? 'active' : ''}
+          onClick={() => setActiveTab('lookup')}
+        >
+          Lookup by ID
+        </button>
+      </div>
+
+      <main>
+        {activeTab === 'wallet' ? (
+          isConnected ? (
+            <PunkGrid
+              address={address}
+              punkData={punkData}
+              eligiblePunks={eligiblePunks}
+            />
+          ) : (
+            <div className="connect-prompt">
+              <p>Connect your wallet to view your CryptoPunks</p>
+            </div>
+          )
+        ) : (
+          <ManualLookup punkData={punkData} />
+        )}
+      </main>
+    </div>
+  );
+}
+
+function App() {
+  const [punkData, setPunkData] = useState({});
+  const [eligiblePunks, setEligiblePunks] = useState([]);
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function init() {
+      try {
+        // Base path for assets (works for both dev and production)
+        const basePath = import.meta.env.DEV ? '../..' : '/remastered-punks';
+
+        // Load assets
+        await loadAssets(
+          `${basePath}/data/cryptopunks-assets/punks/config/punks-24x24.png`,
+          `${basePath}/data/punks.png`
+        );
+
+        // Load punk data
+        const data = await loadPunkData(`${basePath}/data/punks-attributes/original/cryptopunks.csv`);
+        setPunkData(data);
+
+        // Load eligible punks
+        const eligible = await loadEligiblePunks(`${basePath}/data/all-eligible-punks.json`);
+        setEligiblePunks(eligible);
+
+        setAssetsLoaded(true);
+      } catch (err) {
+        console.error('Failed to load:', err);
+        setError(err.message);
+      }
+    }
+
+    init();
+  }, []);
+
+  if (error) {
+    return <div className="error">Error loading: {error}</div>;
+  }
+
+  return (
+    <WagmiProvider config={config}>
+      <QueryClientProvider client={queryClient}>
+        <RainbowKitProvider>
+          <AppContent
+            punkData={punkData}
+            eligiblePunks={eligiblePunks}
+            assetsLoaded={assetsLoaded}
+          />
+        </RainbowKitProvider>
+      </QueryClientProvider>
+    </WagmiProvider>
+  );
+}
+
+export default App;
