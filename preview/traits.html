@@ -284,6 +284,30 @@
         </div>
     </div>
 
+    <div class="section" data-section="26">
+        <h2>26. Front Beard</h2>
+        <div class="section-content">
+            <p>Add beard color pixels at chin area.</p>
+            <div class="skin-tones" id="frontBeardComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="27">
+        <h2>27. Choker</h2>
+        <div class="section-content">
+            <p>Replace choker with 3 pixels.</p>
+            <div class="skin-tones" id="chokerComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="28">
+        <h2>28. Small Shades</h2>
+        <div class="section-content">
+            <p>Add two black pixels for nose bridge.</p>
+            <div class="skin-tones" id="smallShadesComparison"></div>
+        </div>
+    </div>
+
     <script>
         const SPRITE_SIZE = 24;
         const SPRITESHEET_COLS = 25;
@@ -353,6 +377,11 @@
             'Wild Hair': 666,
             'Wild White Hair': 668,
             'Clown Hair Green': 810,
+            // Other traits
+            'Small Shades': 319,
+            'Choker': 380,
+            'Front Beard': 389,
+            'Front Beard Dark': 390,
         };
 
         const SKIN_TONES = ['Light', 'Medium', 'Dark', 'Albino'];
@@ -824,6 +853,99 @@
             });
         }
 
+        // Render Front Beard: add beard pixels at (10,20) and (14,20)
+        function renderFrontBeardComparison() {
+            const container = document.getElementById('frontBeardComparison');
+            const BEARD_COLOR = {r: 168, g: 103, b: 55}; // Brown beard color - may need adjustment
+
+            for (const skinTone of SKIN_TONES) {
+                const trait = extractSprite(SPRITE_IDS['Front Beard']);
+
+                // Original
+                const original = compositeOnBase(skinTone, [trait], false);
+
+                // Remastered: add beard pixels
+                const remastered = compositeOnBase(skinTone, [trait], false);
+                const ctx = remastered.getContext('2d');
+                const imageData = ctx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+                const data = imageData.data;
+
+                // Add beard pixels at (10, 20) and (14, 20) - 4 from bottom
+                for (const x of [10, 14]) {
+                    const idx = (20 * SPRITE_SIZE + x) * 4;
+                    data[idx] = BEARD_COLOR.r;
+                    data[idx + 1] = BEARD_COLOR.g;
+                    data[idx + 2] = BEARD_COLOR.b;
+                    data[idx + 3] = 255;
+                }
+                ctx.putImageData(imageData, 0, 0);
+
+                container.appendChild(createComparison(skinTone, original, remastered));
+            }
+        }
+
+        // Render Choker: replace with 3 pixels at x=8,9,10, y=21
+        function renderChokerComparison() {
+            const container = document.getElementById('chokerComparison');
+            const CHOKER_COLOR = {r: 0, g: 0, b: 0}; // Black choker
+
+            for (const skinTone of SKIN_TONES) {
+                const trait = extractSprite(SPRITE_IDS['Choker']);
+
+                // Original
+                const original = compositeOnBase(skinTone, [trait], false);
+
+                // Remastered: modify choker pixels
+                const remastered = compositeOnBase(skinTone, [], false);
+                const ctx = remastered.getContext('2d');
+                const imageData = ctx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+                const data = imageData.data;
+
+                // Add 3 choker pixels at x=8,9,10, y=21 (3 from bottom)
+                for (const x of [8, 9, 10]) {
+                    const idx = (21 * SPRITE_SIZE + x) * 4;
+                    data[idx] = CHOKER_COLOR.r;
+                    data[idx + 1] = CHOKER_COLOR.g;
+                    data[idx + 2] = CHOKER_COLOR.b;
+                    data[idx + 3] = 255;
+                }
+                ctx.putImageData(imageData, 0, 0);
+
+                container.appendChild(createComparison(skinTone, original, remastered));
+            }
+        }
+
+        // Render Small Shades: add black pixels at (11,13) and (11,12)
+        function renderSmallShadesComparison() {
+            const container = document.getElementById('smallShadesComparison');
+
+            for (const skinTone of SKIN_TONES) {
+                const trait = extractSprite(SPRITE_IDS['Small Shades']);
+
+                // Original
+                const original = compositeOnBase(skinTone, [trait], false);
+
+                // Remastered: add black pixels
+                const remasteredTrait = extractSprite(SPRITE_IDS['Small Shades']);
+                const traitCtx = remasteredTrait.getContext('2d');
+                const imageData = traitCtx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+                const data = imageData.data;
+
+                // Add black pixels at (11, 13) and (11, 12) - 11 and 12 from bottom
+                for (const y of [12, 13]) {
+                    const idx = (y * SPRITE_SIZE + 11) * 4;
+                    data[idx] = 0;
+                    data[idx + 1] = 0;
+                    data[idx + 2] = 0;
+                    data[idx + 3] = 255;
+                }
+                traitCtx.putImageData(imageData, 0, 0);
+
+                const remastered = compositeOnBase(skinTone, [remasteredTrait], false);
+                container.appendChild(createComparison(skinTone, original, remastered));
+            }
+        }
+
         async function init() {
             try {
                 setupCollapsible();
@@ -854,6 +976,10 @@
                 renderTraitWithEar('wildBlondeComparison', 'Wild Blonde');
                 renderTraitWithEar('wildWhiteHairComparison', 'Wild White Hair');
                 renderTraitWithEar('clownHairGreenComparison', 'Clown Hair Green');
+                // Non-ear traits
+                renderFrontBeardComparison();
+                renderChokerComparison();
+                renderSmallShadesComparison();
             } catch (err) {
                 console.error('Init failed:', err);
                 document.body.innerHTML = `<p style="color:red;text-align:center;padding:40px;">Error: ${err.message}</p>`;
