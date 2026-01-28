@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Traits Review - Remaster Status</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 { text-align: center; margin-bottom: 10px; }
+    .subtitle { text-align: center; color: #888; margin-bottom: 30px; }
+    .stats {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 15px;
+      background: #252540;
+      border-radius: 8px;
+    }
+    .stats span { margin: 0 15px; }
+    .has-remaster { color: #4ade80; }
+    .no-remaster { color: #888; }
+    .layer-section {
+      margin-bottom: 30px;
+      background: #252540;
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .layer-title {
+      font-size: 1.2em;
+      font-weight: bold;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #444;
+      display: flex;
+      justify-content: space-between;
+    }
+    .trait-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+    }
+    .trait-card {
+      background: #1a1a2e;
+      border-radius: 6px;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .trait-card.remastered {
+      border: 1px solid #4ade80;
+    }
+    .trait-card.not-remastered {
+      border: 1px solid #444;
+      opacity: 0.7;
+    }
+    .sprite-container {
+      width: 48px;
+      height: 48px;
+      background: #638596;
+      image-rendering: pixelated;
+      flex-shrink: 0;
+    }
+    .sprite-container canvas {
+      width: 48px;
+      height: 48px;
+      image-rendering: pixelated;
+    }
+    .trait-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .trait-name {
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .trait-status {
+      font-size: 0.8em;
+      margin-top: 4px;
+    }
+    .gender-tag {
+      font-size: 0.7em;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: #444;
+      margin-left: 5px;
+    }
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-bottom: 20px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .legend-dot.green { background: #4ade80; }
+    .legend-dot.gray { background: #666; }
+    .filter-bar {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .filter-btn {
+      padding: 8px 16px;
+      border: 1px solid #444;
+      background: transparent;
+      color: #eee;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .filter-btn.active {
+      background: #4ade80;
+      color: #000;
+      border-color: #4ade80;
+    }
+  </style>
+</head>
+<body>
+  <h1>Traits Review</h1>
+  <p class="subtitle">Review which traits have remasters and which don't</p>
+
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-dot green"></div>
+      <span>Has Remaster</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot gray"></div>
+      <span>No Remaster</span>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="remastered">With Remaster</button>
+    <button class="filter-btn" data-filter="not-remastered">Without Remaster</button>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div id="content"></div>
+
+  <script>
+    const SPRITE_SIZE = 24;
+    const SPRITESHEET_COLS = 25;
+
+    // All traits organized by layer with their sprite IDs
+    const TRAITS_BY_LAYER = {
+      'Hair': {
+        female: {
+          'Blonde Bob': 749, 'Blonde Short': 633, 'Clown Hair Green': 810,
+          'Crazy Hair': 635, 'Dark Hair': 637, 'Frumpy Hair': 639,
+          'Half Shaved': 640, 'Messy Hair': 642, 'Mohawk': 644,
+          'Mohawk Dark': 646, 'Mohawk Thin': 648, 'Orange Side': 649,
+          'Pigtails': 651, 'Pink With Hat': 652, 'Purple Hair': 654,
+          'Red Mohawk': 655, 'Shaved Head': 657, 'Straight Hair': 658,
+          'Straight Hair Blonde': 659, 'Straight Hair Dark': 660,
+          'Stringy Hair': 662, 'Wild Blonde': 664, 'Wild Hair': 666,
+          'Wild White Hair': 668,
+        },
+        male: {
+          'Clown Hair Green': 795, 'Crazy Hair': 634, 'Frumpy Hair': 638,
+          'Messy Hair': 641, 'Mohawk': 643, 'Mohawk Dark': 645,
+          'Mohawk Thin': 647, 'Peak Spike': 650, 'Purple Hair': 653,
+          'Shaved Head': 656, 'Stringy Hair': 661, 'Vampire Hair': 663,
+          'Wild Hair': 665,
+        }
+      },
+      'Headgear': {
+        shared: {
+          'Bandana': [404, 403], 'Beanie': [406, 405], 'Cap': [548, 547],
+          'Cap Forward': [408, 407], 'Cowboy Hat': [410, 409],
+          'Do-rag': [412, 411], 'Fedora': [414, 413], 'Headband': [416, 415],
+          'Hoodie': [420, 418], 'Knitted Cap': [422, 421],
+          'Police Cap': [425, 424], 'Top Hat': [429, 428],
+        },
+        female: {
+          'Pilot Helmet': 423, 'Tassle Hat': 426, 'Tiara': 427,
+        }
+      },
+      'Eyewear': {
+        shared: {
+          '3D Glasses': [302, 301], 'Big Shades': [304, 303],
+          'Classic Shades': [306, 305], 'Eye Mask': [308, 307],
+          'Eye Patch': [310, 309], 'Horned Rim Glasses': [312, 311],
+          'Nerd Glasses': [314, 313], 'Regular Shades': [317, 315],
+          'Small Shades': [319, 318], 'VR': [321, 320],
+        },
+        female: {
+          'Welding Goggles': 322,
+        }
+      },
+      'Eyes': {
+        female: {
+          'Blue Eye Shadow': 334, 'Green Eye Shadow': 335,
+          'Purple Eye Shadow': 337, 'Clown Eyes Blue': 339,
+          'Clown Eyes Green': 341,
+        },
+        male: {
+          'Clown Eyes Blue': 338, 'Clown Eyes Green': 340,
+        }
+      },
+      'Blemish': {
+        shared: {
+          'Mole': [345, 344], 'Rosy Cheeks': [347, 346], 'Spots': [349, 348],
+        }
+      },
+      'Mouth': {
+        female: {
+          'Black Lipstick': 363, 'Hot Lipstick': 364, 'Purple Lipstick': 365,
+        },
+        male: {
+          'Buck Teeth': 360, 'Frown': 361, 'Smile': 362,
+        }
+      },
+      'MouthProp': {
+        shared: {
+          'Cigarette': [369, 368], 'Medical Mask': [371, 370],
+          'Pipe': [373, 372], 'Vape': [375, 374],
+        }
+      },
+      'Beard': {
+        male: {
+          'Big Beard': 387, 'Chinstrap': 388, 'Front Beard': 389,
+          'Front Beard Dark': 390, 'Goat': 391, 'Handlebars': 392,
+          'Luxurious Beard': 393, 'Mustache': 396, 'Muttonchops': 397,
+          'Normal Beard': 398, 'Normal Beard Black': 399, 'Shadow Beard': 401,
+        }
+      },
+      'Neck': {
+        shared: {
+          'Gold Chain': [382, 381], 'Silver Chain': [384, 383],
+        },
+        female: {
+          'Choker': 380,
+        }
+      },
+      'Earring': {
+        shared: {
+          'Earring': [357, 356],
+        }
+      },
+    };
+
+    // Traits with remasters
+    const REMASTERED_TRAITS = {
+      // Female ear-visible hairstyles (trigger ear shift remaster)
+      'Mohawk': { type: 'ear', gender: 'female', description: 'Triggers ear shift down 1px' },
+      'Mohawk Dark': { type: 'ear', gender: 'female', description: 'Triggers ear shift down 1px' },
+      'Mohawk Thin': { type: 'ear', gender: 'female', description: 'Triggers ear shift down 1px' },
+      'Red Mohawk': { type: 'ear', gender: 'female', description: 'Triggers ear shift down 1px' },
+      'Bandana': { type: 'ear', gender: 'female', description: 'Triggers ear shift down 1px' },
+      'Headband': { type: 'ear', gender: 'female', description: 'Triggers ear shift down 1px' },
+      'Cap': { type: 'ear', gender: 'female', description: 'Triggers ear shift down 1px' },
+      'Knitted Cap': { type: 'ear', gender: 'female', description: 'Triggers ear shift down 1px' },
+      'Tiara': { type: 'ear', gender: 'female', description: 'Triggers ear shift down 1px' },
+      'Welding Goggles': { type: 'ear', gender: 'female', description: 'Triggers ear shift down 1px' },
+      'Blonde Bob': { type: 'ear', gender: 'female', description: 'Triggers ear shift down 1px' },
+      'Blonde Short': { type: 'ear', gender: 'female', description: 'Triggers ear shift down 1px' },
+      'Crazy Hair': { type: 'ear', gender: 'female', description: 'Triggers ear shift down 1px' },
+      'Messy Hair': { type: 'ear', gender: 'female', description: 'Triggers ear shift down 1px' },
+      'Orange Side': { type: 'ear', gender: 'female', description: 'Triggers ear shift down 1px' },
+      'Pigtails': { type: 'ear', gender: 'female', description: 'Triggers ear shift down 1px' },
+      'Stringy Hair': { type: 'ear', gender: 'female', description: 'Triggers ear shift down 1px' },
+      'Wild Blonde': { type: 'ear', gender: 'female', description: 'Triggers ear shift down 1px' },
+      'Wild White Hair': { type: 'ear', gender: 'female', description: 'Triggers ear shift down 1px' },
+      'Clown Hair Green': { type: 'ear', gender: 'female', description: 'Triggers ear shift down 1px' },
+      // Accessories that shift with ear
+      'Regular Shades': { type: 'shift', gender: 'female', description: 'Shifts down 1px when ear visible' },
+      'Earring': { type: 'shift', gender: 'female', description: 'Shifts down 1px when ear visible' },
+      // Direct remasters
+      'Choker': { type: 'replace', gender: 'female', description: 'Replaced with 3 centered pixels' },
+      'Front Beard': { type: 'add', gender: 'male', description: 'Added beard pixels at chin' },
+      'Front Beard Dark': { type: 'add', gender: 'male', description: 'Added beard pixels at chin' },
+      'Small Shades': { type: 'add', gender: 'male', description: 'Added nose bridge pixels' },
+    };
+
+    let spriteSheet = null;
+    let currentFilter = 'all';
+
+    async function loadSpriteSheet() {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          spriteSheet = img;
+          resolve(img);
+        };
+        img.onerror = reject;
+        img.src = '../data/cryptopunks-assets/punks/config/punks-24x24.png';
+      });
+    }
+
+    function extractSprite(spriteId) {
+      const row = Math.floor(spriteId / SPRITESHEET_COLS);
+      const col = spriteId % SPRITESHEET_COLS;
+      const canvas = document.createElement('canvas');
+      canvas.width = SPRITE_SIZE;
+      canvas.height = SPRITE_SIZE;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(spriteSheet, col * SPRITE_SIZE, row * SPRITE_SIZE, SPRITE_SIZE, SPRITE_SIZE, 0, 0, SPRITE_SIZE, SPRITE_SIZE);
+      return canvas;
+    }
+
+    function createTraitCard(name, spriteId, gender, remaster) {
+      const card = document.createElement('div');
+      card.className = `trait-card ${remaster ? 'remastered' : 'not-remastered'}`;
+      card.dataset.remastered = remaster ? 'true' : 'false';
+
+      const spriteContainer = document.createElement('div');
+      spriteContainer.className = 'sprite-container';
+      if (spriteId !== null) {
+        const sprite = extractSprite(spriteId);
+        spriteContainer.appendChild(sprite);
+      }
+
+      const info = document.createElement('div');
+      info.className = 'trait-info';
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'trait-name';
+      nameEl.textContent = name;
+      if (gender && gender !== 'shared') {
+        const tag = document.createElement('span');
+        tag.className = 'gender-tag';
+        tag.textContent = gender === 'female' ? 'F' : 'M';
+        nameEl.appendChild(tag);
+      }
+
+      const status = document.createElement('div');
+      status.className = `trait-status ${remaster ? 'has-remaster' : 'no-remaster'}`;
+      if (remaster) {
+        status.textContent = remaster.description;
+      } else {
+        status.textContent = 'No remaster';
+      }
+
+      info.appendChild(nameEl);
+      info.appendChild(status);
+      card.appendChild(spriteContainer);
+      card.appendChild(info);
+
+      return card;
+    }
+
+    function render() {
+      const content = document.getElementById('content');
+      content.innerHTML = '';
+
+      let totalTraits = 0;
+      let remasteredCount = 0;
+
+      for (const [layerName, layerData] of Object.entries(TRAITS_BY_LAYER)) {
+        const section = document.createElement('div');
+        section.className = 'layer-section';
+
+        const title = document.createElement('div');
+        title.className = 'layer-title';
+        title.innerHTML = `<span>${layerName}</span>`;
+
+        const grid = document.createElement('div');
+        grid.className = 'trait-grid';
+
+        let layerCount = 0;
+        let layerRemastered = 0;
+
+        // Process shared traits
+        if (layerData.shared) {
+          for (const [name, ids] of Object.entries(layerData.shared)) {
+            const remaster = REMASTERED_TRAITS[name];
+            // Female sprite
+            const femaleRemaster = remaster && (remaster.gender === 'female' || !remaster.gender) ? remaster : null;
+            const maleRemaster = remaster && (remaster.gender === 'male' || !remaster.gender) ? remaster : null;
+
+            grid.appendChild(createTraitCard(name, ids[0], 'female', femaleRemaster));
+            grid.appendChild(createTraitCard(name, ids[1], 'male', maleRemaster));
+            totalTraits += 2;
+            layerCount += 2;
+            if (femaleRemaster) { remasteredCount++; layerRemastered++; }
+            if (maleRemaster) { remasteredCount++; layerRemastered++; }
+          }
+        }
+
+        // Process female-only traits
+        if (layerData.female) {
+          for (const [name, id] of Object.entries(layerData.female)) {
+            const remaster = REMASTERED_TRAITS[name];
+            const hasRemaster = remaster && (remaster.gender === 'female' || !remaster.gender);
+            grid.appendChild(createTraitCard(name, id, 'female', hasRemaster ? remaster : null));
+            totalTraits++;
+            layerCount++;
+            if (hasRemaster) { remasteredCount++; layerRemastered++; }
+          }
+        }
+
+        // Process male-only traits
+        if (layerData.male) {
+          for (const [name, id] of Object.entries(layerData.male)) {
+            const remaster = REMASTERED_TRAITS[name];
+            const hasRemaster = remaster && (remaster.gender === 'male' || !remaster.gender);
+            grid.appendChild(createTraitCard(name, id, 'male', hasRemaster ? remaster : null));
+            totalTraits++;
+            layerCount++;
+            if (hasRemaster) { remasteredCount++; layerRemastered++; }
+          }
+        }
+
+        title.innerHTML += `<span style="color: #888; font-size: 0.8em;">${layerRemastered}/${layerCount} remastered</span>`;
+        section.appendChild(title);
+        section.appendChild(grid);
+        content.appendChild(section);
+      }
+
+      document.getElementById('stats').innerHTML = `
+        <span>Total Traits: <strong>${totalTraits}</strong></span>
+        <span class="has-remaster">With Remaster: <strong>${remasteredCount}</strong></span>
+        <span class="no-remaster">Without Remaster: <strong>${totalTraits - remasteredCount}</strong></span>
+      `;
+
+      applyFilter();
+    }
+
+    function applyFilter() {
+      const cards = document.querySelectorAll('.trait-card');
+      cards.forEach(card => {
+        const isRemastered = card.dataset.remastered === 'true';
+        if (currentFilter === 'all') {
+          card.style.display = '';
+        } else if (currentFilter === 'remastered') {
+          card.style.display = isRemastered ? '' : 'none';
+        } else {
+          card.style.display = isRemastered ? 'none' : '';
+        }
+      });
+    }
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        applyFilter();
+      });
+    });
+
+    loadSpriteSheet().then(render).catch(err => {
+      document.getElementById('content').innerHTML = `<p style="color: red;">Error loading sprites: ${err.message}</p>`;
+    });
+  </script>
+</body>
+</html>
