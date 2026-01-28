@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/remastered-punks/preview/remaster/',
+  base: '/remastered-punks/preview/remaster/dist/',
   build: {
     outDir: 'dist',
   },
