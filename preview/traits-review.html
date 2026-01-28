@@ -162,6 +162,7 @@
     const SPRITESHEET_COLS = 25;
 
     // All traits organized by layer with their sprite IDs
+    // Based on actual CryptoPunks trait availability per punk type
     const TRAITS_BY_LAYER = {
       'Hair': {
         female: {
@@ -185,14 +186,15 @@
       },
       'Headgear': {
         shared: {
-          'Bandana': [404, 403], 'Beanie': [406, 405], 'Cap': [548, 547],
-          'Cap Forward': [408, 407], 'Cowboy Hat': [410, 409],
-          'Do-rag': [412, 411], 'Fedora': [414, 413], 'Headband': [416, 415],
-          'Hoodie': [420, 418], 'Knitted Cap': [422, 421],
-          'Police Cap': [425, 424], 'Top Hat': [429, 428],
+          'Bandana': [404, 403], 'Headband': [416, 415], 'Knitted Cap': [422, 421],
         },
         female: {
-          'Pilot Helmet': 423, 'Tassle Hat': 426, 'Tiara': 427,
+          'Cap': 548, 'Pilot Helmet': 423, 'Tassle Hat': 426, 'Tiara': 427,
+        },
+        male: {
+          'Beanie': 405, 'Cap': 547, 'Cap Forward': 407, 'Cowboy Hat': 409,
+          'Do-rag': 411, 'Fedora': 413, 'Hoodie': 418, 'Police Cap': 424,
+          'Top Hat': 428,
         }
       },
       'Eyewear': {
@@ -201,21 +203,22 @@
           'Classic Shades': [306, 305], 'Eye Mask': [308, 307],
           'Eye Patch': [310, 309], 'Horned Rim Glasses': [312, 311],
           'Nerd Glasses': [314, 313], 'Regular Shades': [317, 315],
-          'Small Shades': [319, 318], 'VR': [321, 320],
+          'VR': [321, 320],
         },
         female: {
           'Welding Goggles': 322,
+        },
+        male: {
+          'Small Shades': 318,
         }
       },
       'Eyes': {
-        female: {
-          'Blue Eye Shadow': 334, 'Green Eye Shadow': 335,
-          'Purple Eye Shadow': 337, 'Clown Eyes Blue': 339,
-          'Clown Eyes Green': 341,
+        shared: {
+          'Clown Eyes Blue': [339, 338], 'Clown Eyes Green': [341, 340],
         },
-        male: {
-          'Clown Eyes Blue': 338, 'Clown Eyes Green': 340,
-        }
+        female: {
+          'Blue Eye Shadow': 334, 'Green Eye Shadow': 335, 'Purple Eye Shadow': 337,
+        },
       },
       'Blemish': {
         shared: {
