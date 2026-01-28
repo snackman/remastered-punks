@@ -96,8 +96,45 @@ From punk type in CSV:
 - `data/punks-attributes/original/cryptopunks.csv` - punk traits
 - `preview/composite.html` - may have useful compositing code
 
+### Step 7: RainbowKit Wallet Integration
+
+**Purpose**: Allow users to connect their wallet and automatically show all their CryptoPunks that have traits to remaster.
+
+**Dependencies**:
+- RainbowKit (@rainbow-me/rainbowkit)
+- wagmi
+- viem
+- React (RainbowKit requires React)
+
+**Implementation**:
+1. Set up React app or integrate RainbowKit into the page
+2. Add "Connect Wallet" button using RainbowKit's ConnectButton
+3. On wallet connect:
+   - Query CryptoPunks contract for punks owned by connected address
+   - Filter to only punks with remastered traits
+   - Display grid of all owned punks with remasters
+4. Show message if wallet has no punks with remastered traits
+
+**CryptoPunks Contract**:
+- Address: `0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB`
+- Use `punkIndexToAddress(uint256)` to check ownership
+- Or use `balanceOf(address)` + `tokensOfOwner` pattern
+
+**UI Flow**:
+1. User clicks "Connect Wallet"
+2. RainbowKit modal opens for wallet selection
+3. After connect, fetch owned punk IDs
+4. For each owned punk, check if it has remastered traits
+5. Display grid: Original → Remastered for each qualifying punk
+6. If no qualifying punks, show "No punks with traits to remaster in this wallet"
+
+**Alternative**: Could also support manual punk ID entry alongside wallet connect.
+
 ### Testing
 - Test with punks that have various remastered traits
 - Test with punk that has no remastered traits
 - Test with both male and female punks
 - Verify all skin tones render correctly
+- Test wallet connection flow
+- Test with wallet that owns punks
+- Test with wallet that owns no punks
