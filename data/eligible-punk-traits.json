@@ -1,0 +1,1381 @@
+{
+  "70": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 4,
+    "accessories": [
+      "Crazy Hair",
+      "Regular Shades",
+      "Earring",
+      "Cigarette"
+    ]
+  },
+  "94": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 3,
+    "accessories": [
+      "Pink With Hat",
+      "Regular Shades",
+      "Earring"
+    ]
+  },
+  "169": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 3,
+    "accessories": [
+      "Wild White Hair",
+      "Hot Lipstick",
+      "Regular Shades"
+    ]
+  },
+  "176": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 4,
+    "accessories": [
+      "Regular Shades",
+      "Wild Hair",
+      "Purple Lipstick",
+      "Earring"
+    ]
+  },
+  "244": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 3,
+    "accessories": [
+      "Regular Shades",
+      "Wild Hair",
+      "Purple Lipstick"
+    ]
+  },
+  "262": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 2,
+    "accessories": [
+      "Blonde Short",
+      "Regular Shades"
+    ]
+  },
+  "342": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 2,
+    "accessories": [
+      "Bandana",
+      "Regular Shades"
+    ]
+  },
+  "479": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 2,
+    "accessories": [
+      "Regular Shades",
+      "Dark Hair"
+    ]
+  },
+  "509": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 2,
+    "accessories": [
+      "Regular Shades",
+      "Wild Hair"
+    ]
+  },
+  "527": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 3,
+    "accessories": [
+      "Straight Hair Blonde",
+      "Hot Lipstick",
+      "Regular Shades"
+    ]
+  },
+  "589": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 4,
+    "accessories": [
+      "Mohawk",
+      "Hot Lipstick",
+      "Regular Shades",
+      "Earring"
+    ]
+  },
+  "874": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 4,
+    "accessories": [
+      "Regular Shades",
+      "Wild Hair",
+      "Earring",
+      "Cigarette"
+    ]
+  },
+  "875": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 3,
+    "accessories": [
+      "Wild White Hair",
+      "Regular Shades",
+      "Earring"
+    ]
+  },
+  "921": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 4,
+    "accessories": [
+      "Red Mohawk",
+      "Regular Shades",
+      "Earring",
+      "Cigarette"
+    ]
+  },
+  "976": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 2,
+    "accessories": [
+      "Straight Hair Blonde",
+      "Regular Shades"
+    ]
+  },
+  "1038": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 3,
+    "accessories": [
+      "Wild Blonde",
+      "Regular Shades",
+      "Purple Lipstick"
+    ]
+  },
+  "1043": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 3,
+    "accessories": [
+      "Tassle Hat",
+      "Regular Shades",
+      "Purple Lipstick"
+    ]
+  },
+  "1329": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 3,
+    "accessories": [
+      "Mole",
+      "Blonde Short",
+      "Regular Shades"
+    ]
+  },
+  "1354": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 2,
+    "accessories": [
+      "Pigtails",
+      "Regular Shades"
+    ]
+  },
+  "1411": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 2,
+    "accessories": [
+      "Regular Shades",
+      "Blonde Bob"
+    ]
+  },
+  "1418": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Albino",
+    "count": 3,
+    "accessories": [
+      "Black Lipstick",
+      "Frumpy Hair",
+      "Regular Shades"
+    ]
+  },
+  "1455": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 4,
+    "accessories": [
+      "Wild Blonde",
+      "Regular Shades",
+      "Purple Lipstick",
+      "Earring"
+    ]
+  },
+  "1457": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 3,
+    "accessories": [
+      "Mohawk Thin",
+      "Regular Shades",
+      "Cigarette"
+    ]
+  },
+  "1493": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 5,
+    "accessories": [
+      "Mole",
+      "Hot Lipstick",
+      "Regular Shades",
+      "Blonde Bob",
+      "Cigarette"
+    ]
+  },
+  "1514": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 3,
+    "accessories": [
+      "Pink With Hat",
+      "Hot Lipstick",
+      "Regular Shades"
+    ]
+  },
+  "1552": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 2,
+    "accessories": [
+      "Regular Shades",
+      "Dark Hair"
+    ]
+  },
+  "1666": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 3,
+    "accessories": [
+      "Regular Shades",
+      "Purple Lipstick",
+      "Straight Hair Dark"
+    ]
+  },
+  "1733": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 2,
+    "accessories": [
+      "Mohawk Thin",
+      "Regular Shades"
+    ]
+  },
+  "1758": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 3,
+    "accessories": [
+      "Mohawk",
+      "Regular Shades",
+      "Earring"
+    ]
+  },
+  "1844": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 2,
+    "accessories": [
+      "Blonde Short",
+      "Regular Shades"
+    ]
+  },
+  "1872": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 2,
+    "accessories": [
+      "Regular Shades",
+      "Half Shaved"
+    ]
+  },
+  "1980": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 2,
+    "accessories": [
+      "Regular Shades",
+      "Blonde Bob"
+    ]
+  },
+  "2068": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 3,
+    "accessories": [
+      "Tassle Hat",
+      "Regular Shades",
+      "Purple Lipstick"
+    ]
+  },
+  "2284": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 2,
+    "accessories": [
+      "Red Mohawk",
+      "Regular Shades"
+    ]
+  },
+  "2286": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 2,
+    "accessories": [
+      "Regular Shades",
+      "Stringy Hair"
+    ]
+  },
+  "2293": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 3,
+    "accessories": [
+      "Wild Blonde",
+      "Regular Shades",
+      "Earring"
+    ]
+  },
+  "2428": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 3,
+    "accessories": [
+      "Frumpy Hair",
+      "Regular Shades",
+      "Cigarette"
+    ]
+  },
+  "2476": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 2,
+    "accessories": [
+      "Regular Shades",
+      "Half Shaved"
+    ]
+  },
+  "2481": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 2,
+    "accessories": [
+      "Bandana",
+      "Regular Shades"
+    ]
+  },
+  "2502": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 3,
+    "accessories": [
+      "Pigtails",
+      "Regular Shades",
+      "Earring"
+    ]
+  },
+  "2544": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 2,
+    "accessories": [
+      "Tassle Hat",
+      "Regular Shades"
+    ]
+  },
+  "2645": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Albino",
+    "count": 3,
+    "accessories": [
+      "Wild White Hair",
+      "Hot Lipstick",
+      "Regular Shades"
+    ]
+  },
+  "2696": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 3,
+    "accessories": [
+      "Mohawk",
+      "Regular Shades",
+      "Purple Lipstick"
+    ]
+  },
+  "2730": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Albino",
+    "count": 2,
+    "accessories": [
+      "Regular Shades",
+      "Dark Hair"
+    ]
+  },
+  "2743": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Albino",
+    "count": 3,
+    "accessories": [
+      "Black Lipstick",
+      "Regular Shades",
+      "Straight Hair Dark"
+    ]
+  },
+  "2849": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 2,
+    "accessories": [
+      "Headband",
+      "Regular Shades"
+    ]
+  },
+  "2852": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 4,
+    "accessories": [
+      "Wild White Hair",
+      "Black Lipstick",
+      "Regular Shades",
+      "Earring"
+    ]
+  },
+  "2860": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 2,
+    "accessories": [
+      "Mohawk",
+      "Regular Shades"
+    ]
+  },
+  "2891": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Albino",
+    "count": 2,
+    "accessories": [
+      "Tiara",
+      "Regular Shades"
+    ]
+  },
+  "2978": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 3,
+    "accessories": [
+      "Black Lipstick",
+      "Pink With Hat",
+      "Regular Shades"
+    ]
+  },
+  "2984": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 3,
+    "accessories": [
+      "Red Mohawk",
+      "Hot Lipstick",
+      "Regular Shades"
+    ]
+  },
+  "3084": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 4,
+    "accessories": [
+      "Black Lipstick",
+      "Regular Shades",
+      "Rosy Cheeks",
+      "Mohawk Dark"
+    ]
+  },
+  "3277": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 3,
+    "accessories": [
+      "Tassle Hat",
+      "Regular Shades",
+      "Earring"
+    ]
+  },
+  "3318": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 3,
+    "accessories": [
+      "Gold Chain",
+      "Frumpy Hair",
+      "Regular Shades"
+    ]
+  },
+  "3343": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 2,
+    "accessories": [
+      "Tassle Hat",
+      "Regular Shades"
+    ]
+  },
+  "3356": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 2,
+    "accessories": [
+      "Knitted Cap",
+      "Regular Shades"
+    ]
+  },
+  "3646": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 3,
+    "accessories": [
+      "Regular Shades",
+      "Stringy Hair",
+      "Cigarette"
+    ]
+  },
+  "3763": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 3,
+    "accessories": [
+      "Blonde Short",
+      "Choker",
+      "Regular Shades"
+    ]
+  },
+  "3842": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Albino",
+    "count": 2,
+    "accessories": [
+      "Bandana",
+      "Regular Shades"
+    ]
+  },
+  "3853": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 2,
+    "accessories": [
+      "Straight Hair",
+      "Regular Shades"
+    ]
+  },
+  "4016": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 3,
+    "accessories": [
+      "Straight Hair",
+      "Regular Shades",
+      "Earring"
+    ]
+  },
+  "4089": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 3,
+    "accessories": [
+      "Crazy Hair",
+      "Regular Shades",
+      "Purple Lipstick"
+    ]
+  },
+  "4183": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 2,
+    "accessories": [
+      "Wild Blonde",
+      "Regular Shades"
+    ]
+  },
+  "4274": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 3,
+    "accessories": [
+      "Black Lipstick",
+      "Regular Shades",
+      "Mohawk Dark"
+    ]
+  },
+  "4339": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 2,
+    "accessories": [
+      "Crazy Hair",
+      "Regular Shades"
+    ]
+  },
+  "4357": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 3,
+    "accessories": [
+      "Regular Shades",
+      "Stringy Hair",
+      "Purple Lipstick"
+    ]
+  },
+  "4368": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 4,
+    "accessories": [
+      "Black Lipstick",
+      "Headband",
+      "Regular Shades",
+      "Earring"
+    ]
+  },
+  "4467": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 3,
+    "accessories": [
+      "Regular Shades",
+      "Dark Hair",
+      "Earring"
+    ]
+  },
+  "4554": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 4,
+    "accessories": [
+      "Mole",
+      "Hot Lipstick",
+      "Regular Shades",
+      "Straight Hair Dark"
+    ]
+  },
+  "4598": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 3,
+    "accessories": [
+      "Blonde Short",
+      "Hot Lipstick",
+      "Regular Shades"
+    ]
+  },
+  "4615": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 3,
+    "accessories": [
+      "Regular Shades",
+      "Half Shaved",
+      "Purple Lipstick"
+    ]
+  },
+  "4622": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 3,
+    "accessories": [
+      "Messy Hair",
+      "Regular Shades",
+      "Purple Lipstick"
+    ]
+  },
+  "4626": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 2,
+    "accessories": [
+      "Messy Hair",
+      "Regular Shades"
+    ]
+  },
+  "4710": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 3,
+    "accessories": [
+      "Black Lipstick",
+      "Blonde Short",
+      "Regular Shades"
+    ]
+  },
+  "4729": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 1,
+    "accessories": [
+      "Regular Shades"
+    ]
+  },
+  "4893": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 2,
+    "accessories": [
+      "Wild Blonde",
+      "Regular Shades"
+    ]
+  },
+  "4980": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Albino",
+    "count": 2,
+    "accessories": [
+      "Regular Shades",
+      "Blonde Bob"
+    ]
+  },
+  "5055": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 4,
+    "accessories": [
+      "Black Lipstick",
+      "Straight Hair",
+      "Regular Shades",
+      "Earring"
+    ]
+  },
+  "5086": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 2,
+    "accessories": [
+      "Regular Shades",
+      "Mohawk Dark"
+    ]
+  },
+  "5183": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 3,
+    "accessories": [
+      "Vape",
+      "Regular Shades",
+      "Straight Hair Dark"
+    ]
+  },
+  "5285": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 3,
+    "accessories": [
+      "Cap",
+      "Hot Lipstick",
+      "Regular Shades"
+    ]
+  },
+  "5636": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 2,
+    "accessories": [
+      "Messy Hair",
+      "Regular Shades"
+    ]
+  },
+  "5673": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 2,
+    "accessories": [
+      "Wild Blonde",
+      "Regular Shades"
+    ]
+  },
+  "5679": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 3,
+    "accessories": [
+      "Black Lipstick",
+      "Pigtails",
+      "Regular Shades"
+    ]
+  },
+  "5781": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 2,
+    "accessories": [
+      "Tassle Hat",
+      "Regular Shades"
+    ]
+  },
+  "5947": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 2,
+    "accessories": [
+      "Straight Hair",
+      "Regular Shades"
+    ]
+  },
+  "5983": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 3,
+    "accessories": [
+      "Messy Hair",
+      "Regular Shades",
+      "Cigarette"
+    ]
+  },
+  "6023": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 3,
+    "accessories": [
+      "Messy Hair",
+      "Regular Shades",
+      "Earring"
+    ]
+  },
+  "6102": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 2,
+    "accessories": [
+      "Red Mohawk",
+      "Regular Shades"
+    ]
+  },
+  "6201": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 2,
+    "accessories": [
+      "Regular Shades",
+      "Straight Hair Dark"
+    ]
+  },
+  "6215": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 3,
+    "accessories": [
+      "Blonde Short",
+      "Regular Shades",
+      "Purple Lipstick"
+    ]
+  },
+  "6323": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 2,
+    "accessories": [
+      "Mohawk Thin",
+      "Regular Shades"
+    ]
+  },
+  "6377": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 3,
+    "accessories": [
+      "Hot Lipstick",
+      "Wild Blonde",
+      "Regular Shades"
+    ]
+  },
+  "6381": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 2,
+    "accessories": [
+      "Straight Hair Blonde",
+      "Regular Shades"
+    ]
+  },
+  "6576": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Albino",
+    "count": 2,
+    "accessories": [
+      "Tassle Hat",
+      "Regular Shades"
+    ]
+  },
+  "6592": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 3,
+    "accessories": [
+      "Black Lipstick",
+      "Straight Hair Blonde",
+      "Regular Shades"
+    ]
+  },
+  "6708": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 3,
+    "accessories": [
+      "Wild White Hair",
+      "Black Lipstick",
+      "Regular Shades"
+    ]
+  },
+  "6714": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 2,
+    "accessories": [
+      "Blonde Short",
+      "Regular Shades"
+    ]
+  },
+  "6804": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 2,
+    "accessories": [
+      "Regular Shades",
+      "Stringy Hair"
+    ]
+  },
+  "6862": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 2,
+    "accessories": [
+      "Pink With Hat",
+      "Regular Shades"
+    ]
+  },
+  "6939": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 3,
+    "accessories": [
+      "Crazy Hair",
+      "Regular Shades",
+      "Purple Lipstick"
+    ]
+  },
+  "6997": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 3,
+    "accessories": [
+      "Regular Shades",
+      "Earring",
+      "Straight Hair Dark"
+    ]
+  },
+  "7052": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 3,
+    "accessories": [
+      "Straight Hair Blonde",
+      "Hot Lipstick",
+      "Regular Shades"
+    ]
+  },
+  "7071": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 4,
+    "accessories": [
+      "Medical Mask",
+      "Regular Shades",
+      "Stringy Hair",
+      "Purple Lipstick"
+    ]
+  },
+  "7153": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 4,
+    "accessories": [
+      "Mole",
+      "Tassle Hat",
+      "Hot Lipstick",
+      "Regular Shades"
+    ]
+  },
+  "7170": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 4,
+    "accessories": [
+      "Vape",
+      "Bandana",
+      "Hot Lipstick",
+      "Regular Shades"
+    ]
+  },
+  "7378": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 3,
+    "accessories": [
+      "Wild White Hair",
+      "Regular Shades",
+      "Purple Lipstick"
+    ]
+  },
+  "7387": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 3,
+    "accessories": [
+      "Knitted Cap",
+      "Regular Shades",
+      "Purple Lipstick"
+    ]
+  },
+  "7562": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 3,
+    "accessories": [
+      "Regular Shades",
+      "Blonde Bob",
+      "Cigarette"
+    ]
+  },
+  "7693": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 3,
+    "accessories": [
+      "Mohawk",
+      "Hot Lipstick",
+      "Regular Shades"
+    ]
+  },
+  "7987": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 3,
+    "accessories": [
+      "Hot Lipstick",
+      "Regular Shades",
+      "Blonde Bob"
+    ]
+  },
+  "8001": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 3,
+    "accessories": [
+      "Gold Chain",
+      "Mohawk",
+      "Regular Shades"
+    ]
+  },
+  "8058": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 3,
+    "accessories": [
+      "Straight Hair",
+      "Hot Lipstick",
+      "Regular Shades"
+    ]
+  },
+  "8091": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 2,
+    "accessories": [
+      "Knitted Cap",
+      "Regular Shades"
+    ]
+  },
+  "8241": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 4,
+    "accessories": [
+      "Mole",
+      "Black Lipstick",
+      "Tiara",
+      "Regular Shades"
+    ]
+  },
+  "8331": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 3,
+    "accessories": [
+      "Bandana",
+      "Regular Shades",
+      "Earring"
+    ]
+  },
+  "8421": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Albino",
+    "count": 3,
+    "accessories": [
+      "Regular Shades",
+      "Wild Hair",
+      "Purple Lipstick"
+    ]
+  },
+  "8537": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 3,
+    "accessories": [
+      "Hot Lipstick",
+      "Regular Shades",
+      "Straight Hair Dark"
+    ]
+  },
+  "8623": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 3,
+    "accessories": [
+      "Black Lipstick",
+      "Regular Shades",
+      "Straight Hair Dark"
+    ]
+  },
+  "8760": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 3,
+    "accessories": [
+      "Wild Blonde",
+      "Regular Shades",
+      "Purple Lipstick"
+    ]
+  },
+  "8952": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 3,
+    "accessories": [
+      "Black Lipstick",
+      "Bandana",
+      "Regular Shades"
+    ]
+  },
+  "9030": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 3,
+    "accessories": [
+      "Black Lipstick",
+      "Frumpy Hair",
+      "Regular Shades"
+    ]
+  },
+  "9223": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 3,
+    "accessories": [
+      "Pink With Hat",
+      "Regular Shades",
+      "Purple Lipstick"
+    ]
+  },
+  "9326": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 4,
+    "accessories": [
+      "Cap",
+      "Regular Shades",
+      "Purple Lipstick",
+      "Earring"
+    ]
+  },
+  "9524": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 3,
+    "accessories": [
+      "Black Lipstick",
+      "Regular Shades",
+      "Mohawk Dark"
+    ]
+  },
+  "9599": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Light",
+    "count": 3,
+    "accessories": [
+      "Mole",
+      "Regular Shades",
+      "Blonde Bob"
+    ]
+  },
+  "9781": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Dark",
+    "count": 2,
+    "accessories": [
+      "Crazy Hair",
+      "Regular Shades"
+    ]
+  },
+  "9851": {
+    "type": "Human",
+    "gender": "Female",
+    "skinTone": "Medium",
+    "count": 3,
+    "accessories": [
+      "Mole",
+      "Clown Hair Green",
+      "Regular Shades"
+    ]
+  }
+}

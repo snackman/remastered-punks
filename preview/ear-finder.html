@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Find Ear Pixels</title>
+    <style>
+        body { background: #1a1a2e; color: white; font-family: monospace; padding: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(24, 20px); gap: 1px; }
+        .pixel {
+            width: 20px; height: 20px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 8px; cursor: pointer;
+        }
+        .pixel:hover { outline: 2px solid yellow; }
+        .coords { margin-top: 20px; }
+        #selected { margin-top: 10px; padding: 10px; background: #333; }
+    </style>
+</head>
+<body>
+    <h2>Punk #5 (Female, Medium, Half Shaved + Earring)</h2>
+    <p>Click pixels to see coordinates. Ear should be on left side around x=6, y=11-14</p>
+    <div class="grid" id="grid"></div>
+    <div id="selected">Click a pixel to see details</div>
+
+    <script>
+        const PUNK_ID = 5;
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 24;
+            canvas.height = 24;
+            const ctx = canvas.getContext('2d');
+
+            const row = Math.floor(PUNK_ID / 100);
+            const col = PUNK_ID % 100;
+            ctx.drawImage(img, col * 24, row * 24, 24, 24, 0, 0, 24, 24);
+
+            const data = ctx.getImageData(0, 0, 24, 24).data;
+            const grid = document.getElementById('grid');
+
+            for (let y = 0; y < 24; y++) {
+                for (let x = 0; x < 24; x++) {
+                    const idx = (y * 24 + x) * 4;
+                    const r = data[idx], g = data[idx+1], b = data[idx+2];
+                    const hex = '#' + [r,g,b].map(c => c.toString(16).padStart(2,'0')).join('');
+
+                    const div = document.createElement('div');
+                    div.className = 'pixel';
+                    div.style.background = hex;
+                    div.textContent = x + ',' + y;
+                    div.style.color = (r + g + b) > 380 ? 'black' : 'white';
+                    div.onclick = () => {
+                        document.getElementById('selected').innerHTML =
+                            'x=' + x + ', y=' + y + '<br>RGB: ' + r + ',' + g + ',' + b + '<br>Hex: ' + hex;
+                    };
+                    grid.appendChild(div);
+                }
+            }
+        };
+        img.src = '../data/punks.png';
+    </script>
+</body>
+</html>

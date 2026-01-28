@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remastered Punks - Regular Shades Female Preview</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            text-align: center;
+            color: #fff;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .controls label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        select, button {
+            padding: 8px 16px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            background: #2a2a4e;
+            color: #fff;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #3a3a6e;
+        }
+        .comparison {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+        .punk-view {
+            text-align: center;
+        }
+        .punk-view h3 {
+            margin-bottom: 10px;
+            color: #aaa;
+        }
+        .canvas-container {
+            background: #638596;
+            padding: 4px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        canvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        .info {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #888;
+        }
+        .traits {
+            margin-top: 12px;
+            font-size: 11px;
+            color: #aaa;
+            text-align: left;
+            max-width: 200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .traits .trait-label {
+            color: #666;
+            font-size: 10px;
+            text-transform: uppercase;
+            margin-top: 8px;
+        }
+        .traits .trait-value {
+            color: #fff;
+            margin-top: 2px;
+        }
+        .traits .trait-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 4px;
+        }
+        .traits .trait-item {
+            background: #3a3a6e;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+        }
+        .traits .trait-item.highlight {
+            background: #6a4a9e;
+            color: #fff;
+        }
+        .punk-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 30px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            background: #2a2a4e;
+            border-radius: 8px;
+        }
+        .punk-thumb {
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+            image-rendering: pixelated;
+        }
+        .punk-thumb:hover {
+            opacity: 1;
+        }
+        .punk-thumb.selected {
+            opacity: 1;
+            outline: 2px solid #fff;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+        }
+        .trait-preview {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .trait-preview h3 {
+            color: #aaa;
+        }
+        .trait-canvases {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Remastered Punks Preview</h1>
+    <p class="subtitle">Regular Shades Female - Glasses moved down 1 pixel</p>
+
+    <div class="controls">
+        <label>
+            Punk ID:
+            <select id="punkSelect"></select>
+        </label>
+        <label>
+            Zoom:
+            <select id="zoomSelect">
+                <option value="4">4x</option>
+                <option value="8" selected>8x</option>
+                <option value="12">12x</option>
+                <option value="16">16x</option>
+            </select>
+        </label>
+        <button id="randomBtn">Random Punk</button>
+    </div>
+
+    <div class="comparison">
+        <div class="punk-view">
+            <h3>Original</h3>
+            <div class="canvas-container">
+                <canvas id="originalCanvas"></canvas>
+            </div>
+            <div class="info" id="originalInfo"></div>
+            <div class="traits" id="punkTraits"></div>
+        </div>
+        <div class="punk-view">
+            <h3>Remastered</h3>
+            <div class="canvas-container">
+                <canvas id="remasteredCanvas"></canvas>
+            </div>
+            <div class="info">Glasses shifted down 1px</div>
+        </div>
+    </div>
+
+    <div class="trait-preview">
+        <h3>Regular Shades Trait (isolated)</h3>
+        <div class="trait-canvases">
+            <div>
+                <div class="canvas-container">
+                    <canvas id="traitOriginal"></canvas>
+                </div>
+                <div class="info">Original position</div>
+            </div>
+            <div>
+                <div class="canvas-container">
+                    <canvas id="traitModified"></canvas>
+                </div>
+                <div class="info">Moved down 1px</div>
+            </div>
+        </div>
+    </div>
+
+    <h3 style="text-align: center; margin-top: 40px; color: #aaa;">All 128 Regular Shades Female Punks</h3>
+    <div class="punk-list" id="punkList">
+        <div class="loading">Loading punk thumbnails...</div>
+    </div>
+
+    <script>
+        // All 128 Regular Shades Female punk IDs
+        const ELIGIBLE_PUNKS = [70,94,169,176,244,262,342,479,509,527,589,874,875,921,976,1038,1043,1329,1354,1411,1418,1455,1457,1493,1514,1552,1666,1733,1758,1844,1872,1980,2068,2284,2286,2293,2428,2476,2481,2502,2544,2645,2696,2730,2743,2849,2852,2860,2891,2978,2984,3084,3277,3318,3343,3356,3646,3763,3842,3853,4016,4089,4183,4274,4339,4357,4368,4467,4554,4598,4615,4622,4626,4710,4729,4893,4980,5055,5086,5183,5285,5636,5673,5679,5781,5947,5983,6023,6102,6201,6215,6323,6377,6381,6576,6592,6708,6714,6804,6862,6939,6997,7052,7071,7153,7170,7378,7387,7562,7693,7987,8001,8058,8091,8241,8331,8421,8537,8623,8760,8952,9030,9223,9326,9524,9599,9781,9851];
+
+        // Ear-visible hairstyles
+        const EAR_VISIBLE_HAIRSTYLES = new Set([
+            'Bandana', 'Headband', 'Cap', 'Knitted Cap', 'Mohawk', 'Mohawk Dark',
+            'Mohawk Thin', 'Red Mohawk', 'Half Shaved', 'Tiara', 'Pilot Helmet',
+            'Tassle Hat', 'Welding Goggles', 'Pink With Hat'
+        ]);
+
+        // Female ear pixel region (approximate - will refine)
+        // The ear is on the left side of the face, around x=6-7, y=11-14
+        const EAR_REGION = {
+            // Ear pixels (x, y coordinates)
+            ear: [
+                {x: 6, y: 11}, {x: 7, y: 11},
+                {x: 6, y: 12}, {x: 7, y: 12},
+                {x: 6, y: 13},
+            ],
+            // Earring pixel (if present)
+            earring: [
+                {x: 6, y: 14}
+            ]
+        };
+
+        // Punk composite image config (100x100 grid of 24x24 punks)
+        const PUNKS_COLS = 100;
+        const SPRITE_SIZE = 24;
+
+        // Sprite sheet config for traits
+        const SPRITESHEET_COLS = 25;
+
+        // Sprite IDs in the spritesheet (from punks-24x24.csv)
+        const SPRITE_IDS = {
+            // Base female heads by skin tone
+            'Female_Light': 22,
+            'Female_Medium': 23,
+            'Female_Dark': 24,
+            'Female_Albino': 25,
+
+            // Eyewear
+            'Regular Shades': 317,
+            '3D Glasses': 302,
+            'Big Shades': 304,
+            'Classic Shades': 306,
+            'Eye Mask': 308,
+            'Eye Patch': 310,
+            'Horned Rim Glasses': 312,
+            'Nerd Glasses': 314,
+            'VR': 321,
+            'Welding Goggles': 322,
+
+            // Eye makeup
+            'Blue Eye Shadow': 334,
+            'Green Eye Shadow': 335,
+            'Purple Eye Shadow': 337,
+            'Clown Eyes Blue': 339,
+            'Clown Eyes Green': 341,
+
+            // Face
+            'Mole': 345,
+            'Rosy Cheeks': 347,
+            'Spots': 349,
+
+            // Accessories
+            'Earring': 357,
+            'Cigarette': 369,
+            'Medical Mask': 371,
+            'Pipe': 373,
+            'Vape': 375,
+
+            // Headwear
+            'Bandana': 404,
+            'Headband': 416,
+            'Knitted Cap': 422,
+            'Pilot Helmet': 423,
+            'Tassle Hat': 426,
+            'Tiara': 427,
+            'Cap': 548,
+
+            // Hair
+            'Blonde Short': 633,
+            'Crazy Hair': 635,
+            'Dark Hair': 637,
+            'Frumpy Hair': 639,
+            'Half Shaved': 640,
+            'Messy Hair': 642,
+            'Mohawk': 644,
+            'Mohawk Dark': 646,
+            'Mohawk Thin': 648,
+            'Orange Side': 649,
+            'Pigtails': 651,
+            'Pink With Hat': 652,
+            'Red Mohawk': 655,
+            'Straight Hair': 658,
+            'Straight Hair Blonde': 659,
+            'Straight Hair Dark': 660,
+            'Stringy Hair': 662,
+            'Wild Blonde': 664,
+            'Wild Hair': 666,
+            'Wild White Hair': 668,
+            'Blonde Bob': 749,
+            'Clown Hair Green': 810,
+
+            // Lips
+            'Black Lipstick': 363,
+            'Hot Lipstick': 364,
+            'Purple Lipstick': 365,
+
+            // Neck
+            'Choker': 380,
+            'Gold Chain': 382,
+            'Silver Chain': 384,
+        };
+
+        // Extract any sprite by ID
+        function extractSprite(spriteId) {
+            const row = Math.floor(spriteId / SPRITESHEET_COLS);
+            const col = spriteId % SPRITESHEET_COLS;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = SPRITE_SIZE;
+            canvas.height = SPRITE_SIZE;
+            const ctx = canvas.getContext('2d');
+
+            ctx.drawImage(
+                spriteSheet,
+                col * SPRITE_SIZE,
+                row * SPRITE_SIZE,
+                SPRITE_SIZE,
+                SPRITE_SIZE,
+                0, 0,
+                SPRITE_SIZE,
+                SPRITE_SIZE
+            );
+
+            return canvas;
+        }
+
+        let punksComposite = null;
+        let spriteSheet = null;
+        let punkTraits = null;
+        let referencePunks = null;
+        let currentPunkId = ELIGIBLE_PUNKS[0];
+        let currentZoom = 8;
+
+        // Crop settings: remove 1px from each edge (24x24 → 22x22)
+        // This puts the neck at the bottom with no background line below
+        const CROP_OFFSET = 1;
+        const CROPPED_SIZE = 22;
+
+        // Load punk traits JSON
+        async function loadTraits() {
+            const response = await fetch('../data/eligible-punk-traits.json');
+            return response.json();
+        }
+
+        // Load reference punks mapping
+        async function loadReferences() {
+            const response = await fetch('../data/reference-punks.json');
+            return response.json();
+        }
+
+        // Load images
+        async function loadImage(src) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = src;
+            });
+        }
+
+        // Extract a single punk from the composite image
+        function extractPunk(punkId) {
+            const row = Math.floor(punkId / PUNKS_COLS);
+            const col = punkId % PUNKS_COLS;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = SPRITE_SIZE;
+            canvas.height = SPRITE_SIZE;
+            const ctx = canvas.getContext('2d');
+
+            ctx.drawImage(
+                punksComposite,
+                col * SPRITE_SIZE,
+                row * SPRITE_SIZE,
+                SPRITE_SIZE,
+                SPRITE_SIZE,
+                0, 0,
+                SPRITE_SIZE,
+                SPRITE_SIZE
+            );
+
+            return canvas;
+        }
+
+        // Extract Regular Shades from sprite sheet
+        function extractRegularShades() {
+            return extractSprite(SPRITE_IDS['Regular Shades']);
+        }
+
+        // Shift image down by 1 pixel
+        function shiftDown(canvas, pixels = 1) {
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const shifted = ctx.createImageData(canvas.width, canvas.height);
+
+            // Copy pixels, shifted down
+            for (let y = 0; y < canvas.height - pixels; y++) {
+                for (let x = 0; x < canvas.width; x++) {
+                    const srcIdx = (y * canvas.width + x) * 4;
+                    const dstIdx = ((y + pixels) * canvas.width + x) * 4;
+                    shifted.data[dstIdx] = imageData.data[srcIdx];
+                    shifted.data[dstIdx + 1] = imageData.data[srcIdx + 1];
+                    shifted.data[dstIdx + 2] = imageData.data[srcIdx + 2];
+                    shifted.data[dstIdx + 3] = imageData.data[srcIdx + 3];
+                }
+            }
+
+            const resultCanvas = document.createElement('canvas');
+            resultCanvas.width = canvas.width;
+            resultCanvas.height = canvas.height;
+            resultCanvas.getContext('2d').putImageData(shifted, 0, 0);
+            return resultCanvas;
+        }
+
+        // CryptoPunk female skin tone colors (exact primary values from original artwork)
+        // Source: https://github.com/cryptopunksnotdead/programming-cryptopunks
+        const SKIN_COLORS = {
+            'Dark':   { r: 113, g: 63,  b: 29  },  // #713f1d
+            'Medium': { r: 174, g: 139, b: 97  },  // #ae8b61
+            'Light':  { r: 219, g: 177, b: 128 },  // #dbb180
+            'Albino': { r: 234, g: 217, b: 217 },  // #ead9d9
+        };
+
+        // Get skin color from punk metadata
+        function getSkinColor(punkId) {
+            const traits = punkTraits[punkId];
+            if (traits && traits.skinTone && SKIN_COLORS[traits.skinTone]) {
+                return SKIN_COLORS[traits.skinTone];
+            }
+            return SKIN_COLORS['Medium']; // fallback
+        }
+
+        // Check if punk has ear-visible hairstyle
+        function hasEarVisibleHairstyle(punkId) {
+            const traits = punkTraits[punkId];
+            if (!traits) return false;
+            return traits.accessories.some(acc => EAR_VISIBLE_HAIRSTYLES.has(acc));
+        }
+
+        // Check if punk has earring
+        function hasEarring(punkId) {
+            const traits = punkTraits[punkId];
+            if (!traits) return false;
+            return traits.accessories.includes('Earring');
+        }
+
+        // Create remastered punk with all applicable fixes
+        function createRemastered(punkCanvas, shadesCanvas, punkId) {
+            const result = document.createElement('canvas');
+            result.width = SPRITE_SIZE;
+            result.height = SPRITE_SIZE;
+            const ctx = result.getContext('2d');
+
+            // Get pixel data from original punk
+            const punkCtx = punkCanvas.getContext('2d');
+            const punkData = punkCtx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+
+            // Get shades mask
+            const shadesCtx = shadesCanvas.getContext('2d');
+            const shadesData = shadesCtx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+
+            // Get reference punk (same traits but no glasses) for filling revealed pixels
+            const refPunkId = referencePunks[punkId];
+            const refPunkCanvas = extractPunk(refPunkId);
+            const refPunkCtx = refPunkCanvas.getContext('2d');
+            const refPunkData = refPunkCtx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+
+            // Check what fixes apply to this punk
+            const hasGlassesFix = true; // All punks in this preview have Regular Shades
+            const hasEarFix = hasEarVisibleHairstyle(punkId);
+            const punkHasEarring = hasEarring(punkId);
+
+            // Create result starting with original punk
+            const resultData = ctx.createImageData(SPRITE_SIZE, SPRITE_SIZE);
+            for (let i = 0; i < punkData.data.length; i++) {
+                resultData.data[i] = punkData.data[i];
+            }
+
+            // === GLASSES FIX ===
+            // For pixels where glasses will be REMOVED but NOT re-added, use reference punk
+
+            for (let y = 0; y < SPRITE_SIZE; y++) {
+                for (let x = 0; x < SPRITE_SIZE; x++) {
+                    const idx = (y * SPRITE_SIZE + x) * 4;
+
+                    const isOriginalGlasses = shadesData.data[idx + 3] > 0;
+                    const shiftedSrcY = y - 1;
+                    const isShiftedGlasses = shiftedSrcY >= 0 &&
+                        shadesData.data[(shiftedSrcY * SPRITE_SIZE + x) * 4 + 3] > 0;
+
+                    if (isOriginalGlasses && !isShiftedGlasses) {
+                        resultData.data[idx] = refPunkData.data[idx];
+                        resultData.data[idx + 1] = refPunkData.data[idx + 1];
+                        resultData.data[idx + 2] = refPunkData.data[idx + 2];
+                        resultData.data[idx + 3] = refPunkData.data[idx + 3];
+                    }
+                }
+            }
+
+            // Add shifted glasses
+            for (let y = 0; y < SPRITE_SIZE - 1; y++) {
+                for (let x = 0; x < SPRITE_SIZE; x++) {
+                    const srcIdx = (y * SPRITE_SIZE + x) * 4;
+                    const dstIdx = ((y + 1) * SPRITE_SIZE + x) * 4;
+
+                    if (shadesData.data[srcIdx + 3] > 0) {
+                        resultData.data[dstIdx] = punkData.data[srcIdx];
+                        resultData.data[dstIdx + 1] = punkData.data[srcIdx + 1];
+                        resultData.data[dstIdx + 2] = punkData.data[srcIdx + 2];
+                        resultData.data[dstIdx + 3] = punkData.data[srcIdx + 3];
+                    }
+                }
+            }
+
+            // === EAR FIX ===
+            if (hasEarFix) {
+                // Ear is at x=6, spanning y=12-14 typically (outline + skin + earring)
+                // We detect ear pixels by comparing to background color
+                const BG_R = 99, BG_G = 133, BG_B = 150; // #638596 background
+
+                // Scan x=6 column from y=10 to y=16 to find all ear-related pixels
+                const earPixels = [];
+                const x = 6;
+
+                for (let y = 10; y <= 16; y++) {
+                    const idx = (y * SPRITE_SIZE + x) * 4;
+                    const r = resultData.data[idx];
+                    const g = resultData.data[idx + 1];
+                    const b = resultData.data[idx + 2];
+                    const a = resultData.data[idx + 3];
+
+                    // Skip if background or transparent
+                    if (a === 0) continue;
+                    if (Math.abs(r - BG_R) < 5 && Math.abs(g - BG_G) < 5 && Math.abs(b - BG_B) < 5) continue;
+
+                    // This is an ear/earring/outline pixel
+                    earPixels.push({x, y, r, g, b, a});
+                }
+
+                console.log('Punk', punkId, 'ear pixels:', earPixels.map(p => `(${p.x},${p.y})`).join(', '));
+
+                // Step 1: Clear original ear pixels, fill with reference punk pixels
+                for (const pixel of earPixels) {
+                    const idx = (pixel.y * SPRITE_SIZE + pixel.x) * 4;
+                    resultData.data[idx] = refPunkData.data[idx];
+                    resultData.data[idx + 1] = refPunkData.data[idx + 1];
+                    resultData.data[idx + 2] = refPunkData.data[idx + 2];
+                    resultData.data[idx + 3] = refPunkData.data[idx + 3];
+                }
+
+                // Step 2: Draw ear pixels shifted down 1 pixel
+                for (const pixel of earPixels) {
+                    const newY = pixel.y + 1;
+                    if (newY < SPRITE_SIZE) {
+                        const dstIdx = (newY * SPRITE_SIZE + pixel.x) * 4;
+                        resultData.data[dstIdx] = pixel.r;
+                        resultData.data[dstIdx + 1] = pixel.g;
+                        resultData.data[dstIdx + 2] = pixel.b;
+                        resultData.data[dstIdx + 3] = pixel.a;
+                    }
+                }
+            }
+
+            ctx.putImageData(resultData, 0, 0);
+            return result;
+        }
+
+        // Draw canvas at zoom level, cropped to 22x22
+        function drawZoomed(sourceCanvas, targetCanvas, zoom) {
+            targetCanvas.width = CROPPED_SIZE * zoom;
+            targetCanvas.height = CROPPED_SIZE * zoom;
+            const ctx = targetCanvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            // Draw cropped: skip 1px from each edge
+            ctx.drawImage(
+                sourceCanvas,
+                CROP_OFFSET, CROP_OFFSET,     // source x, y (skip 1px)
+                CROPPED_SIZE, CROPPED_SIZE,   // source width, height (22x22)
+                0, 0,                         // dest x, y
+                CROPPED_SIZE * zoom, CROPPED_SIZE * zoom  // dest size
+            );
+        }
+
+        // Main render function
+        function renderPunk(punkId) {
+            currentPunkId = punkId;
+
+            const originalCanvas = document.getElementById('originalCanvas');
+            const remasteredCanvas = document.getElementById('remasteredCanvas');
+            const originalInfo = document.getElementById('originalInfo');
+
+            // Extract punk from composite
+            const punkCanvas = extractPunk(punkId);
+
+            // Extract shades from sprite sheet
+            const shadesCanvas = extractRegularShades();
+
+            // Create remastered version
+            const remasteredPunk = createRemastered(punkCanvas, shadesCanvas, punkId);
+
+            // Draw at current zoom
+            drawZoomed(punkCanvas, originalCanvas, currentZoom);
+            drawZoomed(remasteredPunk, remasteredCanvas, currentZoom);
+
+            originalInfo.textContent = `Punk #${punkId}`;
+
+            // Display traits
+            displayTraits(punkId);
+
+            // Update selected state in list
+            document.querySelectorAll('.punk-thumb').forEach(el => {
+                el.classList.toggle('selected', parseInt(el.dataset.punkId) === punkId);
+            });
+        }
+
+        // Display punk traits
+        function displayTraits(punkId) {
+            const traitsDiv = document.getElementById('punkTraits');
+            const traits = punkTraits[punkId];
+
+            if (!traits) {
+                traitsDiv.innerHTML = '<div class="trait-label">No traits found</div>';
+                return;
+            }
+
+            const refPunkId = referencePunks[punkId];
+            const earFixApplies = hasEarVisibleHairstyle(punkId);
+            const hasEarringTrait = hasEarring(punkId);
+
+            traitsDiv.innerHTML = `
+                <div class="trait-label">Type</div>
+                <div class="trait-value">${traits.type} ${traits.gender} (${traits.skinTone})</div>
+                <div class="trait-label">Accessories (${traits.count})</div>
+                <div class="trait-list">
+                    ${traits.accessories.map(acc => {
+                        let highlight = '';
+                        if (acc === 'Regular Shades') highlight = ' highlight';
+                        if (EAR_VISIBLE_HAIRSTYLES.has(acc)) highlight = ' highlight';
+                        if (acc === 'Earring' && earFixApplies) highlight = ' highlight';
+                        return `<span class="trait-item${highlight}">${acc}</span>`;
+                    }).join('')}
+                </div>
+                <div class="trait-label">Fixes Applied</div>
+                <div class="trait-list">
+                    <span class="trait-item highlight">Glasses ↓1px</span>
+                    ${earFixApplies ? '<span class="trait-item highlight">Ear ↓1px</span>' : ''}
+                    ${earFixApplies && hasEarringTrait ? '<span class="trait-item highlight">Earring ↓1px</span>' : ''}
+                </div>
+                <div class="trait-label">Reference Punk</div>
+                <div class="trait-value">#${refPunkId}</div>
+            `;
+        }
+
+        // Render trait preview
+        function renderTraitPreview() {
+            const traitOriginal = document.getElementById('traitOriginal');
+            const traitModified = document.getElementById('traitModified');
+
+            const shadesCanvas = extractRegularShades();
+            const shiftedShades = shiftDown(shadesCanvas, 1);
+
+            drawZoomed(shadesCanvas, traitOriginal, currentZoom);
+            drawZoomed(shiftedShades, traitModified, currentZoom);
+        }
+
+        // Populate punk selector
+        function populateSelect() {
+            const select = document.getElementById('punkSelect');
+            ELIGIBLE_PUNKS.forEach(id => {
+                const option = document.createElement('option');
+                option.value = id;
+                option.textContent = `#${id}`;
+                select.appendChild(option);
+            });
+        }
+
+        // Populate thumbnail list
+        function populateThumbnails() {
+            const list = document.getElementById('punkList');
+            list.innerHTML = '';
+
+            for (const punkId of ELIGIBLE_PUNKS) {
+                const thumb = document.createElement('canvas');
+                thumb.width = 24;
+                thumb.height = 24;
+                thumb.className = 'punk-thumb';
+                thumb.dataset.punkId = punkId;
+                thumb.title = `Punk #${punkId}`;
+
+                // Draw punk thumbnail
+                const punkCanvas = extractPunk(punkId);
+                const ctx = thumb.getContext('2d');
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(punkCanvas, 0, 0);
+
+                thumb.addEventListener('click', () => {
+                    document.getElementById('punkSelect').value = punkId;
+                    renderPunk(punkId);
+                });
+
+                list.appendChild(thumb);
+            }
+        }
+
+        // Initialize
+        async function init() {
+            try {
+                // Load images and data
+                [punksComposite, spriteSheet, punkTraits, referencePunks] = await Promise.all([
+                    loadImage('../data/punks.png'),
+                    loadImage('../data/cryptopunks-assets/punks/config/punks-24x24.png'),
+                    loadTraits(),
+                    loadReferences()
+                ]);
+
+                populateSelect();
+                populateThumbnails();
+
+                // Event listeners
+                document.getElementById('punkSelect').addEventListener('change', (e) => {
+                    renderPunk(parseInt(e.target.value));
+                });
+
+                document.getElementById('zoomSelect').addEventListener('change', (e) => {
+                    currentZoom = parseInt(e.target.value);
+                    renderPunk(currentPunkId);
+                    renderTraitPreview();
+                });
+
+
+                document.getElementById('randomBtn').addEventListener('click', () => {
+                    const randomId = ELIGIBLE_PUNKS[Math.floor(Math.random() * ELIGIBLE_PUNKS.length)];
+                    document.getElementById('punkSelect').value = randomId;
+                    renderPunk(randomId);
+                });
+
+                // Initial render
+                renderPunk(ELIGIBLE_PUNKS[0]);
+                renderTraitPreview();
+
+            } catch (err) {
+                console.error('Failed to initialize:', err);
+                document.body.innerHTML = `<p style="color: red; text-align: center; padding: 40px;">
+                    Failed to load images.<br><br>
+                    Error: ${err.message}<br><br>
+                    Make sure you're running from a local server and the data files exist.
+                </p>`;
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

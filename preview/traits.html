@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remastered Traits Preview</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 { text-align: center; color: #fff; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 40px; }
+        .section {
+            margin-bottom: 50px;
+            padding: 20px;
+            background: #252545;
+            border-radius: 8px;
+            max-width: 1000px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .section h2 {
+            color: #fff;
+            margin-top: 0;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .section h2::before {
+            content: '\u25BC ';
+            font-size: 12px;
+            margin-right: 8px;
+        }
+        .section.collapsed h2::before {
+            content: '\u25B6 ';
+        }
+        .section.collapsed .section-content {
+            display: none;
+        }
+        .section h2:hover {
+            color: #aaf;
+        }
+        .section p { color: #888; font-size: 14px; }
+        .comparison-row {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .comparison-item {
+            text-align: center;
+        }
+        .comparison-item h4 {
+            color: #aaa;
+            margin: 0 0 10px 0;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        .punk-pair {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        .punk-box {
+            text-align: center;
+        }
+        .punk-box .label {
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        .canvas-container {
+            background: #638596;
+            padding: 0;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        canvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            display: block;
+        }
+        .arrow {
+            font-size: 24px;
+            color: #6a4a9e;
+            display: flex;
+            align-items: center;
+            padding-bottom: 20px;
+        }
+        .skin-tones {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .skin-tone-group h4 {
+            color: #aaa;
+            margin: 0 0 10px 0;
+            font-size: 12px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Remastered Traits Preview</h1>
+    <p class="subtitle">Each remastered trait shown on a plain punk head with no other accessories</p>
+
+    <div class="section collapsed" data-section="1">
+        <h2>1. Ear Position (Base Head)</h2>
+        <div class="section-content">
+            <p>The ear on the female base head is moved down 1 pixel. This affects punks with ear-visible hairstyles.</p>
+            <div class="skin-tones" id="earComparison"></div>
+        </div>
+    </div>
+
+    <div class="section collapsed" data-section="2">
+        <h2>2. Regular Shades</h2>
+        <div class="section-content">
+            <p>Regular Shades are moved down 1 pixel to sit lower on the face.</p>
+            <div class="skin-tones" id="shadesComparison"></div>
+        </div>
+    </div>
+
+    <div class="section collapsed" data-section="3">
+        <h2>3. Earring (with Ear Visible)</h2>
+        <div class="section-content">
+            <p>When the ear is visible (and moved down), the Earring is also moved down 1 pixel to stay aligned.</p>
+            <div class="skin-tones" id="earringComparison"></div>
+        </div>
+    </div>
+
+    <div class="section collapsed" data-section="4">
+        <h2>4. Combined: Ear + Shades + Earring</h2>
+        <div class="section-content">
+            <p>A punk with all remastered elements: moved ear, moved shades, and moved earring.</p>
+            <div class="skin-tones" id="combinedComparison"></div>
+        </div>
+    </div>
+
+    <div class="section collapsed" data-section="5">
+        <h2>5. Mohawk</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="mohawkComparison"></div>
+        </div>
+    </div>
+
+    <div class="section collapsed" data-section="6">
+        <h2>6. Mohawk Dark</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="mohawkDarkComparison"></div>
+        </div>
+    </div>
+
+    <div class="section collapsed" data-section="7">
+        <h2>7. Mohawk Thin</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="mohawkThinComparison"></div>
+        </div>
+    </div>
+
+    <div class="section collapsed" data-section="8">
+        <h2>8. Red Mohawk</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="redMohawkComparison"></div>
+        </div>
+    </div>
+
+    <div class="section collapsed" data-section="9">
+        <h2>9. Bandana</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="bandanaComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="10">
+        <h2>10. Headband</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="headbandComparison"></div>
+        </div>
+    </div>
+
+    <div class="section collapsed" data-section="11">
+        <h2>11. Cap</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="capComparison"></div>
+        </div>
+    </div>
+
+    <div class="section collapsed" data-section="12">
+        <h2>12. Knitted Cap</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="knittedCapComparison"></div>
+        </div>
+    </div>
+
+    <div class="section collapsed" data-section="13">
+        <h2>13. Tiara</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="tiaraComparison"></div>
+        </div>
+    </div>
+
+    <div class="section collapsed" data-section="14">
+        <h2>14. Welding Goggles</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="weldingGogglesComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="15">
+        <h2>15. Blonde Bob</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="blondeBobComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="16">
+        <h2>16. Blonde Short</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="blondeShortComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="17">
+        <h2>17. Crazy Hair</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="crazyHairComparison"></div>
+        </div>
+    </div>
+
+    <div class="section collapsed" data-section="18">
+        <h2>18. Messy Hair</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="messyHairComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="20">
+        <h2>20. Orange Side</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="orangeSideComparison"></div>
+        </div>
+    </div>
+
+    <div class="section collapsed" data-section="21">
+        <h2>21. Pigtails</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="pigtailsComparison"></div>
+        </div>
+    </div>
+
+    <div class="section collapsed" data-section="22">
+        <h2>22. Stringy Hair</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="stringyHairComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="23">
+        <h2>23. Wild Blonde</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="wildBlondeComparison"></div>
+        </div>
+    </div>
+
+    <div class="section collapsed" data-section="24">
+        <h2>24. Wild White Hair</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="wildWhiteHairComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="25">
+        <h2>25. Clown Hair Green</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="clownHairGreenComparison"></div>
+        </div>
+    </div>
+
+    <script>
+        const SPRITE_SIZE = 24;
+        const SPRITESHEET_COLS = 25;
+        const ZOOM = 6;
+
+        // Cropping settings: 2px from top, 0px from bottom, 1px from sides
+        const CROP_TOP = 2;
+        const CROP_LEFT = 1;
+        const CROPPED_SIZE = 22;
+
+        // Hairstyles that HIDE the ear (do NOT need ear remaster):
+        // - Pilot Helmet
+        // - Half Shaved
+        // - Pink With Hat
+        // - Tassle Hat
+        // - Frumpy Hair
+        // - Straight Hair
+        // - Straight Hair Blonde
+        // - Straight Hair Dark
+        // - Wild Hair
+        // - Dark Hair
+
+        // Sprite IDs - all female traits
+        const SPRITE_IDS = {
+            'base_Light': 24, 'base_Medium': 23, 'base_Dark': 22, 'base_Albino': 25,
+            // Eyewear
+            'Regular Shades': 317,
+            '3D Glasses': 302,
+            'Big Shades': 304,
+            'Classic Shades': 306,
+            'Eye Mask': 308,
+            'Eye Patch': 310,
+            'Horned Rim Glasses': 312,
+            'Nerd Glasses': 314,
+            'VR': 321,
+            'Welding Goggles': 322,
+            // Earring
+            'Earring': 357,
+            // Headgear
+            'Bandana': 404,
+            'Headband': 416,
+            'Knitted Cap': 422,
+            'Pilot Helmet': 423,
+            'Tassle Hat': 426,
+            'Tiara': 427,
+            'Cap': 548,
+            // Hair
+            'Mohawk': 644,
+            'Mohawk Dark': 646,
+            'Mohawk Thin': 648,
+            'Red Mohawk': 655,
+            'Half Shaved': 640,
+            'Pink With Hat': 652,
+            'Blonde Bob': 749,
+            'Blonde Short': 633,
+            'Crazy Hair': 635,
+            'Dark Hair': 637,
+            'Frumpy Hair': 639,
+            'Messy Hair': 642,
+            'Orange Side': 649,
+            'Pigtails': 651,
+            'Straight Hair': 658,
+            'Straight Hair Blonde': 659,
+            'Straight Hair Dark': 660,
+            'Stringy Hair': 662,
+            'Wild Blonde': 664,
+            'Wild Hair': 666,
+            'Wild White Hair': 668,
+            'Clown Hair Green': 810,
+        };
+
+        const SKIN_TONES = ['Light', 'Medium', 'Dark', 'Albino'];
+        const SKIN_LABELS = {
+            'Light': 'Light (#dbb180)',
+            'Medium': 'Medium (#ae8b61)',
+            'Dark': 'Dark (#713f1d)',
+            'Albino': 'Albino (#ead9d9)'
+        };
+
+        let spriteSheet = null;
+
+        async function loadImage(src) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = src;
+            });
+        }
+
+        function extractSprite(spriteId) {
+            const row = Math.floor(spriteId / SPRITESHEET_COLS);
+            const col = spriteId % SPRITESHEET_COLS;
+            const canvas = document.createElement('canvas');
+            canvas.width = SPRITE_SIZE;
+            canvas.height = SPRITE_SIZE;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(spriteSheet, col * SPRITE_SIZE, row * SPRITE_SIZE, SPRITE_SIZE, SPRITE_SIZE, 0, 0, SPRITE_SIZE, SPRITE_SIZE);
+            return canvas;
+        }
+
+        function shiftSpriteDown(canvas, pixels) {
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+            const shifted = ctx.createImageData(SPRITE_SIZE, SPRITE_SIZE);
+
+            for (let y = 0; y < SPRITE_SIZE - pixels; y++) {
+                for (let x = 0; x < SPRITE_SIZE; x++) {
+                    const srcIdx = (y * SPRITE_SIZE + x) * 4;
+                    const dstIdx = ((y + pixels) * SPRITE_SIZE + x) * 4;
+                    shifted.data[dstIdx] = imageData.data[srcIdx];
+                    shifted.data[dstIdx + 1] = imageData.data[srcIdx + 1];
+                    shifted.data[dstIdx + 2] = imageData.data[srcIdx + 2];
+                    shifted.data[dstIdx + 3] = imageData.data[srcIdx + 3];
+                }
+            }
+
+            const result = document.createElement('canvas');
+            result.width = SPRITE_SIZE;
+            result.height = SPRITE_SIZE;
+            result.getContext('2d').putImageData(shifted, 0, 0);
+            return result;
+        }
+
+        // Fill colors for traits that cover the ear area with non-black color
+        // x: fill position (default 7, some traits need 6)
+        // fills: array of {x, r, g, b} for multiple fill positions
+        // noFill: true to skip adding any fill pixel
+        // extraEarSkin: true to add an additional ear skin pixel below
+        const TRAIT_FILL_COLORS = {
+            'Headband': {fills: [
+                {x: 7, y: 0, r: 0, g: 0, b: 0}, // Black at top
+                {x: 7, y: 2, useSkinColor: true}, // Skin color 2 below
+                {x: 7, y: 3, useSkinColor: true}, // Skin color 3 below
+            ]},
+            'Blonde Bob': {fills: [
+                {x: 7, y: 0, r: 249, g: 242, b: 161}, // Blonde at top
+                {x: 7, y: 2, useSkinColor: true}, // Skin color 2 below
+            ], extraEarSkin: true},
+            'Blonde Short': {r: 0, g: 0, b: 0, x: 7, extraEarSkin: true, shiftPixel: {x: 7, y: 14}}, // Black fill + extra ear skin + shift specific pixel
+            'Crazy Hair': {fills: [
+                {x: 6, r: 226, g: 38, b: 38}, // Crazy Hair red #e22626 at x=6
+                {x: 7, r: 0, g: 0, b: 0}, // Black at x=7, y=11
+                {x: 7, y: -1, r: 226, g: 38, b: 38}, // Crazy Hair red at y=10
+            ]},
+            'Orange Side': {r: 99, g: 133, b: 150, x: 6}, // Background color at x=6
+            'Wild Blonde': {fills: [
+                {x: 6, r: 249, g: 242, b: 161}, // Blonde at x=6
+                {x: 7, r: 249, g: 242, b: 161}, // Blonde at x=7
+            ]},
+            'Clown Hair Green': {fills: [
+                {x: 6, r: 21, g: 112, b: 4}, // Clown Hair Green at x=6
+                {x: 7, r: 0, g: 0, b: 0}, // Black at x=7
+                {x: 7, y: -1, r: 21, g: 112, b: 4}, // Green one row above at x=7
+            ]},
+        };
+
+        // Skin colors by tone for extra ear pixels
+        // Main skin color and shadow color (used for bottom-right eye pixel)
+        const SKIN_COLORS = {
+            'Light': {r: 219, g: 177, b: 128, shadowR: 201, shadowG: 175, shadowB: 145}, // #dbb180, shadow #c9af91
+            'Medium': {r: 174, g: 139, b: 97, shadowR: 156, shadowG: 124, shadowB: 88}, // #ae8b61, shadow #9c7c58
+            'Dark': {r: 113, g: 63, b: 29, shadowR: 96, shadowG: 53, shadowB: 24}, // #713f1d, shadow #603518
+            'Albino': {r: 234, g: 217, b: 217, shadowR: 223, shadowG: 206, shadowB: 206}, // #ead9d9, shadow #dfcece
+        };
+
+
+        function shiftEarOnBase(baseCanvas, fillColor = {r: 0, g: 0, b: 0, x: 7}) {
+            const canvas = document.createElement('canvas');
+            canvas.width = SPRITE_SIZE;
+            canvas.height = SPRITE_SIZE;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(baseCanvas, 0, 0);
+
+            const imageData = ctx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+            const data = imageData.data;
+
+            const BG = {r: 99, g: 133, b: 150};
+            const earPixels = [];
+            let topEarY = 24; // Track the topmost ear pixel
+
+            // Ear structure: outline at x=6, skin pixels at x=7
+            // The ear is 2 pixels left of the eye (eye ~x=9, ear skin at x=7)
+            // Scan x=6-7 for the ear area
+            for (let x = 6; x <= 7; x++) {
+                for (let y = 11; y <= 14; y++) {
+                    const idx = (y * SPRITE_SIZE + x) * 4;
+                    const r = data[idx], g = data[idx+1], b = data[idx+2], a = data[idx+3];
+
+                    if (a === 0) continue;
+                    // Skip background color
+                    if (Math.abs(r - BG.r) < 10 && Math.abs(g - BG.g) < 10 && Math.abs(b - BG.b) < 10) continue;
+
+                    // At x=7, only take ear pixels (not the full face column)
+                    // The ear skin pixels are at y=12-14
+                    if (x === 7) {
+                        // Only include the ear skin pixels at y=12,13,14
+                        if (y !== 12 && y !== 13 && y !== 14) continue;
+                    }
+
+                    earPixels.push({x, y, r, g, b, a});
+                    if (x === 6 && y < topEarY) topEarY = y;
+                }
+            }
+
+            // Clear original ear pixels (set to background)
+            for (const p of earPixels) {
+                const idx = (p.y * SPRITE_SIZE + p.x) * 4;
+                data[idx] = BG.r;
+                data[idx+1] = BG.g;
+                data[idx+2] = BG.b;
+                data[idx+3] = 255;
+            }
+
+            // Draw ear pixels 1 row down
+            for (const p of earPixels) {
+                const newY = p.y + 1;
+                if (newY < SPRITE_SIZE) {
+                    const idx = (newY * SPRITE_SIZE + p.x) * 4;
+                    data[idx] = p.r;
+                    data[idx+1] = p.g;
+                    data[idx+2] = p.b;
+                    data[idx+3] = p.a;
+                }
+            }
+
+            // Fill the gap at the top with specified color (default black for outline)
+            // The gap is at fillColor.x (default 7, above where the ear skin was)
+            // Skip if noFill is set
+            if (topEarY < 24 && !fillColor.noFill) {
+                if (fillColor.fills) {
+                    // Multiple fill positions
+                    for (const fill of fillColor.fills) {
+                        const fillY = fill.y !== undefined ? topEarY + fill.y : topEarY;
+                        const idx = (fillY * SPRITE_SIZE + fill.x) * 4;
+                        data[idx] = fill.r;
+                        data[idx+1] = fill.g;
+                        data[idx+2] = fill.b;
+                        data[idx+3] = 255;
+                    }
+                } else {
+                    // Single fill position
+                    const fillX = fillColor.x !== undefined ? fillColor.x : 7;
+                    const idx = (topEarY * SPRITE_SIZE + fillX) * 4;
+                    data[idx] = fillColor.r;
+                    data[idx+1] = fillColor.g;
+                    data[idx+2] = fillColor.b;
+                    data[idx+3] = 255;
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+            return canvas;
+        }
+
+        function compositeOnBase(skinTone, sprites, shiftEar = false, traitName = null) {
+            const canvas = document.createElement('canvas');
+            canvas.width = SPRITE_SIZE;
+            canvas.height = SPRITE_SIZE;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#638596';
+            ctx.fillRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+
+            let base = extractSprite(SPRITE_IDS[`base_${skinTone}`]);
+
+            // Fix eye shadow pixels (bottom-right of each 2x2 eye)
+            // Left eye (viewer's right) at ~(10,13), Right eye at ~(15,13)
+            if (SKIN_COLORS[skinTone]) {
+                const baseCtx = base.getContext('2d');
+                const imageData = baseCtx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+                const shadow = SKIN_COLORS[skinTone];
+
+                // Left eye shadow pixel (x=10, y=13)
+                let idx = (13 * SPRITE_SIZE + 10) * 4;
+                imageData.data[idx] = shadow.shadowR;
+                imageData.data[idx + 1] = shadow.shadowG;
+                imageData.data[idx + 2] = shadow.shadowB;
+                imageData.data[idx + 3] = 255;
+
+                // Right eye shadow pixel (x=15, y=13)
+                idx = (13 * SPRITE_SIZE + 15) * 4;
+                imageData.data[idx] = shadow.shadowR;
+                imageData.data[idx + 1] = shadow.shadowG;
+                imageData.data[idx + 2] = shadow.shadowB;
+                imageData.data[idx + 3] = 255;
+
+                baseCtx.putImageData(imageData, 0, 0);
+            }
+            if (shiftEar) {
+                let fillColor = (traitName && TRAIT_FILL_COLORS[traitName]) || {r: 0, g: 0, b: 0};
+                // If useSkinColor is set, use the skin color for this tone
+                if (fillColor.useSkinColor && SKIN_COLORS[skinTone]) {
+                    const skin = SKIN_COLORS[skinTone];
+                    fillColor = {...fillColor, r: skin.r, g: skin.g, b: skin.b};
+                }
+                // Handle fills array with useSkinColor on individual fills
+                if (fillColor.fills && SKIN_COLORS[skinTone]) {
+                    const skin = SKIN_COLORS[skinTone];
+                    fillColor = {...fillColor, fills: fillColor.fills.map(fill =>
+                        fill.useSkinColor ? {...fill, r: skin.r, g: skin.g, b: skin.b} : fill
+                    )};
+                }
+                base = shiftEarOnBase(base, fillColor);
+
+                // Add extra ear skin pixels if needed
+                if (fillColor.extraEarSkin && SKIN_COLORS[skinTone]) {
+                    const baseCtx = base.getContext('2d');
+                    const skin = SKIN_COLORS[skinTone];
+                    const imageData = baseCtx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+                    // Add skin pixels at x=7, y=15 and y=16 (below the shifted ear)
+                    for (const y of [15, 16]) {
+                        const idx = (y * SPRITE_SIZE + 7) * 4;
+                        imageData.data[idx] = skin.r;
+                        imageData.data[idx + 1] = skin.g;
+                        imageData.data[idx + 2] = skin.b;
+                        imageData.data[idx + 3] = 255;
+                    }
+                    baseCtx.putImageData(imageData, 0, 0);
+                }
+            }
+            ctx.drawImage(base, 0, 0);
+
+            for (const sprite of sprites) {
+                ctx.drawImage(sprite, 0, 0);
+            }
+
+            // Apply post-sprite fills (fills with explicit y offset that need to override sprites)
+            if (shiftEar && traitName && TRAIT_FILL_COLORS[traitName]) {
+                let fillColor = TRAIT_FILL_COLORS[traitName];
+                if (fillColor.fills) {
+                    const imageData = ctx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+                    const data = imageData.data;
+                    const topEarY = 11; // Standard ear top position
+                    for (const fill of fillColor.fills) {
+                        if (fill.y !== undefined && fill.y !== 0) {
+                            const fillY = topEarY + fill.y;
+                            let r = fill.r, g = fill.g, b = fill.b;
+                            if (fill.useSkinColor && SKIN_COLORS[skinTone]) {
+                                const skin = SKIN_COLORS[skinTone];
+                                r = skin.r; g = skin.g; b = skin.b;
+                            }
+                            const idx = (fillY * SPRITE_SIZE + fill.x) * 4;
+                            data[idx] = r;
+                            data[idx + 1] = g;
+                            data[idx + 2] = b;
+                            data[idx + 3] = 255;
+                        }
+                    }
+                    ctx.putImageData(imageData, 0, 0);
+                }
+            }
+
+            return canvas;
+        }
+
+        function drawZoomed(sourceCanvas, targetCanvas) {
+            targetCanvas.width = CROPPED_SIZE * ZOOM;
+            targetCanvas.height = CROPPED_SIZE * ZOOM;
+            const ctx = targetCanvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(sourceCanvas, CROP_LEFT, CROP_TOP, CROPPED_SIZE, CROPPED_SIZE, 0, 0, CROPPED_SIZE * ZOOM, CROPPED_SIZE * ZOOM);
+        }
+
+        function createPunkBox(label, sourceCanvas) {
+            const box = document.createElement('div');
+            box.className = 'punk-box';
+
+            const labelDiv = document.createElement('div');
+            labelDiv.className = 'label';
+            labelDiv.textContent = label;
+            box.appendChild(labelDiv);
+
+            const container = document.createElement('div');
+            container.className = 'canvas-container';
+
+            const canvas = document.createElement('canvas');
+            drawZoomed(sourceCanvas, canvas);
+            container.appendChild(canvas);
+            box.appendChild(container);
+
+            return box;
+        }
+
+        function createArrow() {
+            const arrow = document.createElement('div');
+            arrow.className = 'arrow';
+            arrow.textContent = '\u2192';
+            return arrow;
+        }
+
+        function createComparison(skinTone, originalCanvas, remasteredCanvas) {
+            const group = document.createElement('div');
+            group.className = 'skin-tone-group';
+
+            const title = document.createElement('h4');
+            title.textContent = SKIN_LABELS[skinTone];
+            group.appendChild(title);
+
+            const pair = document.createElement('div');
+            pair.className = 'punk-pair';
+
+            pair.appendChild(createPunkBox('Original', originalCanvas));
+            pair.appendChild(createArrow());
+            pair.appendChild(createPunkBox('Remastered', remasteredCanvas));
+
+            group.appendChild(pair);
+            return group;
+        }
+
+        function renderEarComparison() {
+            const container = document.getElementById('earComparison');
+
+            for (const skinTone of SKIN_TONES) {
+                const original = compositeOnBase(skinTone, [], false);
+                const remastered = compositeOnBase(skinTone, [], true);
+                container.appendChild(createComparison(skinTone, original, remastered));
+            }
+        }
+
+        function renderShadesComparison() {
+            const container = document.getElementById('shadesComparison');
+
+            for (const skinTone of SKIN_TONES) {
+                const shades = extractSprite(SPRITE_IDS['Regular Shades']);
+                const shadesShifted = shiftSpriteDown(extractSprite(SPRITE_IDS['Regular Shades']), 1);
+
+                const original = compositeOnBase(skinTone, [shades], false);
+                const remastered = compositeOnBase(skinTone, [shadesShifted], true); // ear also shifted
+                container.appendChild(createComparison(skinTone, original, remastered));
+            }
+        }
+
+        function renderEarringComparison() {
+            const container = document.getElementById('earringComparison');
+
+            for (const skinTone of SKIN_TONES) {
+                const earring = extractSprite(SPRITE_IDS['Earring']);
+                const earringShifted = shiftSpriteDown(extractSprite(SPRITE_IDS['Earring']), 1);
+
+                // Original: normal ear + normal earring
+                const original = compositeOnBase(skinTone, [earring], false);
+                // Remastered: shifted ear + shifted earring
+                const remastered = compositeOnBase(skinTone, [earringShifted], true);
+                container.appendChild(createComparison(skinTone, original, remastered));
+            }
+        }
+
+        function renderCombinedComparison() {
+            const container = document.getElementById('combinedComparison');
+
+            for (const skinTone of SKIN_TONES) {
+                const shades = extractSprite(SPRITE_IDS['Regular Shades']);
+                const earring = extractSprite(SPRITE_IDS['Earring']);
+
+                const shadesShifted = shiftSpriteDown(extractSprite(SPRITE_IDS['Regular Shades']), 1);
+                const earringShifted = shiftSpriteDown(extractSprite(SPRITE_IDS['Earring']), 1);
+
+                // Original: normal ear + normal shades + normal earring
+                const original = compositeOnBase(skinTone, [shades, earring], false);
+                // Remastered: shifted ear + shifted shades + shifted earring
+                const remastered = compositeOnBase(skinTone, [shadesShifted, earringShifted], true);
+                container.appendChild(createComparison(skinTone, original, remastered));
+            }
+        }
+
+        function shiftSinglePixel(spriteCanvas, px, py) {
+            // Shift a single pixel down by 1
+            const canvas = document.createElement('canvas');
+            canvas.width = SPRITE_SIZE;
+            canvas.height = SPRITE_SIZE;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(spriteCanvas, 0, 0);
+
+            const imageData = ctx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+            const data = imageData.data;
+
+            // Get the pixel color
+            const srcIdx = (py * SPRITE_SIZE + px) * 4;
+            const r = data[srcIdx], g = data[srcIdx + 1], b = data[srcIdx + 2], a = data[srcIdx + 3];
+
+            // Clear original position (make transparent)
+            data[srcIdx] = 0;
+            data[srcIdx + 1] = 0;
+            data[srcIdx + 2] = 0;
+            data[srcIdx + 3] = 0;
+
+            // Draw at new position (1 pixel down)
+            const dstIdx = ((py + 1) * SPRITE_SIZE + px) * 4;
+            data[dstIdx] = r;
+            data[dstIdx + 1] = g;
+            data[dstIdx + 2] = b;
+            data[dstIdx + 3] = a;
+
+            ctx.putImageData(imageData, 0, 0);
+            return canvas;
+        }
+
+        function renderTraitWithEar(containerId, traitName) {
+            const container = document.getElementById(containerId);
+            const fillConfig = TRAIT_FILL_COLORS[traitName];
+
+            for (const skinTone of SKIN_TONES) {
+                const trait = extractSprite(SPRITE_IDS[traitName]);
+
+                // For remastered, some traits need modifications
+                let remasteredTrait = extractSprite(SPRITE_IDS[traitName]);
+
+                // Shift a specific pixel if configured
+                if (fillConfig && fillConfig.shiftPixel) {
+                    remasteredTrait = shiftSinglePixel(remasteredTrait, fillConfig.shiftPixel.x, fillConfig.shiftPixel.y);
+                }
+
+                const original = compositeOnBase(skinTone, [trait], false, traitName);
+                const remastered = compositeOnBase(skinTone, [remasteredTrait], true, traitName);
+                container.appendChild(createComparison(skinTone, original, remastered));
+            }
+        }
+
+        function setupCollapsible() {
+            document.querySelectorAll('.section h2').forEach(h2 => {
+                h2.addEventListener('click', () => {
+                    h2.parentElement.classList.toggle('collapsed');
+                });
+            });
+        }
+
+        async function init() {
+            try {
+                setupCollapsible();
+                spriteSheet = await loadImage('../data/cryptopunks-assets/punks/config/punks-24x24.png');
+
+                renderEarComparison();
+                renderShadesComparison();
+                renderEarringComparison();
+                renderCombinedComparison();
+                // Ear-visible traits only
+                renderTraitWithEar('mohawkComparison', 'Mohawk');
+                renderTraitWithEar('mohawkDarkComparison', 'Mohawk Dark');
+                renderTraitWithEar('mohawkThinComparison', 'Mohawk Thin');
+                renderTraitWithEar('redMohawkComparison', 'Red Mohawk');
+                renderTraitWithEar('bandanaComparison', 'Bandana');
+                renderTraitWithEar('headbandComparison', 'Headband');
+                renderTraitWithEar('capComparison', 'Cap');
+                renderTraitWithEar('knittedCapComparison', 'Knitted Cap');
+                renderTraitWithEar('tiaraComparison', 'Tiara');
+                renderTraitWithEar('weldingGogglesComparison', 'Welding Goggles');
+                renderTraitWithEar('blondeBobComparison', 'Blonde Bob');
+                renderTraitWithEar('blondeShortComparison', 'Blonde Short');
+                renderTraitWithEar('crazyHairComparison', 'Crazy Hair');
+                renderTraitWithEar('messyHairComparison', 'Messy Hair');
+                renderTraitWithEar('orangeSideComparison', 'Orange Side');
+                renderTraitWithEar('pigtailsComparison', 'Pigtails');
+                renderTraitWithEar('stringyHairComparison', 'Stringy Hair');
+                renderTraitWithEar('wildBlondeComparison', 'Wild Blonde');
+                renderTraitWithEar('wildWhiteHairComparison', 'Wild White Hair');
+                renderTraitWithEar('clownHairGreenComparison', 'Clown Hair Green');
+            } catch (err) {
+                console.error('Init failed:', err);
+                document.body.innerHTML = `<p style="color:red;text-align:center;padding:40px;">Error: ${err.message}</p>`;
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

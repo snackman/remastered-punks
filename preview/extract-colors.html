@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Extract Colors from Sprites</title>
+    <style>
+        body { font-family: monospace; background: #1a1a2e; color: #fff; padding: 20px; }
+        pre { background: #333; padding: 15px; border-radius: 4px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h2>Extracting Colors from Sprites</h2>
+    <pre id="output">Loading...</pre>
+
+    <script>
+        const SPRITE_SIZE = 24;
+        const SPRITESHEET_COLS = 25;
+
+        // Sprite IDs for traits we need colors from
+        const SPRITES_TO_CHECK = [
+            { id: 810, name: 'Clown Hair Green' },
+            { id: 655, name: 'Red Mohawk' },
+            { id: 666, name: 'Wild Hair' },
+            { id: 664, name: 'Wild Blonde' },
+            { id: 749, name: 'Blonde Bob' },
+            { id: 633, name: 'Blonde Short' },
+        ];
+
+        // Punks for eye shadow colors
+        const PUNKS_TO_CHECK = [
+            { id: 106, skinTone: 'Light' },
+            { id: 64, skinTone: 'Medium' },
+            { id: 70, skinTone: 'Dark' },
+            { id: 1857, skinTone: 'Albino' },
+        ];
+
+        async function extractColors() {
+            const spriteSheet = new Image();
+            spriteSheet.src = '../data/cryptopunks-assets/punks/config/punks-24x24.png';
+            await new Promise(resolve => spriteSheet.onload = resolve);
+
+            const punksImg = new Image();
+            punksImg.src = '../data/punks.png';
+            await new Promise(resolve => punksImg.onload = resolve);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 24;
+            canvas.height = 24;
+            const ctx = canvas.getContext('2d');
+
+            let output = '=== HAIR/TRAIT COLORS ===\n';
+
+            for (const sprite of SPRITES_TO_CHECK) {
+                const row = Math.floor(sprite.id / SPRITESHEET_COLS);
+                const col = sprite.id % SPRITESHEET_COLS;
+
+                ctx.clearRect(0, 0, 24, 24);
+                ctx.drawImage(spriteSheet, col * 24, row * 24, 24, 24, 0, 0, 24, 24);
+
+                const imageData = ctx.getImageData(0, 0, 24, 24);
+                output += `\n${sprite.name} (sprite ${sprite.id}):\n`;
+
+                // Find non-transparent, non-black colors
+                const colors = new Map();
+                for (let y = 0; y < 24; y++) {
+                    for (let x = 0; x < 24; x++) {
+                        const idx = (y * 24 + x) * 4;
+                        const r = imageData.data[idx];
+                        const g = imageData.data[idx + 1];
+                        const b = imageData.data[idx + 2];
+                        const a = imageData.data[idx + 3];
+                        if (a > 0 && !(r === 0 && g === 0 && b === 0)) {
+                            const hex = '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('');
+                            if (!colors.has(hex)) {
+                                colors.set(hex, { r, g, b, count: 0 });
+                            }
+                            colors.get(hex).count++;
+                        }
+                    }
+                }
+
+                // Sort by count and show top colors
+                const sorted = [...colors.entries()].sort((a, b) => b[1].count - a[1].count);
+                for (const [hex, data] of sorted.slice(0, 3)) {
+                    output += `  ${hex} = RGB(${data.r}, ${data.g}, ${data.b}) - ${data.count} pixels\n`;
+                }
+            }
+
+            output += '\n\n=== EYE SHADOW COLORS FROM PUNKS ===\n';
+
+            for (const punk of PUNKS_TO_CHECK) {
+                const row = Math.floor(punk.id / 100);
+                const col = punk.id % 100;
+
+                ctx.clearRect(0, 0, 24, 24);
+                ctx.drawImage(punksImg, col * 24, row * 24, 24, 24, 0, 0, 24, 24);
+
+                const imageData = ctx.getImageData(0, 0, 24, 24);
+                output += `\nPunk #${punk.id} (${punk.skinTone}):\n`;
+
+                // Eye positions - check bottom right of each eye
+                const eyePositions = [
+                    { x: 10, y: 13, label: 'Left eye BR' },
+                    { x: 15, y: 13, label: 'Right eye BR' },
+                ];
+
+                for (const pos of eyePositions) {
+                    const idx = (pos.y * 24 + pos.x) * 4;
+                    const r = imageData.data[idx];
+                    const g = imageData.data[idx + 1];
+                    const b = imageData.data[idx + 2];
+                    const hex = '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('');
+                    output += `  ${pos.label} (${pos.x},${pos.y}): RGB(${r}, ${g}, ${b}) = ${hex}\n`;
+                }
+            }
+
+            document.getElementById('output').textContent = output;
+        }
+
+        extractColors();
+    </script>
+</body>
+</html>
