@@ -922,8 +922,8 @@
                 const imageData = ctx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
                 const data = imageData.data;
 
-                // Add 3 choker pixels at x=8,9,10, y=22 (2 from bottom)
-                for (const x of [8, 9, 10]) {
+                // Add 3 choker pixels at x=9,10,11, y=22 (2 from bottom)
+                for (const x of [9, 10, 11]) {
                     const idx = (22 * SPRITE_SIZE + x) * 4;
                     data[idx] = CHOKER_COLOR.r;
                     data[idx + 1] = CHOKER_COLOR.g;
