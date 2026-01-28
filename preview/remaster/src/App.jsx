@@ -18,7 +18,7 @@ import './App.css';
 
 const config = getDefaultConfig({
   appName: 'Remastered Punks',
-  projectId: 'YOUR_WALLETCONNECT_PROJECT_ID', // Get from cloud.walletconnect.com
+  projectId: 'c490ddb4e12e01e9e541522b7cde7452', // Get from cloud.walletconnect.com
   chains: [mainnet],
 });
 
