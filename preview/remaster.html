@@ -881,11 +881,11 @@
         }
 
         function drawZoomed(sourceCanvas, targetCanvas) {
-            targetCanvas.width = CROPPED_SIZE * ZOOM;
-            targetCanvas.height = CROPPED_SIZE * ZOOM;
+            targetCanvas.width = SPRITE_SIZE * ZOOM;
+            targetCanvas.height = SPRITE_SIZE * ZOOM;
             const ctx = targetCanvas.getContext('2d');
             ctx.imageSmoothingEnabled = false;
-            ctx.drawImage(sourceCanvas, CROP_LEFT, CROP_TOP, CROPPED_SIZE, CROPPED_SIZE, 0, 0, CROPPED_SIZE * ZOOM, CROPPED_SIZE * ZOOM);
+            ctx.drawImage(sourceCanvas, 0, 0, SPRITE_SIZE, SPRITE_SIZE, 0, 0, SPRITE_SIZE * ZOOM, SPRITE_SIZE * ZOOM);
         }
 
         function showMessage(text, type = 'info') {
