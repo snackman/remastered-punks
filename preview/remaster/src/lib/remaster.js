@@ -80,7 +80,9 @@ export function compositePunk(punk, applyRemasters = false) {
 
   const isFemale = punk.gender === 'Female';
   const spriteIds = isFemale ? FEMALE_SPRITE_IDS : MALE_SPRITE_IDS;
-  const baseKey = `base_${punk.skinTone}`;
+  // Use type for non-human punks (Zombie, Ape, Alien), skin tone for humans
+  const isNonHuman = ['Zombie', 'Ape', 'Alien'].includes(punk.type);
+  const baseKey = isNonHuman ? `base_${punk.type}` : `base_${punk.skinTone}`;
   let baseSprite = extractSprite(spriteIds[baseKey]);
 
   // Fix eye shadow pixels for female

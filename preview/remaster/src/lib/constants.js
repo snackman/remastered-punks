@@ -90,6 +90,8 @@ export const FEMALE_SPRITE_IDS = {
 export const MALE_SPRITE_IDS = {
   // Base heads by skin tone
   'base_Light': 7, 'base_Medium': 6, 'base_Dark': 5, 'base_Albino': 8,
+  // Non-human bases (no skin tone)
+  'base_Zombie': 30, 'base_Ape': 35, 'base_Alien': 41,
   // Eyewear
   'Regular Shades': 315,
   '3D Glasses': 301,
