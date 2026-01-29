@@ -5,11 +5,13 @@ import { compositePunk, getRemasters } from '../lib/remaster';
 
 const ZOOM = 4;
 
-function PunkCard({ punk, showRemastered = true }) {
+function PunkCard({ punk, showRemastered = true, showEligibility = false }) {
   const originalRef = useRef(null);
   const remasteredRef = useRef(null);
 
-  const remasters = getRemasters(punk);
+  // Only check remasters if punk is eligible (has full data)
+  const isEligible = punk.isEligible !== false && punk.traits && punk.traits.length > 0;
+  const remasters = isEligible ? getRemasters(punk) : [];
   const hasRemasters = remasters.length > 0;
 
   useEffect(() => {
@@ -32,8 +34,10 @@ function PunkCard({ punk, showRemastered = true }) {
     }
   }, [punk, hasRemasters, showRemastered]);
 
+  const cardClass = `punk-card${punk.isEligible === false ? ' not-eligible' : ''}`;
+
   return (
-    <div className="punk-card">
+    <div className={cardClass}>
       <div className="punk-id">#{punk.id}</div>
       <div className="punk-images">
         <div className="punk-image-wrapper">
@@ -58,10 +62,12 @@ function PunkCard({ punk, showRemastered = true }) {
           </>
         )}
       </div>
-      <div className="punk-info">
-        <span className="gender">{punk.gender}</span>
-        <span className="skin">{punk.skinTone}</span>
-      </div>
+      {punk.gender && punk.skinTone && (
+        <div className="punk-info">
+          <span className="gender">{punk.gender}</span>
+          <span className="skin">{punk.skinTone}</span>
+        </div>
+      )}
       {hasRemasters && (
         <div className="remasters">
           {remasters.map((r, i) => (
@@ -69,7 +75,10 @@ function PunkCard({ punk, showRemastered = true }) {
           ))}
         </div>
       )}
-      {!hasRemasters && (
+      {showEligibility && punk.isEligible === false && (
+        <div className="not-eligible-badge">Not eligible for remaster</div>
+      )}
+      {isEligible && !hasRemasters && (
         <div className="no-remaster">No remaster available</div>
       )}
     </div>

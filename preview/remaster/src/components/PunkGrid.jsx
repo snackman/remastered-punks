@@ -1,89 +1,85 @@
 import { useState, useEffect } from 'react';
-import { useReadContracts } from 'wagmi';
-import { CRYPTOPUNKS_ADDRESS } from '../lib/constants';
+import { fetchOwnedPunks } from '../lib/ownedPunks';
 import { hasRemasters } from '../lib/remaster';
 import PunkCard from './PunkCard';
-
-// CryptoPunks ABI - just the function we need
-const PUNKS_ABI = [
-  {
-    name: 'punkIndexToAddress',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'punkIndex', type: 'uint256' }],
-    outputs: [{ name: '', type: 'address' }],
-  },
-];
 
 function PunkGrid({ address, punkData, eligiblePunks }) {
   const [ownedPunks, setOwnedPunks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all'); // 'all' or 'remastered'
 
-  // Query ownership for eligible punks only (more efficient)
-  const contracts = eligiblePunks.map(punkId => ({
-    address: CRYPTOPUNKS_ADDRESS,
-    abi: PUNKS_ABI,
-    functionName: 'punkIndexToAddress',
-    args: [BigInt(punkId)],
-  }));
-
-  const { data, isLoading, isError } = useReadContracts({
-    contracts,
-    query: {
-      enabled: eligiblePunks.length > 0 && !!address,
-    },
-  });
+  // Create a Set for O(1) lookup
+  const eligibleSet = new Set(eligiblePunks);
 
   useEffect(() => {
-    if (data && address) {
-      const owned = [];
-      data.forEach((result, index) => {
-        if (result.status === 'success' && result.result) {
-          const owner = result.result.toLowerCase();
-          if (owner === address.toLowerCase()) {
-            const punkId = eligiblePunks[index];
-            if (punkData[punkId]) {
-              owned.push(punkData[punkId]);
-            }
-          }
-        }
-      });
-      setOwnedPunks(owned);
-      setLoading(false);
-    }
-  }, [data, address, eligiblePunks, punkData]);
+    if (!address) return;
 
-  if (isLoading || loading) {
+    async function loadOwnedPunks() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const punkIds = await fetchOwnedPunks(address);
+
+        // Build punk objects for all owned punks
+        const owned = punkIds.map(punkId => {
+          // Use punkData if available, otherwise create minimal object
+          if (punkData[punkId]) {
+            return {
+              ...punkData[punkId],
+              isEligible: eligibleSet.has(punkId),
+            };
+          }
+          // For punks not in our data, create minimal object
+          return {
+            id: punkId,
+            type: 'Unknown',
+            skin: 'Unknown',
+            traits: [],
+            isEligible: false,
+          };
+        });
+
+        setOwnedPunks(owned);
+      } catch (err) {
+        console.error('Failed to fetch owned punks:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadOwnedPunks();
+  }, [address, punkData, eligiblePunks]);
+
+  if (loading) {
     return (
       <div className="loading">
-        <p>Checking ownership of {eligiblePunks.length} eligible punks...</p>
-        <p className="loading-note">This may take a moment</p>
+        <p>Fetching CryptoPunks for this wallet...</p>
       </div>
     );
   }
 
-  if (isError) {
+  if (error) {
     return (
       <div className="error">
-        <p>Error fetching punk ownership</p>
+        <p>Error fetching punks: {error}</p>
       </div>
     );
   }
 
+  const eligibleOwned = ownedPunks.filter(p => p.isEligible);
   const filteredPunks = filter === 'remastered'
-    ? ownedPunks.filter(p => hasRemasters(p))
+    ? ownedPunks.filter(p => p.isEligible && hasRemasters(p))
     : ownedPunks;
 
-  const remasteredCount = ownedPunks.filter(p => hasRemasters(p)).length;
+  const remasteredCount = ownedPunks.filter(p => p.isEligible && hasRemasters(p)).length;
 
   if (ownedPunks.length === 0) {
     return (
       <div className="no-punks">
-        <p>No CryptoPunks with remaster-eligible traits found in this wallet.</p>
-        <p className="note">
-          Only {eligiblePunks.length} punks out of 10,000 have traits that can be remastered.
-        </p>
+        <p>No CryptoPunks found in this wallet.</p>
       </div>
     );
   }
@@ -93,6 +89,8 @@ function PunkGrid({ address, punkData, eligiblePunks }) {
       <div className="grid-header">
         <div className="stats">
           <span>{ownedPunks.length} punk{ownedPunks.length !== 1 ? 's' : ''} found</span>
+          <span className="divider">|</span>
+          <span>{eligibleOwned.length} eligible for remaster</span>
           <span className="divider">|</span>
           <span>{remasteredCount} with remasters</span>
         </div>
@@ -114,7 +112,7 @@ function PunkGrid({ address, punkData, eligiblePunks }) {
 
       <div className="punk-grid">
         {filteredPunks.map(punk => (
-          <PunkCard key={punk.id} punk={punk} />
+          <PunkCard key={punk.id} punk={punk} showEligibility={true} />
         ))}
       </div>
 
