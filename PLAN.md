@@ -194,6 +194,50 @@ contract RemasteredPunks is ERC721 {
     function totalSupply() external view returns (uint256) {
         return totalActivated;
     }
+
+    /// @notice Deactivate (burn) your remastered punk
+    /// @dev Can be reactivated later by calling activate() again
+    function deactivate(uint256 punkId) external {
+        // Must own the punk
+        if (cryptoPunks.punkIndexToAddress(punkId) != msg.sender) {
+            revert NotPunkOwner();
+        }
+        // Must be activated
+        if (!activated[punkId]) {
+            revert ERC721NonexistentToken(punkId);
+        }
+
+        activated[punkId] = false;
+        totalActivated--;
+
+        // Emit burn event
+        emit Transfer(msg.sender, address(0), punkId);
+    }
+
+    /// @notice Block approvals to prevent marketplace listings
+    function approve(address, uint256) public pure override {
+        revert TransferDisabled();
+    }
+
+    /// @notice Block approvals to prevent marketplace listings
+    function setApprovalForAll(address, bool) public pure override {
+        revert TransferDisabled();
+    }
+
+    /// @notice EIP-5192: Soulbound token - always locked
+    function locked(uint256 tokenId) external view returns (bool) {
+        if (!activated[tokenId]) {
+            revert ERC721NonexistentToken(tokenId);
+        }
+        return true; // Always locked - cannot be transferred
+    }
+
+    /// @notice EIP-165: Interface detection
+    function supportsInterface(bytes4 interfaceId) public view override returns (bool) {
+        return
+            interfaceId == 0xb45a3c0e || // EIP-5192 (Soulbound)
+            super.supportsInterface(interfaceId);
+    }
 }
 ```
 
@@ -204,6 +248,21 @@ contract RemasteredPunks is ERC721 {
 3. **Transfers disabled**: `_update()` reverts for any transfer attempt
 4. **`balanceOf()` challenge**: Expensive to compute on-chain; handle via indexer/subgraph
 5. **Merkle proof**: Verifies punk is in eligible set (2,291 punks)
+6. **Deactivate/Reactivate**: Punk owners can toggle their remaster on/off anytime
+7. **Marketplace protection**: `approve()` and `setApprovalForAll()` are blocked
+8. **EIP-5192 Soulbound**: Signals to marketplaces that tokens are non-transferable
+
+### Marketplace Behavior
+
+| Action | Result |
+|--------|--------|
+| List on OpenSea/Blur | ❌ Blocked - can't approve marketplace |
+| Transfer directly | ❌ Blocked - TransferDisabled error |
+| Sell original punk | ✅ Buyer automatically owns the remaster |
+| Deactivate remaster | ✅ Owner can "burn" if they don't want it |
+| Reactivate remaster | ✅ Owner (or new owner) can re-activate |
+
+The remaster is **soulbound to the punk**, not to the wallet. It travels with the punk automatically.
 
 ---
 
