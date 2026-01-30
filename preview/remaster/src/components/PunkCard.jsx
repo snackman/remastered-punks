@@ -1,18 +1,59 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useAccount, useChainId, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
 import { SPRITE_SIZE } from '../lib/constants';
 import { extractPunk } from '../lib/sprites';
 import { compositePunk, getRemasters } from '../lib/remaster';
+import { REMASTERED_PUNKS_ABI, getContractAddress } from '../lib/contracts';
 
 const ZOOM = 4;
 
-function PunkCard({ punk, showRemastered = true, showEligibility = false }) {
+function PunkCard({ punk, showRemastered = true, showEligibility = false, merkleProof }) {
   const originalRef = useRef(null);
   const remasteredRef = useRef(null);
+  const [mintStatus, setMintStatus] = useState(null);
+
+  const { address, isConnected } = useAccount();
+  const chainId = useChainId();
+  const contractAddress = getContractAddress(chainId);
+
+  // Check if already activated
+  const { data: isActivated, refetch: refetchActivated } = useReadContract({
+    address: contractAddress,
+    abi: REMASTERED_PUNKS_ABI,
+    functionName: 'activated',
+    args: [BigInt(punk.id)],
+    query: {
+      enabled: !!contractAddress,
+    },
+  });
+
+  // Write contract hook
+  const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
+
+  // Wait for transaction
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+    hash,
+  });
+
+  // Update status based on transaction state
+  useEffect(() => {
+    if (isPending) {
+      setMintStatus('confirming');
+    } else if (isConfirming) {
+      setMintStatus('minting');
+    } else if (isSuccess) {
+      setMintStatus('success');
+      refetchActivated();
+    } else if (writeError) {
+      setMintStatus('error');
+    }
+  }, [isPending, isConfirming, isSuccess, writeError, refetchActivated]);
 
   // Only check remasters if punk is eligible (has full data)
   const isEligible = punk.isEligible !== false && punk.accessories && punk.accessories.length > 0;
   const remasters = isEligible ? getRemasters(punk) : [];
   const hasRemasters = remasters.length > 0;
+  const hasMerkleProof = merkleProof && merkleProof.length > 0;
 
   useEffect(() => {
     if (!originalRef.current) return;
@@ -34,7 +75,31 @@ function PunkCard({ punk, showRemastered = true, showEligibility = false }) {
     }
   }, [punk, hasRemasters, showRemastered]);
 
+  const handleMint = () => {
+    if (!contractAddress || !merkleProof) return;
+
+    setMintStatus('confirming');
+    writeContract({
+      address: contractAddress,
+      abi: REMASTERED_PUNKS_ABI,
+      functionName: 'activate',
+      args: [BigInt(punk.id), merkleProof],
+    });
+  };
+
   const cardClass = `punk-card${punk.isEligible === false ? ' not-eligible' : ''}`;
+
+  // Determine button state
+  const canMint = isConnected && contractAddress && hasMerkleProof && hasRemasters && !isActivated;
+  const buttonDisabled = !canMint || isPending || isConfirming;
+
+  let buttonText = 'Mint Remaster';
+  if (!isConnected) buttonText = 'Connect Wallet';
+  else if (!contractAddress) buttonText = 'Wrong Network';
+  else if (isActivated) buttonText = 'Already Minted';
+  else if (isPending) buttonText = 'Confirm in Wallet...';
+  else if (isConfirming) buttonText = 'Minting...';
+  else if (isSuccess) buttonText = 'Minted!';
 
   return (
     <div className={cardClass}>
@@ -80,6 +145,32 @@ function PunkCard({ punk, showRemastered = true, showEligibility = false }) {
       )}
       {isEligible && !hasRemasters && (
         <div className="no-remaster">No remaster available</div>
+      )}
+
+      {/* Mint Button */}
+      {hasRemasters && hasMerkleProof && (
+        <div className="mint-section">
+          {isActivated ? (
+            <div className="minted-badge">Minted</div>
+          ) : (
+            <button
+              className={`mint-button ${mintStatus === 'success' ? 'success' : ''}`}
+              onClick={handleMint}
+              disabled={buttonDisabled}
+            >
+              {buttonText}
+            </button>
+          )}
+          {writeError && (
+            <div className="mint-error">
+              {writeError.message?.includes('NotPunkOwner')
+                ? "You don't own this punk"
+                : writeError.message?.includes('AlreadyActivated')
+                ? 'Already minted'
+                : 'Error minting'}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

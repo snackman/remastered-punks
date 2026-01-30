@@ -3,7 +3,7 @@ import { fetchOwnedPunks } from '../lib/ownedPunks';
 import { hasRemasters } from '../lib/remaster';
 import PunkCard from './PunkCard';
 
-function PunkGrid({ address, punkData, eligiblePunks }) {
+function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {} }) {
   const [ownedPunks, setOwnedPunks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -113,7 +113,12 @@ function PunkGrid({ address, punkData, eligiblePunks }) {
 
       <div className="punk-grid">
         {filteredPunks.map(punk => (
-          <PunkCard key={punk.id} punk={punk} showEligibility={true} />
+          <PunkCard
+            key={punk.id}
+            punk={punk}
+            showEligibility={true}
+            merkleProof={merkleProofs[punk.id]}
+          />
         ))}
       </div>
 

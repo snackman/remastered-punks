@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Build
+cache/
+out/
+
+# Environment
+.env
+.env.local
+
+# Broadcast files (contain deployment info)
+broadcast/
+
+# IDE
+.idea/
+.vscode/

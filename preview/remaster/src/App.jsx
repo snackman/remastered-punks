@@ -6,7 +6,7 @@ import {
   ConnectButton,
 } from '@rainbow-me/rainbowkit';
 import { WagmiProvider, useAccount } from 'wagmi';
-import { mainnet } from 'wagmi/chains';
+import { mainnet, sepolia } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { loadAssets } from './lib/sprites';
@@ -19,12 +19,12 @@ import './App.css';
 const config = getDefaultConfig({
   appName: 'Remastered Punks',
   projectId: 'c490ddb4e12e01e9e541522b7cde7452', // Get from cloud.walletconnect.com
-  chains: [mainnet],
+  chains: [mainnet, sepolia],
 });
 
 const queryClient = new QueryClient();
 
-function AppContent({ punkData, eligiblePunks, assetsLoaded }) {
+function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
   const { address, isConnected } = useAccount();
   const [activeTab, setActiveTab] = useState('wallet');
 
@@ -64,6 +64,7 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded }) {
               address={address}
               punkData={punkData}
               eligiblePunks={eligiblePunks}
+              merkleProofs={merkleProofs}
             />
           ) : (
             <div className="connect-prompt">
@@ -71,7 +72,7 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded }) {
             </div>
           )
         ) : (
-          <ManualLookup punkData={punkData} />
+          <ManualLookup punkData={punkData} merkleProofs={merkleProofs} />
         )}
       </main>
     </div>
@@ -81,14 +82,15 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded }) {
 function App() {
   const [punkData, setPunkData] = useState({});
   const [eligiblePunks, setEligiblePunks] = useState([]);
+  const [merkleProofs, setMerkleProofs] = useState({});
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     async function init() {
       try {
-        // Base path for assets (works for both dev and production)
-        const basePath = import.meta.env.DEV ? '../..' : '/remastered-punks';
+        // Base path for assets
+        const basePath = import.meta.env.DEV ? '../..' : '';
 
         // Load assets
         await loadAssets(
@@ -105,6 +107,12 @@ function App() {
         setEligiblePunks(eligible);
 
         setAssetsLoaded(true);
+
+        // Load merkle proofs in background (large file, don't block UI)
+        fetch(`${basePath}/data/merkle-tree.json`)
+          .then(res => res.json())
+          .then(merkleData => setMerkleProofs(merkleData.proofs || {}))
+          .catch(e => console.warn('Merkle tree not loaded:', e));
       } catch (err) {
         console.error('Failed to load:', err);
         setError(err.message);
@@ -125,6 +133,7 @@ function App() {
           <AppContent
             punkData={punkData}
             eligiblePunks={eligiblePunks}
+            merkleProofs={merkleProofs}
             assetsLoaded={assetsLoaded}
           />
         </RainbowKitProvider>
