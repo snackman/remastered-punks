@@ -214,7 +214,15 @@ export const EAR_VISIBLE_HAIRSTYLES = new Set([
   'Welding Goggles',
   'Blonde Bob', 'Blonde Short', 'Crazy Hair', 'Messy Hair',
   'Orange Side', 'Pigtails', 'Stringy Hair',
-  'Wild Blonde', 'Wild White Hair', 'Clown Hair Green'
+  'Wild Blonde', 'Wild White Hair', 'Clown Hair Green',
+  'Shaved Head'  // Also exposes the ear
+]);
+
+// Hair traits that cover the ear (no ear remaster needed) - FEMALE ONLY
+export const EAR_COVERING_HAIR = new Set([
+  'Dark Hair', 'Frumpy Hair', 'Half Shaved', 'Pink With Hat',
+  'Purple Hair', 'Straight Hair', 'Straight Hair Blonde',
+  'Straight Hair Dark', 'Wild Hair'
 ]);
 
 // Skin colors
@@ -227,6 +235,9 @@ export const SKIN_COLORS = {
 
 // Fill colors for traits that cover the ear area
 export const TRAIT_FILL_COLORS = {
+  // Bald females - no hair to fill, just use background color
+  'Bald': {r: 99, g: 133, b: 150},
+  'Shaved Head': {r: 99, g: 133, b: 150},
   'Headband': {fills: [
     {x: 7, y: 0, r: 0, g: 0, b: 0},
     {x: 7, y: 2, useSkinColor: true},
