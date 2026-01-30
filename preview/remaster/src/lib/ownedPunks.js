@@ -1,108 +1,97 @@
-import { CRYPTOPUNKS_ADDRESS } from './constants';
-
-// Cache to prevent repeated fetches
-const cache = new Map();
-const CACHE_TTL = 60000; // 1 minute
-
 /**
- * Fetch with retry logic
- */
-async function fetchWithRetry(url, options = {}, maxRetries = 3) {
-  let lastError;
-
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      const response = await fetch(url, options);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      return response;
-    } catch (error) {
-      lastError = error;
-      console.warn(`Fetch attempt ${i + 1} failed:`, error.message);
-      if (i < maxRetries - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
-      }
-    }
-  }
-
-  throw lastError;
-}
-
-/**
- * Fetch all CryptoPunks owned by an address using Reservoir API
+ * Fetch all CryptoPunks owned by an address using The Graph
  */
 export async function fetchOwnedPunks(address) {
   const normalizedAddress = address.toLowerCase();
 
-  // Check cache
-  const cached = cache.get(normalizedAddress);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    console.log(`Using cached result: ${cached.punks.length} punks`);
-    return cached.punks;
+  console.log(`Fetching punks for address: ${normalizedAddress}`);
+
+  // Use The Graph's CryptoPunks subgraph
+  const query = `
+    query GetPunks($owner: String!) {
+      punks(where: { owner: $owner }, first: 1000) {
+        id
+      }
+    }
+  `;
+
+  try {
+    const response = await fetch(
+      'https://api.thegraph.com/subgraphs/name/itsjerryokolo/cryptopunks',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query,
+          variables: { owner: normalizedAddress },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.errors) {
+      console.error('GraphQL errors:', data.errors);
+      throw new Error(data.errors[0]?.message || 'GraphQL error');
+    }
+
+    const punks = (data.data?.punks || [])
+      .map(p => parseInt(p.id, 10))
+      .sort((a, b) => a - b);
+
+    console.log(`Found ${punks.length} punks via The Graph`);
+    return punks;
+  } catch (error) {
+    console.error('The Graph failed, trying Reservoir:', error.message);
+    return fetchFromReservoir(normalizedAddress);
   }
+}
 
-  console.log(`Fetching punks for address: ${address}`);
-
+/**
+ * Fallback: Fetch from Reservoir API
+ */
+async function fetchFromReservoir(address) {
   const punks = [];
   let continuation = null;
   let pageCount = 0;
-  const maxPages = 10;
+
+  const CRYPTOPUNKS_ADDRESS = '0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB';
 
   do {
-    const url = new URL('https://api.reservoir.tools/users/' + normalizedAddress + '/tokens/v10');
+    const url = new URL(`https://api.reservoir.tools/users/${address}/tokens/v10`);
     url.searchParams.set('collection', CRYPTOPUNKS_ADDRESS);
     url.searchParams.set('limit', '200');
-    url.searchParams.set('includeAttributes', 'false');
-    url.searchParams.set('includeLastSale', 'false');
-    url.searchParams.set('includeTopBid', 'false');
-    url.searchParams.set('normalizeRoyalties', 'false');
     if (continuation) {
       url.searchParams.set('continuation', continuation);
     }
 
-    console.log(`Fetching page ${pageCount + 1}...`);
-
-    const response = await fetchWithRetry(url.toString(), {
-      headers: {
-        'accept': 'application/json',
-      },
+    const response = await fetch(url.toString(), {
+      headers: { 'accept': 'application/json' },
     });
 
-    const data = await response.json();
-    const tokens = data.tokens || [];
-    console.log(`Page ${pageCount + 1}: found ${tokens.length} tokens`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
 
-    for (const token of tokens) {
+    const data = await response.json();
+
+    for (const token of data.tokens || []) {
       const tokenId = token.token?.tokenId;
-      if (tokenId !== undefined && tokenId !== null) {
+      if (tokenId != null) {
         punks.push(parseInt(tokenId, 10));
       }
     }
 
     continuation = data.continuation;
     pageCount++;
+  } while (continuation && pageCount < 10);
 
-    if (pageCount >= maxPages) {
-      console.warn('Reached max page limit');
-      break;
-    }
-
-    // Small delay between pages to avoid rate limiting
-    if (continuation) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-  } while (continuation);
-
-  // Remove duplicates and sort
-  const uniquePunks = [...new Set(punks)].sort((a, b) => a - b);
-  console.log(`Total unique punks: ${uniquePunks.length}`);
-
-  // Cache the result
-  cache.set(normalizedAddress, {
-    punks: uniquePunks,
-    timestamp: Date.now()
-  });
-
-  return uniquePunks;
+  console.log(`Found ${punks.length} punks via Reservoir`);
+  return [...new Set(punks)].sort((a, b) => a - b);
 }
