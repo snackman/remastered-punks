@@ -35,8 +35,9 @@ function PunkGrid({ address, punkData, eligiblePunks }) {
           return {
             id: punkId,
             type: 'Unknown',
-            skin: 'Unknown',
-            traits: [],
+            gender: 'Unknown',
+            skinTone: null,
+            accessories: [],
             isEligible: false,
           };
         });

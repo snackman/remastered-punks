@@ -10,7 +10,7 @@ function PunkCard({ punk, showRemastered = true, showEligibility = false }) {
   const remasteredRef = useRef(null);
 
   // Only check remasters if punk is eligible (has full data)
-  const isEligible = punk.isEligible !== false && punk.traits && punk.traits.length > 0;
+  const isEligible = punk.isEligible !== false && punk.accessories && punk.accessories.length > 0;
   const remasters = isEligible ? getRemasters(punk) : [];
   const hasRemasters = remasters.length > 0;
 
