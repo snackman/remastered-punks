@@ -5,6 +5,7 @@ import {
   LAYER_ORDER,
   TRAIT_TO_LAYER,
   EAR_VISIBLE_HAIRSTYLES,
+  EAR_COVERING_HAIR,
   SKIN_COLORS,
   TRAIT_FILL_COLORS,
 } from './constants';
@@ -25,8 +26,18 @@ export function getRemasters(punk) {
   if (isFemale) {
     // Check for ear-visible hairstyles
     const earVisibleTrait = punk.accessories.find(a => EAR_VISIBLE_HAIRSTYLES.has(a));
-    if (earVisibleTrait) {
-      remasters.push({type: 'ear', trait: earVisibleTrait, description: 'Ear shifted down 1px'});
+
+    // Check if punk has any trait that covers the ear
+    const hasEarCoveringHair = punk.accessories.some(a => EAR_COVERING_HAIR.has(a));
+    const hasHoodie = punk.accessories.includes('Hoodie');
+
+    // Determine if ear is visible: either has ear-visible trait, or is bald (no ear-covering traits)
+    const earIsVisible = earVisibleTrait || (!hasEarCoveringHair && !hasHoodie);
+
+    if (earIsVisible) {
+      // Use the ear-visible trait if present, otherwise 'Bald' for bald punks
+      const earTrait = earVisibleTrait || 'Bald';
+      remasters.push({type: 'ear', trait: earTrait, description: 'Ear shifted down 1px'});
 
       // If Regular Shades present, shift it too
       if (punk.accessories.includes('Regular Shades')) {
