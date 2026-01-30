@@ -35,7 +35,7 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded }) {
   return (
     <div className="app">
       <header>
-        <h1>Remastered Punks</h1>
+        <h1>Punks Remastered</h1>
         <p className="subtitle">View your CryptoPunks with remastered traits</p>
         <div className="connect-wrapper">
           <ConnectButton />
