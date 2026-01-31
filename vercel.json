@@ -1,6 +1,17 @@
 {
   "buildCommand": "cd preview/remaster && npm install && npm run build",
   "outputDirectory": "preview/remaster/dist",
-  "installCommand": "cd preview/remaster && npm install",
-  "framework": null
+  "installCommand": "npm install && cd preview/remaster && npm install",
+  "framework": null,
+  "functions": {
+    "api/[punkId].js": {
+      "includeFiles": "data/**"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/:punkId(\\d+)",
+      "destination": "/api/:punkId"
+    }
+  ]
 }

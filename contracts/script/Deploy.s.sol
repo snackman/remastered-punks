@@ -11,8 +11,8 @@ contract DeployRemasteredPunks is Script {
     // CryptoPunks Sepolia mock (you'll need to deploy this or use an existing mock)
     address constant CRYPTOPUNKS_SEPOLIA = address(0); // TODO: Set after deploying mock
 
-    // Merkle root for 2,373 eligible punks (including bald females)
-    bytes32 constant MERKLE_ROOT = 0x199c72564fd9e9e2c1bca04da13d126a6910b48b75bfaaeb104e0f5f23096e2f;
+    // Merkle root for 3,558 eligible punks (ear-visible females + bald + male traits)
+    bytes32 constant MERKLE_ROOT = 0xe0a95f0e5247bb0174ac777b2c446d3a64253cc0ebde877453d03634afe34587;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
