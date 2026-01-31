@@ -13,6 +13,7 @@ import { loadAssets } from './lib/sprites';
 import { loadPunkData, loadEligiblePunks } from './lib/data';
 import PunkGrid from './components/PunkGrid';
 import ManualLookup from './components/ManualLookup';
+import TraitsGallery from './components/TraitsGallery';
 
 import './App.css';
 
@@ -55,10 +56,16 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
         >
           Lookup by ID
         </button>
+        <button
+          className={activeTab === 'traits' ? 'active' : ''}
+          onClick={() => setActiveTab('traits')}
+        >
+          All Traits
+        </button>
       </div>
 
       <main>
-        {activeTab === 'wallet' ? (
+        {activeTab === 'wallet' && (
           isConnected ? (
             <PunkGrid
               address={address}
@@ -71,8 +78,12 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
               <p>Connect your wallet to view your CryptoPunks</p>
             </div>
           )
-        ) : (
+        )}
+        {activeTab === 'lookup' && (
           <ManualLookup punkData={punkData} merkleProofs={merkleProofs} />
+        )}
+        {activeTab === 'traits' && (
+          <TraitsGallery punkData={punkData} />
         )}
       </main>
     </div>
