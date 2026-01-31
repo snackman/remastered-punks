@@ -11,9 +11,9 @@ import {
   TRAIT_TO_LAYER,
   SKIN_COLORS,
   TRAIT_FILL_COLORS,
-} from '../lib/constants.js';
+} from './constants.js';
 
-import { getRemasters } from '../lib/remaster-logic.js';
+import { getRemasters } from './remaster-logic.js';
 
 // Cached data
 let spriteSheet = null;

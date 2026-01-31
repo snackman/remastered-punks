@@ -1,5 +1,5 @@
 import { createCanvas, loadImage } from '@napi-rs/canvas';
-import { SPRITE_SIZE, SPRITESHEET_COLS } from '../lib/constants.js';
+import { SPRITE_SIZE, SPRITESHEET_COLS } from './constants.js';
 
 let spriteSheet = null;
 

@@ -6,7 +6,7 @@ import { dirname, join } from 'path';
 import { loadSpriteSheet } from './sprites.js';
 import { loadPunkData, loadEligiblePunks } from './data.js';
 import { compositePunk, hasRemasters } from './remaster.js';
-import { SPRITE_SIZE } from '../lib/constants.js';
+import { SPRITE_SIZE } from './constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

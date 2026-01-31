@@ -7,7 +7,7 @@ import {
   TRAIT_TO_LAYER,
   SKIN_COLORS,
   TRAIT_FILL_COLORS,
-} from '../lib/constants.js';
+} from './constants.js';
 
 import {
   extractSprite,
@@ -17,8 +17,8 @@ import {
 } from './sprites.js';
 
 // Re-export shared logic from lib
-export { getRemasters, hasRemasters } from '../lib/remaster-logic.js';
-import { getRemasters } from '../lib/remaster-logic.js';
+export { getRemasters, hasRemasters } from './remaster-logic.js';
+import { getRemasters } from './remaster-logic.js';
 
 // Composite a punk with remastering
 export function compositePunk(punk, applyRemasters = false) {
