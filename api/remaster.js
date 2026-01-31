@@ -5,10 +5,9 @@ import {
   MALE_SPRITE_IDS,
   LAYER_ORDER,
   TRAIT_TO_LAYER,
-  EAR_VISIBLE_HAIRSTYLES,
   SKIN_COLORS,
   TRAIT_FILL_COLORS,
-} from './constants.js';
+} from '../lib/constants.js';
 
 import {
   extractSprite,
@@ -17,57 +16,9 @@ import {
   shiftEarOnBase,
 } from './sprites.js';
 
-// Get list of remasters applicable to a punk
-export function getRemasters(punk) {
-  const remasters = [];
-  const isFemale = punk.gender === 'Female';
-  const isMale = punk.gender === 'Male';
-
-  if (isFemale) {
-    // Check for ear-visible hairstyles
-    const earVisibleTrait = punk.accessories.find(a => EAR_VISIBLE_HAIRSTYLES.has(a));
-    if (earVisibleTrait) {
-      remasters.push({type: 'ear', trait: earVisibleTrait, description: 'Ear shifted down 1px'});
-
-      // If Regular Shades present, shift it too
-      if (punk.accessories.includes('Regular Shades')) {
-        remasters.push({type: 'shades', trait: 'Regular Shades', description: 'Regular Shades shifted down 1px'});
-      }
-
-      // If Earring present, shift it too
-      if (punk.accessories.includes('Earring')) {
-        remasters.push({type: 'earring', trait: 'Earring', description: 'Earring shifted down 1px'});
-      }
-    }
-
-    // Choker remaster
-    if (punk.accessories.includes('Choker')) {
-      remasters.push({type: 'choker', trait: 'Choker', description: 'Choker replaced with 3 centered pixels'});
-    }
-  }
-
-  if (isMale) {
-    // Front Beard remaster
-    if (punk.accessories.includes('Front Beard')) {
-      remasters.push({type: 'frontBeard', trait: 'Front Beard', description: 'Added beard pixels at chin'});
-    }
-    if (punk.accessories.includes('Front Beard Dark')) {
-      remasters.push({type: 'frontBeardDark', trait: 'Front Beard Dark', description: 'Added beard pixels at chin'});
-    }
-
-    // Small Shades remaster
-    if (punk.accessories.includes('Small Shades')) {
-      remasters.push({type: 'smallShades', trait: 'Small Shades', description: 'Added nose bridge pixels'});
-    }
-  }
-
-  return remasters;
-}
-
-// Check if a punk has any remasters available
-export function hasRemasters(punk) {
-  return getRemasters(punk).length > 0;
-}
+// Re-export shared logic from lib
+export { getRemasters, hasRemasters } from '../lib/remaster-logic.js';
+import { getRemasters } from '../lib/remaster-logic.js';
 
 // Composite a punk with remastering
 export function compositePunk(punk, applyRemasters = false) {

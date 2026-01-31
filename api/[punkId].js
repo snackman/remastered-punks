@@ -9,10 +9,11 @@ import {
   MALE_SPRITE_IDS,
   LAYER_ORDER,
   TRAIT_TO_LAYER,
-  EAR_VISIBLE_HAIRSTYLES,
   SKIN_COLORS,
   TRAIT_FILL_COLORS,
-} from './constants.js';
+} from '../lib/constants.js';
+
+import { getRemasters } from '../lib/remaster-logic.js';
 
 // Cached data
 let spriteSheet = null;
@@ -191,31 +192,6 @@ function shiftEarOnBase(baseCanvas, fillColor = {r: 0, g: 0, b: 0, x: 7}) {
 
   ctx.putImageData(imageData, 0, 0);
   return canvas;
-}
-
-// Get remasters for a punk
-function getRemasters(punk) {
-  const remasters = [];
-  const isFemale = punk.gender === 'Female';
-  const isMale = punk.gender === 'Male';
-
-  if (isFemale) {
-    const earVisibleTrait = punk.accessories.find(a => EAR_VISIBLE_HAIRSTYLES.has(a));
-    if (earVisibleTrait) {
-      remasters.push({type: 'ear', trait: earVisibleTrait});
-      if (punk.accessories.includes('Regular Shades')) remasters.push({type: 'shades'});
-      if (punk.accessories.includes('Earring')) remasters.push({type: 'earring'});
-    }
-    if (punk.accessories.includes('Choker')) remasters.push({type: 'choker'});
-  }
-
-  if (isMale) {
-    if (punk.accessories.includes('Front Beard')) remasters.push({type: 'frontBeard'});
-    if (punk.accessories.includes('Front Beard Dark')) remasters.push({type: 'frontBeardDark'});
-    if (punk.accessories.includes('Small Shades')) remasters.push({type: 'smallShades'});
-  }
-
-  return remasters;
 }
 
 // Composite punk image
