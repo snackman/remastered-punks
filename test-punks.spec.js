@@ -1,74 +1,58 @@
 const { test, expect } = require('@playwright/test');
 
 const LIVE_URL = 'https://snackman.github.io/remastered-punks/preview/remaster/dist/';
-const CRYPTOPUNKS_ADDRESS = '0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB';
 
 test('live site header shows "Punks Remastered"', async ({ page }) => {
-  await page.goto(LIVE_URL);
+  await page.goto(LIVE_URL + '?nocache=' + Date.now(), { waitUntil: 'networkidle' });
   await page.waitForSelector('h1', { timeout: 30000 });
   const header = await page.textContent('h1');
+  console.log('Header text:', header);
   expect(header).toBe('Punks Remastered');
 });
 
-test('snax.eth should have 16 CryptoPunks via Reservoir API', async ({ page }) => {
-  // Navigate to the live site first (provides proper origin for CORS)
-  await page.goto(LIVE_URL);
-  await page.waitForLoadState('networkidle');
+test('Lookup by ID shows punk with remaster for eligible punk #70', async ({ page }) => {
+  // Punk #70 is Female with Crazy Hair (ear visible) + Regular Shades + Earring - should have remasters
+  await page.goto(LIVE_URL + '?nocache=' + Date.now(), { waitUntil: 'networkidle' });
 
-  // Test the Reservoir API directly in the browser context
-  const result = await page.evaluate(async (contractAddress) => {
-    const punks = [];
-    let continuation = null;
-    let pageCount = 0;
+  // Click "Lookup by ID" tab
+  await page.click('button:has-text("Lookup by ID")');
 
-    // snax.eth resolved address
-    const address = '0x8B9E9C4e39acE79c7A54FAaB3c1a9bc334D2e0ED';
+  // Enter punk ID and submit
+  await page.fill('input[type="number"]', '70');
+  await page.click('button[type="submit"]');
 
-    do {
-      const url = new URL('https://api.reservoir.tools/users/' + address.toLowerCase() + '/tokens/v10');
-      url.searchParams.set('collection', contractAddress);
-      url.searchParams.set('limit', '200');
-      url.searchParams.set('includeAttributes', 'false');
-      url.searchParams.set('includeLastSale', 'false');
-      if (continuation) {
-        url.searchParams.set('continuation', continuation);
-      }
+  // Wait for punk card to appear
+  await page.waitForSelector('.punk-card', { timeout: 10000 });
 
-      const response = await fetch(url.toString(), {
-        headers: { 'accept': 'application/json' },
-      });
+  // Check that we see "Original" and "Remastered" labels (indicating remaster is shown)
+  const originalLabel = await page.locator('.label:has-text("Original")').count();
+  const remasteredLabel = await page.locator('.label:has-text("Remastered")').count();
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+  console.log('Original label count:', originalLabel);
+  console.log('Remastered label count:', remasteredLabel);
 
-      const data = await response.json();
-      const tokens = data.tokens || [];
+  // Should show both original and remastered
+  expect(originalLabel).toBeGreaterThan(0);
+  expect(remasteredLabel).toBeGreaterThan(0);
 
-      for (const token of tokens) {
-        const tokenId = token.token?.tokenId;
-        if (tokenId !== undefined && tokenId !== null) {
-          punks.push(parseInt(tokenId, 10));
-        }
-      }
+  // Check for remaster badge
+  const remasterBadges = await page.locator('.remaster-badge').count();
+  console.log('Remaster badges count:', remasterBadges);
+  expect(remasterBadges).toBeGreaterThan(0);
+});
 
-      continuation = data.continuation;
-      pageCount++;
+test('Lookup by ID shows no remaster for punk #1 (Ape)', async ({ page }) => {
+  // Punk #1 is an Ape - no remasters available
+  await page.goto(LIVE_URL + '?nocache=' + Date.now(), { waitUntil: 'networkidle' });
 
-      if (pageCount >= 10) break;
+  await page.click('button:has-text("Lookup by ID")');
+  await page.fill('input[type="number"]', '1');
+  await page.click('button[type="submit"]');
 
-      // Small delay between pages
-      if (continuation) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-    } while (continuation);
+  await page.waitForSelector('.punk-card', { timeout: 10000 });
 
-    return {
-      count: [...new Set(punks)].length,
-      punkIds: [...new Set(punks)].sort((a, b) => a - b)
-    };
-  }, CRYPTOPUNKS_ADDRESS);
-
-  console.log(`Found ${result.count} punks for snax.eth:`, result.punkIds);
-  expect(result.count).toBe(16);
+  // Should show "No remaster available" message
+  const noRemasterMsg = await page.locator('.no-remaster').count();
+  console.log('No remaster message count:', noRemasterMsg);
+  expect(noRemasterMsg).toBeGreaterThan(0);
 });

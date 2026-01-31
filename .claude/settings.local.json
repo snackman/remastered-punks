@@ -19,7 +19,17 @@
       "Bash(git remote set-url:*)",
       "Bash(gh api:*)",
       "Bash(git checkout:*)",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "Bash(vercel --version:*)",
+      "Bash(vercel ls:*)",
+      "Bash(python -m uv run python:*)",
+      "Bash(vercel deploy:*)",
+      "Bash(vercel domains add:*)",
+      "Bash(vercel domains:*)",
+      "Bash(vercel inspect:*)",
+      "Bash(npm --version)",
+      "Bash(nslookup:*)",
+      "Bash(cmd //c:*)"
     ]
   }
 }

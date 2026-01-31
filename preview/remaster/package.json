@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && cp -r ../../data dist/",
+    "build": "vite build",
     "build:win": "vite build && xcopy ..\\..\\data dist\\data /E /I /Y",
     "lint": "eslint .",
     "preview": "vite preview"

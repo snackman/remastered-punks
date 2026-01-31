@@ -13,7 +13,6 @@ import { loadAssets } from './lib/sprites';
 import { loadPunkData, loadEligiblePunks } from './lib/data';
 import PunkGrid from './components/PunkGrid';
 import ManualLookup from './components/ManualLookup';
-import TraitsGallery from './components/TraitsGallery';
 
 import './App.css';
 
@@ -56,12 +55,9 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
         >
           Lookup by ID
         </button>
-        <button
-          className={activeTab === 'traits' ? 'active' : ''}
-          onClick={() => setActiveTab('traits')}
-        >
+        <a href="/traits.html" className="tab-link">
           All Traits
-        </button>
+        </a>
       </div>
 
       <main>
@@ -81,9 +77,6 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
         )}
         {activeTab === 'lookup' && (
           <ManualLookup punkData={punkData} merkleProofs={merkleProofs} />
-        )}
-        {activeTab === 'traits' && (
-          <TraitsGallery punkData={punkData} />
         )}
       </main>
     </div>
