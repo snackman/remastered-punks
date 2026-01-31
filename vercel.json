@@ -1,10 +1,11 @@
 {
   "buildCommand": "cd preview/remaster && npm install && npm run build",
   "outputDirectory": "preview/remaster/dist",
-  "installCommand": "cd api && npm install && cd ../preview/remaster && npm install",
+  "installCommand": "cd api && npm install && cd .. && cd preview/remaster && npm install",
   "framework": null,
   "functions": {
-    "api/[punkId].js": {
+    "api/*.js": {
+      "runtime": "nodejs20.x",
       "includeFiles": "data/**"
     }
   },
