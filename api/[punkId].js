@@ -383,10 +383,13 @@ export default async function handler(req, res) {
     return res.status(404).json({ error: `Punk #${id} not found.` });
   }
 
-  // Parse size
+  // Parse size - must be a multiple of 24 for clean pixel scaling
   let outputSize = parseInt(size) || SPRITE_SIZE;
   if (outputSize < 24) outputSize = 24;
   if (outputSize > 1024) outputSize = 1024;
+  // Snap to nearest multiple of 24 for uniform pixel scaling
+  outputSize = Math.round(outputSize / SPRITE_SIZE) * SPRITE_SIZE;
+  if (outputSize < 24) outputSize = 24;
 
   // Check eligibility - only return images for punks that can be remastered
   const isEligible = eligiblePunks.has(id);
