@@ -593,26 +593,29 @@
 
             let base = extractSprite(SPRITE_IDS[`base_${skinTone}`]);
 
-            // Fix eye shadow pixels (bottom-right of each 2x2 eye)
-            // Left eye (viewer's right) at ~(10,13), Right eye at ~(15,13)
-            if (SKIN_COLORS[skinTone]) {
+            // Fix female eyes - the f,s base sprites don't include eyes
+            {
                 const baseCtx = base.getContext('2d');
                 const imageData = baseCtx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
-                const shadow = SKIN_COLORS[skinTone];
 
-                // Left eye shadow pixel (x=10, y=13)
-                let idx = (13 * SPRITE_SIZE + 10) * 4;
-                imageData.data[idx] = shadow.shadowR;
-                imageData.data[idx + 1] = shadow.shadowG;
-                imageData.data[idx + 2] = shadow.shadowB;
-                imageData.data[idx + 3] = 255;
+                // Add eyes at y=12: pupil (black) + sclera (white)
+                let idx = (12 * SPRITE_SIZE + 9) * 4;
+                imageData.data[idx] = 0; imageData.data[idx + 1] = 0; imageData.data[idx + 2] = 0; imageData.data[idx + 3] = 255;
+                idx = (12 * SPRITE_SIZE + 10) * 4;
+                imageData.data[idx] = 255; imageData.data[idx + 1] = 255; imageData.data[idx + 2] = 255; imageData.data[idx + 3] = 255;
+                idx = (12 * SPRITE_SIZE + 14) * 4;
+                imageData.data[idx] = 0; imageData.data[idx + 1] = 0; imageData.data[idx + 2] = 0; imageData.data[idx + 3] = 255;
+                idx = (12 * SPRITE_SIZE + 15) * 4;
+                imageData.data[idx] = 255; imageData.data[idx + 1] = 255; imageData.data[idx + 2] = 255; imageData.data[idx + 3] = 255;
 
-                // Right eye shadow pixel (x=15, y=13)
-                idx = (13 * SPRITE_SIZE + 15) * 4;
-                imageData.data[idx] = shadow.shadowR;
-                imageData.data[idx + 1] = shadow.shadowG;
-                imageData.data[idx + 2] = shadow.shadowB;
-                imageData.data[idx + 3] = 255;
+                // Fix eye shadow below eyes at y=13 (white in base → skin shadow)
+                if (SKIN_COLORS[skinTone]) {
+                    const shadow = SKIN_COLORS[skinTone];
+                    idx = (13 * SPRITE_SIZE + 10) * 4;
+                    imageData.data[idx] = shadow.shadowR; imageData.data[idx + 1] = shadow.shadowG; imageData.data[idx + 2] = shadow.shadowB; imageData.data[idx + 3] = 255;
+                    idx = (13 * SPRITE_SIZE + 15) * 4;
+                    imageData.data[idx] = shadow.shadowR; imageData.data[idx + 1] = shadow.shadowG; imageData.data[idx + 2] = shadow.shadowB; imageData.data[idx + 3] = 255;
+                }
 
                 baseCtx.putImageData(imageData, 0, 0);
             }
