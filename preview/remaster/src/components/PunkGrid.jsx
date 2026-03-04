@@ -3,7 +3,7 @@ import { fetchOwnedPunks } from '../lib/ownedPunks';
 import { hasRemasters } from '../lib/remaster';
 import PunkCard from './PunkCard';
 
-function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {} }) {
+function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {}, isTestnet = false }) {
   const [ownedPunks, setOwnedPunks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -15,32 +15,41 @@ function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {} }) {
   useEffect(() => {
     if (!address) return;
 
-    async function loadOwnedPunks() {
+    async function loadPunks() {
       setLoading(true);
       setError(null);
 
       try {
-        const punkIds = await fetchOwnedPunks(address);
+        let owned;
 
-        // Build punk objects for all owned punks
-        const owned = punkIds.map(punkId => {
-          // Use punkData if available, otherwise create minimal object
-          if (punkData[punkId]) {
-            return {
+        if (isTestnet) {
+          // On testnet, show all eligible punks (anyone can claim on mock contract)
+          owned = eligiblePunks
+            .filter(punkId => punkData[punkId])
+            .map(punkId => ({
               ...punkData[punkId],
-              isEligible: eligibleSet.has(punkId),
+              isEligible: true,
+            }));
+        } else {
+          // On mainnet, query actual ownership
+          const punkIds = await fetchOwnedPunks(address);
+          owned = punkIds.map(punkId => {
+            if (punkData[punkId]) {
+              return {
+                ...punkData[punkId],
+                isEligible: eligibleSet.has(punkId),
+              };
+            }
+            return {
+              id: punkId,
+              type: 'Unknown',
+              gender: 'Unknown',
+              skinTone: null,
+              accessories: [],
+              isEligible: false,
             };
-          }
-          // For punks not in our data, create minimal object
-          return {
-            id: punkId,
-            type: 'Unknown',
-            gender: 'Unknown',
-            skinTone: null,
-            accessories: [],
-            isEligible: false,
-          };
-        });
+          });
+        }
 
         setOwnedPunks(owned);
       } catch (err) {
@@ -51,13 +60,13 @@ function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {} }) {
       }
     }
 
-    loadOwnedPunks();
-  }, [address, punkData, eligiblePunks]);
+    loadPunks();
+  }, [address, punkData, eligiblePunks, isTestnet]);
 
   if (loading) {
     return (
       <div className="loading">
-        <p>Fetching CryptoPunks for this wallet...</p>
+        <p>{isTestnet ? 'Loading eligible punks...' : 'Fetching CryptoPunks for this wallet...'}</p>
       </div>
     );
   }

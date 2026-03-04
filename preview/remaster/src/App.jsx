@@ -5,7 +5,7 @@ import {
   RainbowKitProvider,
   ConnectButton,
 } from '@rainbow-me/rainbowkit';
-import { WagmiProvider, useAccount } from 'wagmi';
+import { WagmiProvider, useAccount, useChainId } from 'wagmi';
 import { mainnet, sepolia } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -26,6 +26,8 @@ const queryClient = new QueryClient();
 
 function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
   const { address, isConnected } = useAccount();
+  const chainId = useChainId();
+  const isTestnet = chainId === 11155111;
   const [activeTab, setActiveTab] = useState('wallet');
 
   if (!assetsLoaded) {
@@ -68,6 +70,7 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
               punkData={punkData}
               eligiblePunks={eligiblePunks}
               merkleProofs={merkleProofs}
+              isTestnet={isTestnet}
             />
           ) : (
             <div className="connect-prompt">
