@@ -322,9 +322,38 @@ header h1 {
   min-width: 300px;
 }
 
-/* Mint Button */
+/* Claim + Mint Buttons */
 .mint-section {
   margin-top: 12px;
+}
+
+.claim-button {
+  width: 100%;
+  padding: 10px 20px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  border: 1px solid #e8a83e;
+  background: transparent;
+  color: #e8a83e;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.claim-button:hover:not(:disabled) {
+  background: rgba(232, 168, 62, 0.1);
+  transform: translateY(-1px);
+}
+
+.claim-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.claim-button.success {
+  border-color: #3ab85a;
+  color: #3ab85a;
 }
 
 .mint-button {

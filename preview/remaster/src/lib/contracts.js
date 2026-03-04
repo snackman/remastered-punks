@@ -54,6 +54,24 @@ export const REMASTERED_PUNKS_ABI = [
   },
 ];
 
+// Mock CryptoPunks ABI (testnet only - for claiming punks)
+export const MOCK_CRYPTOPUNKS_ABI = [
+  {
+    name: 'claimPunk',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'punkId', type: 'uint256' }],
+    outputs: [],
+  },
+  {
+    name: 'punkIndexToAddress',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'punkIndex', type: 'uint256' }],
+    outputs: [{ name: '', type: 'address' }],
+  },
+];
+
 // Get contract address for current chain
 export function getContractAddress(chainId) {
   if (chainId === 11155111) {
@@ -61,6 +79,14 @@ export function getContractAddress(chainId) {
   }
   if (chainId === 1) {
     return CONTRACTS.mainnet.remasteredPunks;
+  }
+  return null;
+}
+
+// Get mock CryptoPunks address (testnet only)
+export function getCryptoPunksAddress(chainId) {
+  if (chainId === 11155111) {
+    return CONTRACTS.sepolia.cryptoPunks;
   }
   return null;
 }

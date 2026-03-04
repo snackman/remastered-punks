@@ -3,7 +3,7 @@ import { useAccount, useChainId, useWriteContract, useWaitForTransactionReceipt,
 import { SPRITE_SIZE } from '../lib/constants';
 import { extractPunk } from '../lib/sprites';
 import { compositePunk, getRemasters } from '../lib/remaster';
-import { REMASTERED_PUNKS_ABI, getContractAddress } from '../lib/contracts';
+import { REMASTERED_PUNKS_ABI, MOCK_CRYPTOPUNKS_ABI, getContractAddress, getCryptoPunksAddress } from '../lib/contracts';
 
 const ZOOM = 4;
 
@@ -11,10 +11,13 @@ function PunkCard({ punk, showRemastered = true, showEligibility = false, merkle
   const originalRef = useRef(null);
   const remasteredRef = useRef(null);
   const [mintStatus, setMintStatus] = useState(null);
+  const [claimStatus, setClaimStatus] = useState(null);
 
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const contractAddress = getContractAddress(chainId);
+  const mockPunksAddress = getCryptoPunksAddress(chainId);
+  const isTestnet = chainId === 11155111;
 
   // Check if already activated
   const { data: isActivated, refetch: refetchActivated } = useReadContract({
@@ -27,15 +30,38 @@ function PunkCard({ punk, showRemastered = true, showEligibility = false, merkle
     },
   });
 
-  // Write contract hook
+  // Check punk ownership on mock contract (testnet only)
+  const { data: punkOwner, refetch: refetchOwner } = useReadContract({
+    address: mockPunksAddress,
+    abi: MOCK_CRYPTOPUNKS_ABI,
+    functionName: 'punkIndexToAddress',
+    args: [BigInt(punk.id)],
+    query: {
+      enabled: !!mockPunksAddress && isTestnet,
+    },
+  });
+
+  const zeroAddress = '0x0000000000000000000000000000000000000000';
+  const ownsPunkOnMock = punkOwner && punkOwner !== zeroAddress && address && punkOwner.toLowerCase() === address.toLowerCase();
+  const punkUnclaimed = punkOwner === zeroAddress || !punkOwner;
+
+  // Write contract hook for minting
   const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
 
-  // Wait for transaction
+  // Write contract hook for claiming (testnet)
+  const { writeContract: writeClaim, data: claimHash, isPending: isClaimPending, error: claimError } = useWriteContract();
+
+  // Wait for mint transaction
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   });
 
-  // Update status based on transaction state
+  // Wait for claim transaction
+  const { isLoading: isClaimConfirming, isSuccess: isClaimSuccess } = useWaitForTransactionReceipt({
+    hash: claimHash,
+  });
+
+  // Update status based on mint transaction state
   useEffect(() => {
     if (isPending) {
       setMintStatus('confirming');
@@ -48,6 +74,20 @@ function PunkCard({ punk, showRemastered = true, showEligibility = false, merkle
       setMintStatus('error');
     }
   }, [isPending, isConfirming, isSuccess, writeError, refetchActivated]);
+
+  // Update status based on claim transaction state
+  useEffect(() => {
+    if (isClaimPending) {
+      setClaimStatus('confirming');
+    } else if (isClaimConfirming) {
+      setClaimStatus('claiming');
+    } else if (isClaimSuccess) {
+      setClaimStatus('success');
+      refetchOwner();
+    } else if (claimError) {
+      setClaimStatus('error');
+    }
+  }, [isClaimPending, isClaimConfirming, isClaimSuccess, claimError, refetchOwner]);
 
   // Only check remasters if punk is eligible (has full data)
   const isEligible = punk.isEligible !== false && punk.accessories && punk.accessories.length > 0;
@@ -75,6 +115,18 @@ function PunkCard({ punk, showRemastered = true, showEligibility = false, merkle
     }
   }, [punk, hasRemasters, showRemastered]);
 
+  const handleClaim = () => {
+    if (!mockPunksAddress) return;
+
+    setClaimStatus('confirming');
+    writeClaim({
+      address: mockPunksAddress,
+      abi: MOCK_CRYPTOPUNKS_ABI,
+      functionName: 'claimPunk',
+      args: [BigInt(punk.id)],
+    });
+  };
+
   const handleMint = () => {
     if (!contractAddress || !merkleProof) return;
 
@@ -89,8 +141,17 @@ function PunkCard({ punk, showRemastered = true, showEligibility = false, merkle
 
   const cardClass = `punk-card${punk.isEligible === false ? ' not-eligible' : ''}`;
 
-  // Determine button state
-  const canMint = isConnected && contractAddress && hasMerkleProof && hasRemasters && !isActivated;
+  // Determine claim button state (testnet only)
+  const needsClaim = isTestnet && punkUnclaimed && !isActivated;
+  const claimDisabled = !isConnected || isClaimPending || isClaimConfirming;
+
+  let claimButtonText = 'Claim Punk (Testnet)';
+  if (isClaimPending) claimButtonText = 'Confirm in Wallet...';
+  else if (isClaimConfirming) claimButtonText = 'Claiming...';
+  else if (isClaimSuccess) claimButtonText = 'Claimed!';
+
+  // Determine mint button state
+  const canMint = isConnected && contractAddress && hasMerkleProof && hasRemasters && !isActivated && (!isTestnet || ownsPunkOnMock);
   const buttonDisabled = !canMint || isPending || isConfirming;
 
   let buttonText = 'Mint Remaster';
@@ -147,19 +208,37 @@ function PunkCard({ punk, showRemastered = true, showEligibility = false, merkle
         <div className="no-remaster">No remaster available</div>
       )}
 
-      {/* Mint Button */}
+      {/* Claim + Mint Buttons */}
       {hasRemasters && hasMerkleProof && (
         <div className="mint-section">
           {isActivated ? (
             <div className="minted-badge">Minted</div>
           ) : (
-            <button
-              className={`mint-button ${mintStatus === 'success' ? 'success' : ''}`}
-              onClick={handleMint}
-              disabled={buttonDisabled}
-            >
-              {buttonText}
-            </button>
+            <>
+              {needsClaim && (
+                <button
+                  className={`claim-button ${claimStatus === 'success' ? 'success' : ''}`}
+                  onClick={handleClaim}
+                  disabled={claimDisabled}
+                >
+                  {claimButtonText}
+                </button>
+              )}
+              <button
+                className={`mint-button ${mintStatus === 'success' ? 'success' : ''}`}
+                onClick={handleMint}
+                disabled={buttonDisabled}
+              >
+                {buttonText}
+              </button>
+            </>
+          )}
+          {claimError && (
+            <div className="mint-error">
+              {claimError.message?.includes('Already claimed')
+                ? 'Punk already claimed by another wallet'
+                : 'Error claiming punk'}
+            </div>
           )}
           {writeError && (
             <div className="mint-error">
