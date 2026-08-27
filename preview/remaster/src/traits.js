@@ -163,7 +163,6 @@ function renderTraitWithEar(containerId, traitName) {
 
 function renderFrontBeardComparison() {
   const container = document.getElementById('frontBeardComparison');
-  const BEARD_COLOR = { r: 168, g: 103, b: 55 };
 
   for (const skinTone of SKIN_TONES) {
     const trait = extractSprite(MALE_SPRITE_IDS['Front Beard']);
@@ -173,11 +172,14 @@ function renderFrontBeardComparison() {
     const ctx = remastered.getContext('2d');
     const imageData = ctx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
     const data = imageData.data;
+    // Sample the beard's own colour so the added corners match exactly.
+    const sampleIdx = (20 * SPRITE_SIZE + 12) * 4;
+    const beard = { r: data[sampleIdx], g: data[sampleIdx + 1], b: data[sampleIdx + 2] };
     for (const x of [10, 14]) {
       const idx = (20 * SPRITE_SIZE + x) * 4;
-      data[idx] = BEARD_COLOR.r;
-      data[idx + 1] = BEARD_COLOR.g;
-      data[idx + 2] = BEARD_COLOR.b;
+      data[idx] = beard.r;
+      data[idx + 1] = beard.g;
+      data[idx + 2] = beard.b;
       data[idx + 3] = 255;
     }
     ctx.putImageData(imageData, 0, 0);
@@ -249,31 +251,31 @@ function setupCollapsible() {
 // derived from data/all-eligible-punks.json + cryptopunks.csv using the
 // ear-visible/covering rules in lib/constants.js.
 const SECTION_COUNTS = {
-  earComparison: 2562,
-  earringComparison: 656,
+  earComparison: 2468,
+  earringComparison: 629,
   smallShadesComparison: 378,
   frontBeardComparison: 276,
-  crazyHairComparison: 168,
-  stringyHairComparison: 165,
-  bandanaComparison: 164,
-  messyHairComparison: 160,
-  mohawkComparison: 153,
-  mohawkThinComparison: 152,
-  redMohawkComparison: 147,
-  blondeBobComparison: 147,
-  mohawkDarkComparison: 146,
-  wildBlondeComparison: 144,
-  wildWhiteHairComparison: 136,
-  blondeShortComparison: 129,
-  knittedCapComparison: 101,
-  capComparison: 98,
-  headbandComparison: 96,
-  pigtailsComparison: 94,
+  crazyHairComparison: 160,
+  stringyHairComparison: 158,
+  bandanaComparison: 157,
+  messyHairComparison: 153,
+  mohawkComparison: 149,
+  mohawkThinComparison: 147,
+  mohawkDarkComparison: 143,
+  blondeBobComparison: 143,
+  redMohawkComparison: 141,
+  wildBlondeComparison: 138,
+  wildWhiteHairComparison: 131,
+  blondeShortComparison: 123,
+  knittedCapComparison: 97,
+  pigtailsComparison: 93,
+  capComparison: 91,
+  headbandComparison: 90,
   weldingGogglesComparison: 86,
   shadesComparison: 81,
-  orangeSideComparison: 68,
-  clownHairGreenComparison: 63,
-  tiaraComparison: 55,
+  orangeSideComparison: 65,
+  clownHairGreenComparison: 61,
+  tiaraComparison: 54,
   chokerComparison: 48,
   combinedComparison: 13,
 };
