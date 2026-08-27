@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useReadContracts, useChainId } from 'wagmi';
 import { fetchOwnedPunks } from '../lib/ownedPunks';
 import { hasRemasters } from '../lib/remaster';
+import { REMASTERED_PUNKS_ABI, getContractAddress } from '../lib/contracts';
 import PunkCard from './PunkCard';
 
 function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {}, isTestnet = false }) {
@@ -8,6 +10,9 @@ function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {}, isTestn
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all'); // 'all' or 'remastered'
+
+  const chainId = useChainId();
+  const contractAddress = getContractAddress(chainId);
 
   // Create a Set for O(1) lookup
   const eligibleSet = new Set(eligiblePunks);
@@ -63,6 +68,23 @@ function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {}, isTestn
     loadPunks();
   }, [address, punkData, eligiblePunks, isTestnet]);
 
+  // Punks that CAN be remastered (owned + eligible).
+  const eligibleOwned = ownedPunks.filter(p => p.isEligible);
+
+  // Of those, how many have actually been remastered (minted/activated on-chain).
+  const { data: activatedResults } = useReadContracts({
+    contracts: eligibleOwned.map(p => ({
+      address: contractAddress,
+      abi: REMASTERED_PUNKS_ABI,
+      functionName: 'activated',
+      args: [BigInt(p.id)],
+    })),
+    query: { enabled: !!contractAddress && eligibleOwned.length > 0 },
+  });
+  const remasteredCount = activatedResults
+    ? activatedResults.filter(r => r?.result === true).length
+    : 0;
+
   if (loading) {
     return (
       <div className="loading">
@@ -79,12 +101,9 @@ function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {}, isTestn
     );
   }
 
-  const eligibleOwned = ownedPunks.filter(p => p.isEligible);
-  const filteredPunks = filter === 'remastered'
-    ? ownedPunks.filter(p => p.isEligible && hasRemasters(p))
+  const filteredPunks = filter === 'eligible'
+    ? eligibleOwned
     : ownedPunks;
-
-  const remasteredCount = ownedPunks.filter(p => p.isEligible && hasRemasters(p)).length;
 
   if (ownedPunks.length === 0) {
     return (
@@ -100,9 +119,9 @@ function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {}, isTestn
         <div className="stats">
           <span>{ownedPunks.length} punk{ownedPunks.length !== 1 ? 's' : ''} found</span>
           <span className="divider">|</span>
-          <span>{eligibleOwned.length} eligible for remaster</span>
+          <span>{eligibleOwned.length} eligible to be remastered</span>
           <span className="divider">|</span>
-          <span>{remasteredCount} with remasters</span>
+          <span>{remasteredCount} remastered</span>
         </div>
         <div className="filter-buttons">
           <button
@@ -112,10 +131,10 @@ function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {}, isTestn
             All
           </button>
           <button
-            className={filter === 'remastered' ? 'active' : ''}
-            onClick={() => setFilter('remastered')}
+            className={filter === 'eligible' ? 'active' : ''}
+            onClick={() => setFilter('eligible')}
           >
-            Remastered Only
+            Eligible Only
           </button>
         </div>
       </div>
@@ -131,9 +150,9 @@ function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {}, isTestn
         ))}
       </div>
 
-      {filteredPunks.length === 0 && filter === 'remastered' && (
+      {filteredPunks.length === 0 && filter === 'eligible' && (
         <div className="no-results">
-          <p>None of your punks have remasterable traits.</p>
+          <p>None of your punks are eligible to be remastered.</p>
         </div>
       )}
     </div>
