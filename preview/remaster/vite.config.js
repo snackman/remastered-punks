@@ -9,6 +9,12 @@ export default defineConfig({
   base: process.env.GITHUB_PAGES ? '/remastered-punks/preview/remaster/dist/' : '/',
   build: {
     outDir: 'dist',
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        traits: path.resolve(__dirname, 'traits.html'),
+      },
+    },
   },
   // Allow importing from the shared lib folder
   server: {

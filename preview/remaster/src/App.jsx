@@ -45,7 +45,7 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
   };
 
   const base = import.meta.env.BASE_URL;
-  const traitsUrl = `${base}../../traits.html`;
+  const traitsUrl = `${base}traits.html`;
   const faviconUrl = `${base}favicon.png`;
 
   if (!assetsLoaded) {
