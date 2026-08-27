@@ -164,7 +164,15 @@ function PunkCard({ punk, showRemastered = true, showEligibility = false, merkle
 
   return (
     <div className={cardClass}>
-      <div className="punk-id">#{punk.id}</div>
+      <div className="punk-id">
+        <a
+          href={`https://cryptopunks.app/cryptopunks/details/${punk.id}`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          #{punk.id}
+        </a>
+      </div>
       <div className="punk-images">
         <div className="punk-image-wrapper">
           <canvas
@@ -194,10 +202,10 @@ function PunkCard({ punk, showRemastered = true, showEligibility = false, merkle
           <span className="skin">{punk.skinTone}</span>
         </div>
       )}
-      {hasRemasters && (
+      {punk.accessories && punk.accessories.length > 0 && (
         <div className="remasters">
-          {remasters.map((r, i) => (
-            <span key={i} className="remaster-badge">{r.trait}</span>
+          {punk.accessories.map((a, i) => (
+            <span key={i} className="remaster-badge">{a}</span>
           ))}
         </div>
       )}

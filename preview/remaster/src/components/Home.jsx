@@ -55,8 +55,6 @@ function Home({ punkData, eligiblePunks, onNavigate }) {
     draw(remasteredRef.current, compositePunk(punk, true));
   }, [punk]);
 
-  const remasters = punk ? getRemasters(punk) : [];
-
   return (
     <section className="home">
       <h1 className="home-title">Your CryptoPunks, remastered</h1>
@@ -86,9 +84,16 @@ function Home({ punkData, eligiblePunks, onNavigate }) {
 
       {punk && (
         <div className="hero-meta">
-          <span className="hero-punkid">Punk #{punk.id}</span>
-          {remasters.map((r, i) => (
-            <span key={i} className="remaster-badge">{r.trait}</span>
+          <a
+            className="hero-punkid"
+            href={`https://cryptopunks.app/cryptopunks/details/${punk.id}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Punk #{punk.id}
+          </a>
+          {(punk.accessories || []).map((a, i) => (
+            <span key={i} className="remaster-badge">{a}</span>
           ))}
         </div>
       )}
