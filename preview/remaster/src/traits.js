@@ -27,10 +27,10 @@ const CROPPED_SIZE = 22;
 
 const SKIN_TONES = ['Light', 'Medium', 'Dark', 'Albino'];
 const SKIN_LABELS = {
-  'Light': 'Light (#dbb180)',
-  'Medium': 'Medium (#ae8b61)',
-  'Dark': 'Dark (#713f1d)',
-  'Albino': 'Albino (#ead9d9)',
+  'Light': 'Light',
+  'Medium': 'Medium',
+  'Dark': 'Dark',
+  'Albino': 'Albino',
 };
 
 // Extract a trait sprite, applying any spritesheet colour correction (e.g. the
