@@ -61,8 +61,7 @@ function Home({ punkData, eligiblePunks, onNavigate }) {
     <section className="home">
       <h1 className="home-title">Your CryptoPunks, remastered</h1>
       <p className="home-sub">
-        Every eligible punk gets a hand-corrected remaster that follows the
-        original on-chain &mdash; no transfers needed. Here&rsquo;s one, refreshed.
+        Every eligible punk can mint a remaster that follows the original onchain.
       </p>
 
       <div className="hero-compare">
