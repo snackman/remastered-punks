@@ -35,18 +35,20 @@ export function compositePunk(punk, applyRemasters = false) {
   const baseKey = isNonHuman ? `base_${punk.type}` : `base_${punk.skinTone}`;
   let baseSprite = extractSprite(spriteIds[baseKey]);
 
-  // Fix human eyes - the base sprites contain the correct black pupils but a
+  // Fix human/ape eyes - the base sprites contain the correct black pupils but a
   // stray white pixel just right of each; recolor it to the per-tone eye shadow
-  // so the eyes match the original punks (dark pupils, no white sclera). Male
-  // eyes sit at y=12; female eyes one row lower at y=13.
-  if (SKIN_COLORS[punk.skinTone]) {
+  // so the eyes match the original punks (dark pupils, no white sclera). Human
+  // males and Apes have eyes at y=12; human females one row lower at y=13.
+  // (Zombie/Alien bases have no stray white at the eyes.)
+  const humanShadow = SKIN_COLORS[punk.skinTone];
+  const eyeShadow = humanShadow || (punk.type === 'Ape' ? { shadowR: 169, shadowG: 140, shadowB: 107 } : null);
+  if (eyeShadow) {
     const baseCtx = baseSprite.getContext('2d');
     const imageData = baseCtx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
-    const shadow = SKIN_COLORS[punk.skinTone];
-    const eyeRow = isFemale ? 13 : 12;
+    const eyeRow = (humanShadow && isFemale) ? 13 : 12;
     for (const x of [10, 15]) {
       const idx = (eyeRow * SPRITE_SIZE + x) * 4;
-      imageData.data[idx] = shadow.shadowR; imageData.data[idx + 1] = shadow.shadowG; imageData.data[idx + 2] = shadow.shadowB; imageData.data[idx + 3] = 255;
+      imageData.data[idx] = eyeShadow.shadowR; imageData.data[idx + 1] = eyeShadow.shadowG; imageData.data[idx + 2] = eyeShadow.shadowB; imageData.data[idx + 3] = 255;
     }
     baseCtx.putImageData(imageData, 0, 0);
   }
