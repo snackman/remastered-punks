@@ -156,7 +156,7 @@ function PunkCard({ punk, showRemastered = true, showEligibility = false, merkle
 
   let buttonText = 'Mint Remaster';
   if (!isConnected) buttonText = 'Connect Wallet';
-  else if (!contractAddress) buttonText = 'Wrong Network';
+  else if (!contractAddress) buttonText = chainId === 1 ? 'Minting Soon' : 'Wrong Network';
   else if (isActivated) buttonText = 'Already Minted';
   else if (isPending) buttonText = 'Confirm in Wallet...';
   else if (isConfirming) buttonText = 'Minting...';
