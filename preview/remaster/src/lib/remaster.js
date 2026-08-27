@@ -36,32 +36,18 @@ export function compositePunk(punk, applyRemasters = false) {
   const baseKey = isNonHuman ? `base_${punk.type}` : `base_${punk.skinTone}`;
   let baseSprite = extractSprite(spriteIds[baseKey]);
 
-  // Fix female eyes - the f,s base sprites don't include eyes
-  if (isFemale) {
+  // Fix female eyes - the f,s base sprites already contain the correct black
+  // pupils at y=13 (x=9 and x=14), but with a stray white pixel just right of
+  // each pupil. Recolor those to the per-tone eye shadow so the eyes match the
+  // original punks (two dark pupils at y=13, no white sclera, nothing at y=12).
+  if (isFemale && SKIN_COLORS[punk.skinTone]) {
     const baseCtx = baseSprite.getContext('2d');
     const imageData = baseCtx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
-
-    // Add eyes at y=12: pupil (black) + sclera (white)
-    // Left eye
-    let idx = (12 * SPRITE_SIZE + 9) * 4;
-    imageData.data[idx] = 0; imageData.data[idx + 1] = 0; imageData.data[idx + 2] = 0; imageData.data[idx + 3] = 255;
-    idx = (12 * SPRITE_SIZE + 10) * 4;
-    imageData.data[idx] = 255; imageData.data[idx + 1] = 255; imageData.data[idx + 2] = 255; imageData.data[idx + 3] = 255;
-    // Right eye
-    idx = (12 * SPRITE_SIZE + 14) * 4;
-    imageData.data[idx] = 0; imageData.data[idx + 1] = 0; imageData.data[idx + 2] = 0; imageData.data[idx + 3] = 255;
-    idx = (12 * SPRITE_SIZE + 15) * 4;
-    imageData.data[idx] = 255; imageData.data[idx + 1] = 255; imageData.data[idx + 2] = 255; imageData.data[idx + 3] = 255;
-
-    // Fix eye shadow below eyes at y=13 (white in base → skin shadow)
-    if (SKIN_COLORS[punk.skinTone]) {
-      const shadow = SKIN_COLORS[punk.skinTone];
-      idx = (13 * SPRITE_SIZE + 10) * 4;
-      imageData.data[idx] = shadow.shadowR; imageData.data[idx + 1] = shadow.shadowG; imageData.data[idx + 2] = shadow.shadowB; imageData.data[idx + 3] = 255;
-      idx = (13 * SPRITE_SIZE + 15) * 4;
+    const shadow = SKIN_COLORS[punk.skinTone];
+    for (const x of [10, 15]) {
+      const idx = (13 * SPRITE_SIZE + x) * 4;
       imageData.data[idx] = shadow.shadowR; imageData.data[idx + 1] = shadow.shadowG; imageData.data[idx + 2] = shadow.shadowB; imageData.data[idx + 3] = 255;
     }
-
     baseCtx.putImageData(imageData, 0, 0);
   }
 

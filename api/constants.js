@@ -227,10 +227,10 @@ export const EAR_COVERING_HAIR = new Set([
 
 // Skin colors
 export const SKIN_COLORS = {
-  'Light': {r: 219, g: 177, b: 128, shadowR: 201, shadowG: 175, shadowB: 145},
-  'Medium': {r: 174, g: 139, b: 97, shadowR: 156, shadowG: 124, shadowB: 88},
-  'Dark': {r: 113, g: 63, b: 29, shadowR: 96, shadowG: 53, shadowB: 24},
-  'Albino': {r: 234, g: 217, b: 217, shadowR: 223, shadowG: 206, shadowB: 206},
+  'Light': {r: 219, g: 177, b: 128, shadowR: 210, shadowG: 157, shadowB: 96},
+  'Medium': {r: 174, g: 139, b: 97, shadowR: 167, shadowG: 124, shadowB: 71},
+  'Dark': {r: 113, g: 63, b: 29, shadowR: 114, shadowG: 55, shadowB: 9},
+  'Albino': {r: 234, g: 217, b: 217, shadowR: 201, shadowG: 178, shadowB: 178},
 };
 
 // Fill colors for traits that cover the ear area

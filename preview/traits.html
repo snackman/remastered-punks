@@ -3,50 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <title>Remastered Traits Preview</title>
     <style>
+        :root {
+            --accent: #1a43c8;
+            --accent-dark: #1637a4;
+            --ink: #181818;
+            --text: #272727;
+            --muted: #6b6b6b;
+            --line: #e6e6e6;
+            --panel: #f5f5f5;
+            --punk-bg: #638596;
+        }
         * { box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #1a1a2e;
-            color: #eee;
-            padding: 20px;
+            font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+            background: #ffffff;
+            color: var(--text);
+            padding: 0 0 72px;
             margin: 0;
+            -webkit-font-smoothing: antialiased;
         }
-        h1 { text-align: center; color: #fff; }
-        .subtitle { text-align: center; color: #888; margin-bottom: 40px; }
+        /* Shared nav bar (matches the app) */
+        .tp-nav {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            max-width: 1040px;
+            margin: 0 auto;
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--line);
+            flex-wrap: wrap;
+        }
+        .tp-brand { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+        .tp-brand img { width: 32px; height: 32px; border-radius: 6px; image-rendering: pixelated; display: block; }
+        .tp-brand span { font-weight: 800; font-size: 17px; letter-spacing: 0.04em; color: var(--ink); text-transform: uppercase; }
+        .tp-links { display: flex; gap: 2px; margin-left: 6px; flex-wrap: wrap; }
+        .tp-links a {
+            font-weight: 700; font-size: 12.5px; letter-spacing: 0.04em; text-transform: uppercase;
+            color: var(--text); text-decoration: none; padding: 8px 15px; border-radius: 50px; transition: all 0.15s ease;
+        }
+        .tp-links a:hover { color: var(--accent); }
+        .tp-links a.active { background: var(--accent); color: #fff; }
+        h1 { text-align: center; color: var(--ink); font-weight: 800; margin: 36px 0 8px; }
+        .subtitle { text-align: center; color: var(--muted); margin-bottom: 40px; font-weight: 500; }
         .section {
-            margin-bottom: 50px;
-            padding: 20px;
-            background: #252545;
-            border-radius: 8px;
+            margin-bottom: 28px;
+            padding: 24px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 14px;
             max-width: 1000px;
             margin-left: auto;
             margin-right: auto;
         }
         .section h2 {
-            color: #fff;
+            color: var(--ink);
+            font-weight: 800;
             margin-top: 0;
-            border-bottom: 1px solid #444;
-            padding-bottom: 10px;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 12px;
             cursor: pointer;
             user-select: none;
         }
         .section h2::before {
-            content: '\u25BC ';
+            content: '\25BC ';
             font-size: 12px;
             margin-right: 8px;
+            color: var(--accent);
         }
         .section.collapsed h2::before {
-            content: '\u25B6 ';
+            content: '\25B6 ';
         }
         .section.collapsed .section-content {
             display: none;
         }
         .section h2:hover {
-            color: #aaf;
+            color: var(--accent);
         }
-        .section p { color: #888; font-size: 14px; }
+        .section p { color: var(--muted); font-size: 14px; font-weight: 500; }
         .comparison-row {
             display: flex;
             gap: 30px;
@@ -58,9 +97,11 @@
             text-align: center;
         }
         .comparison-item h4 {
-            color: #aaa;
+            color: var(--muted);
             margin: 0 0 10px 0;
             font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
             text-transform: uppercase;
         }
         .punk-pair {
@@ -73,13 +114,16 @@
         }
         .punk-box .label {
             font-size: 10px;
-            color: #666;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--muted);
             margin-bottom: 4px;
         }
         .canvas-container {
-            background: #638596;
+            background: var(--punk-bg);
             padding: 0;
-            border-radius: 4px;
+            border-radius: 6px;
             display: inline-block;
         }
         canvas {
@@ -89,7 +133,7 @@
         }
         .arrow {
             font-size: 24px;
-            color: #6a4a9e;
+            color: var(--accent);
             display: flex;
             align-items: center;
             padding-bottom: 20px;
@@ -101,14 +145,26 @@
             flex-wrap: wrap;
         }
         .skin-tone-group h4 {
-            color: #aaa;
+            color: var(--muted);
             margin: 0 0 10px 0;
             font-size: 12px;
+            font-weight: 700;
             text-align: center;
         }
     </style>
 </head>
 <body>
+    <header class="tp-nav">
+        <a class="tp-brand" href="/">
+            <img src="favicon.png" alt="">
+            <span>Punks Remastered</span>
+        </a>
+        <nav class="tp-links">
+            <a href="/#home">Home</a>
+            <a href="/#wallet">My Punks</a>
+            <a class="active" href="traits.html">All Traits</a>
+        </nav>
+    </header>
     <h1>Remastered Traits Preview</h1>
     <p class="subtitle">Each remastered trait shown on a plain punk head with no other accessories</p>
 
@@ -487,10 +543,10 @@
         // Skin colors by tone for extra ear pixels
         // Main skin color and shadow color (used for bottom-right eye pixel)
         const SKIN_COLORS = {
-            'Light': {r: 219, g: 177, b: 128, shadowR: 201, shadowG: 175, shadowB: 145}, // #dbb180, shadow #c9af91
-            'Medium': {r: 174, g: 139, b: 97, shadowR: 156, shadowG: 124, shadowB: 88}, // #ae8b61, shadow #9c7c58
-            'Dark': {r: 113, g: 63, b: 29, shadowR: 96, shadowG: 53, shadowB: 24}, // #713f1d, shadow #603518
-            'Albino': {r: 234, g: 217, b: 217, shadowR: 223, shadowG: 206, shadowB: 206}, // #ead9d9, shadow #dfcece
+            'Light': {r: 219, g: 177, b: 128, shadowR: 210, shadowG: 157, shadowB: 96}, // #dbb180, eye shadow #d29d60
+            'Medium': {r: 174, g: 139, b: 97, shadowR: 167, shadowG: 124, shadowB: 71}, // #ae8b61, eye shadow #a77c47
+            'Dark': {r: 113, g: 63, b: 29, shadowR: 114, shadowG: 55, shadowB: 9}, // #713f1d, eye shadow #723709
+            'Albino': {r: 234, g: 217, b: 217, shadowR: 201, shadowG: 178, shadowB: 178}, // #ead9d9, eye shadow #c9b2b2
         };
 
 
@@ -593,30 +649,18 @@
 
             let base = extractSprite(SPRITE_IDS[`base_${skinTone}`]);
 
-            // Fix female eyes - the f,s base sprites don't include eyes
-            {
+            // Fix female eyes - the f,s base sprites already contain the correct
+            // black pupils at y=13 (x=9 and x=14), but with a stray white pixel
+            // just right of each pupil. Recolor those to the per-tone eye shadow
+            // so the eyes match the original punks (dark pupils, no white sclera).
+            if (SKIN_COLORS[skinTone]) {
                 const baseCtx = base.getContext('2d');
                 const imageData = baseCtx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
-
-                // Add eyes at y=12: pupil (black) + sclera (white)
-                let idx = (12 * SPRITE_SIZE + 9) * 4;
-                imageData.data[idx] = 0; imageData.data[idx + 1] = 0; imageData.data[idx + 2] = 0; imageData.data[idx + 3] = 255;
-                idx = (12 * SPRITE_SIZE + 10) * 4;
-                imageData.data[idx] = 255; imageData.data[idx + 1] = 255; imageData.data[idx + 2] = 255; imageData.data[idx + 3] = 255;
-                idx = (12 * SPRITE_SIZE + 14) * 4;
-                imageData.data[idx] = 0; imageData.data[idx + 1] = 0; imageData.data[idx + 2] = 0; imageData.data[idx + 3] = 255;
-                idx = (12 * SPRITE_SIZE + 15) * 4;
-                imageData.data[idx] = 255; imageData.data[idx + 1] = 255; imageData.data[idx + 2] = 255; imageData.data[idx + 3] = 255;
-
-                // Fix eye shadow below eyes at y=13 (white in base → skin shadow)
-                if (SKIN_COLORS[skinTone]) {
-                    const shadow = SKIN_COLORS[skinTone];
-                    idx = (13 * SPRITE_SIZE + 10) * 4;
-                    imageData.data[idx] = shadow.shadowR; imageData.data[idx + 1] = shadow.shadowG; imageData.data[idx + 2] = shadow.shadowB; imageData.data[idx + 3] = 255;
-                    idx = (13 * SPRITE_SIZE + 15) * 4;
+                const shadow = SKIN_COLORS[skinTone];
+                for (const x of [10, 15]) {
+                    const idx = (13 * SPRITE_SIZE + x) * 4;
                     imageData.data[idx] = shadow.shadowR; imageData.data[idx + 1] = shadow.shadowG; imageData.data[idx + 2] = shadow.shadowB; imageData.data[idx + 3] = 255;
                 }
-
                 baseCtx.putImageData(imageData, 0, 0);
             }
             if (shiftEar) {
