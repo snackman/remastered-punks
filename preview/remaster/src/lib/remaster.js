@@ -4,10 +4,9 @@ import {
   MALE_SPRITE_IDS,
   LAYER_ORDER,
   TRAIT_TO_LAYER,
-  EAR_VISIBLE_HAIRSTYLES,
   SKIN_COLORS,
   TRAIT_FILL_COLORS,
-} from './constants';
+} from '@lib/constants.js';
 
 import {
   extractSprite,
@@ -16,57 +15,9 @@ import {
   shiftEarOnBase,
 } from './sprites';
 
-// Get list of remasters applicable to a punk
-export function getRemasters(punk) {
-  const remasters = [];
-  const isFemale = punk.gender === 'Female';
-  const isMale = punk.gender === 'Male';
-
-  if (isFemale) {
-    // Check for ear-visible hairstyles
-    const earVisibleTrait = punk.accessories.find(a => EAR_VISIBLE_HAIRSTYLES.has(a));
-    if (earVisibleTrait) {
-      remasters.push({type: 'ear', trait: earVisibleTrait, description: 'Ear shifted down 1px'});
-
-      // If Regular Shades present, shift it too
-      if (punk.accessories.includes('Regular Shades')) {
-        remasters.push({type: 'shades', trait: 'Regular Shades', description: 'Regular Shades shifted down 1px'});
-      }
-
-      // If Earring present, shift it too
-      if (punk.accessories.includes('Earring')) {
-        remasters.push({type: 'earring', trait: 'Earring', description: 'Earring shifted down 1px'});
-      }
-    }
-
-    // Choker remaster
-    if (punk.accessories.includes('Choker')) {
-      remasters.push({type: 'choker', trait: 'Choker', description: 'Choker replaced with 3 centered pixels'});
-    }
-  }
-
-  if (isMale) {
-    // Front Beard remaster
-    if (punk.accessories.includes('Front Beard')) {
-      remasters.push({type: 'frontBeard', trait: 'Front Beard', description: 'Added beard pixels at chin'});
-    }
-    if (punk.accessories.includes('Front Beard Dark')) {
-      remasters.push({type: 'frontBeardDark', trait: 'Front Beard Dark', description: 'Added beard pixels at chin'});
-    }
-
-    // Small Shades remaster
-    if (punk.accessories.includes('Small Shades')) {
-      remasters.push({type: 'smallShades', trait: 'Small Shades', description: 'Added nose bridge pixels'});
-    }
-  }
-
-  return remasters;
-}
-
-// Check if a punk has any remasters available
-export function hasRemasters(punk) {
-  return getRemasters(punk).length > 0;
-}
+// Re-export shared logic from lib
+export { getRemasters, hasRemasters } from '@lib/remaster-logic.js';
+import { getRemasters } from '@lib/remaster-logic.js';
 
 // Composite a punk with remastering
 export function compositePunk(punk, applyRemasters = false) {
@@ -85,24 +36,18 @@ export function compositePunk(punk, applyRemasters = false) {
   const baseKey = isNonHuman ? `base_${punk.type}` : `base_${punk.skinTone}`;
   let baseSprite = extractSprite(spriteIds[baseKey]);
 
-  // Fix eye shadow pixels for female
+  // Fix female eyes - the f,s base sprites already contain the correct black
+  // pupils at y=13 (x=9 and x=14), but with a stray white pixel just right of
+  // each pupil. Recolor those to the per-tone eye shadow so the eyes match the
+  // original punks (two dark pupils at y=13, no white sclera, nothing at y=12).
   if (isFemale && SKIN_COLORS[punk.skinTone]) {
     const baseCtx = baseSprite.getContext('2d');
     const imageData = baseCtx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
     const shadow = SKIN_COLORS[punk.skinTone];
-
-    let idx = (13 * SPRITE_SIZE + 10) * 4;
-    imageData.data[idx] = shadow.shadowR;
-    imageData.data[idx + 1] = shadow.shadowG;
-    imageData.data[idx + 2] = shadow.shadowB;
-    imageData.data[idx + 3] = 255;
-
-    idx = (13 * SPRITE_SIZE + 15) * 4;
-    imageData.data[idx] = shadow.shadowR;
-    imageData.data[idx + 1] = shadow.shadowG;
-    imageData.data[idx + 2] = shadow.shadowB;
-    imageData.data[idx + 3] = 255;
-
+    for (const x of [10, 15]) {
+      const idx = (13 * SPRITE_SIZE + x) * 4;
+      imageData.data[idx] = shadow.shadowR; imageData.data[idx + 1] = shadow.shadowG; imageData.data[idx + 2] = shadow.shadowB; imageData.data[idx + 3] = 255;
+    }
     baseCtx.putImageData(imageData, 0, 0);
   }
 

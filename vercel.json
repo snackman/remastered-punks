@@ -1,0 +1,17 @@
+{
+  "buildCommand": "cd preview/remaster && npm install && npm run build && cp -r ../../data dist/data && cp ../../preview/traits.html dist/traits.html",
+  "outputDirectory": "preview/remaster/dist",
+  "installCommand": "cd api && npm install && cd .. && cd preview/remaster && npm install",
+  "framework": null,
+  "functions": {
+    "api/*.js": {
+      "includeFiles": "data/**"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/:punkId(\\d+)",
+      "destination": "/api/:punkId"
+    }
+  ]
+}
