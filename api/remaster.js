@@ -35,16 +35,17 @@ export function compositePunk(punk, applyRemasters = false) {
   const baseKey = isNonHuman ? `base_${punk.type}` : `base_${punk.skinTone}`;
   let baseSprite = extractSprite(spriteIds[baseKey]);
 
-  // Fix female eyes - the f,s base sprites already contain the correct black
-  // pupils at y=13 (x=9 and x=14), but with a stray white pixel just right of
-  // each pupil. Recolor those to the per-tone eye shadow so the eyes match the
-  // original punks (two dark pupils at y=13, no white sclera, nothing at y=12).
-  if (isFemale && SKIN_COLORS[punk.skinTone]) {
+  // Fix human eyes - the base sprites contain the correct black pupils but a
+  // stray white pixel just right of each; recolor it to the per-tone eye shadow
+  // so the eyes match the original punks (dark pupils, no white sclera). Male
+  // eyes sit at y=12; female eyes one row lower at y=13.
+  if (SKIN_COLORS[punk.skinTone]) {
     const baseCtx = baseSprite.getContext('2d');
     const imageData = baseCtx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
     const shadow = SKIN_COLORS[punk.skinTone];
+    const eyeRow = isFemale ? 13 : 12;
     for (const x of [10, 15]) {
-      const idx = (13 * SPRITE_SIZE + x) * 4;
+      const idx = (eyeRow * SPRITE_SIZE + x) * 4;
       imageData.data[idx] = shadow.shadowR; imageData.data[idx + 1] = shadow.shadowG; imageData.data[idx + 2] = shadow.shadowB; imageData.data[idx + 3] = 255;
     }
     baseCtx.putImageData(imageData, 0, 0);
