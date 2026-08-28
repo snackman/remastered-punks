@@ -36,7 +36,6 @@ function Home({ punkData, eligiblePunks, onNavigate }) {
   const [pos, setPos] = useState(-1);     // index into the shuffle history
   const [count, setCount] = useState(0);  // history length
   const [reveal, setReveal] = useState(false);      // "can't see the difference?" overlay
-  const [revealPhase, setRevealPhase] = useState('blink');
   const [changedCount, setChangedCount] = useState(0);
   const originalRef = useRef(null);
   const remasteredRef = useRef(null);
@@ -55,54 +54,37 @@ function Home({ punkData, eligiblePunks, onNavigate }) {
 
   const urlFor = (id) => `?punk=${id}${window.location.hash || '#home'}`;
 
-  // Show a brand-new punk: append to history (dropping any forward entries) and
-  // record a browser history entry so back/forward and refresh/share all work.
-  const goToNew = useCallback((id, { replace = false } = {}) => {
-    const p = punkDataRef.current[id];
-    if (!p) return;
-    const h = historyRef.current.slice(0, posRef.current + 1);
-    h.push(id);
-    historyRef.current = h;
-    const newPos = h.length - 1;
-    posRef.current = newPos;
-    setPos(newPos);
-    setCount(h.length);
-    setPunk(p);
-    const state = { punkHistory: true, pos: newPos };
-    if (replace) window.history.replaceState(state, '', urlFor(id));
-    else window.history.pushState(state, '', urlFor(id));
+  // Show the punk at a given history index and mirror it into the URL.
+  const showAt = useCallback((p) => {
+    const id = historyRef.current[p];
+    const punkObj = id != null ? punkDataRef.current[id] : null;
+    if (!punkObj) return;
+    posRef.current = p;
+    setPos(p);
+    setPunk(punkObj);
+    window.history.replaceState(null, '', urlFor(id));
   }, []);
+
+  // Shuffle appends to the history (never truncates forward entries) and jumps
+  // to the new punk at the end.
+  const goToNew = useCallback((id) => {
+    if (!punkDataRef.current[id]) return;
+    historyRef.current.push(id);
+    setCount(historyRef.current.length);
+    showAt(historyRef.current.length - 1);
+  }, [showAt]);
 
   const shuffle = useCallback(() => {
     const id = pickRandomByType(bucketsRef.current);
     if (id != null) goToNew(id);
   }, [goToNew]);
 
-  // Back/Next drive the browser history, so browser arrows and these stay in sync.
   const goBack = useCallback(() => {
-    if (posRef.current > 0) window.history.back();
-  }, []);
+    if (posRef.current > 0) showAt(posRef.current - 1);
+  }, [showAt]);
   const goNext = useCallback(() => {
-    if (posRef.current < historyRef.current.length - 1) window.history.forward();
-  }, []);
-
-  // Browser back/forward (and our Back/Next buttons) land here.
-  useEffect(() => {
-    const onPop = (e) => {
-      const st = e.state;
-      if (st && st.punkHistory && typeof st.pos === 'number') {
-        const id = historyRef.current[st.pos];
-        const p = id != null ? punkDataRef.current[id] : null;
-        if (p) {
-          posRef.current = st.pos;
-          setPos(st.pos);
-          setPunk(p);
-        }
-      }
-    };
-    window.addEventListener('popstate', onPop);
-    return () => window.removeEventListener('popstate', onPop);
-  }, []);
+    if (posRef.current < historyRef.current.length - 1) showAt(posRef.current + 1);
+  }, [showAt]);
 
   // Initial punk: honor ?punk=<id> from the URL (deep-link/refresh), else shuffle.
   const initedRef = useRef(false);
@@ -112,10 +94,10 @@ function Home({ punkData, eligiblePunks, onNavigate }) {
     initedRef.current = true;
     const q = parseInt(new URLSearchParams(window.location.search).get('punk'), 10);
     if (!Number.isNaN(q) && punkData[q]) {
-      goToNew(q, { replace: true });
+      goToNew(q);
     } else {
       const id = pickRandomByType(buckets);
-      if (id != null) goToNew(id, { replace: true });
+      if (id != null) goToNew(id);
     }
   }, [punkData, buckets, goToNew]);
 
@@ -138,9 +120,9 @@ function Home({ punkData, eligiblePunks, onNavigate }) {
     draw(remasteredRef.current, compositePunk(punk, true));
   }, [punk, reveal]);
 
-  // Reveal mode: overlay the two images in one spot, blink between them a few
-  // times (so the changed pixels flicker), then settle on the remaster with the
-  // changed pixels pulsing in a highlight colour.
+  // Reveal mode: overlay the two images in one spot and flicker between them so
+  // the changed pixels stand out. Both are drawn on the same background, so the
+  // diff count reflects only real pixel changes (not the transparent-vs-grey bg).
   useEffect(() => {
     if (!reveal || !punk || !overlayRef.current) return;
     const canvas = overlayRef.current;
@@ -148,21 +130,25 @@ function Home({ punkData, eligiblePunks, onNavigate }) {
     ctx.imageSmoothingEnabled = false;
     const S = SPRITE_SIZE * ZOOM;
 
-    const orig = extractPunk(punk.id);
+    // Composite the original onto the same background as the remaster
+    // (extractPunk's background is transparent, which would otherwise all count
+    // as "changed" against the remaster's opaque background).
+    const orig = document.createElement('canvas');
+    orig.width = SPRITE_SIZE;
+    orig.height = SPRITE_SIZE;
+    const oc = orig.getContext('2d');
+    oc.fillStyle = '#638596';
+    oc.fillRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+    oc.drawImage(extractPunk(punk.id), 0, 0);
+
     const rem = compositePunk(punk, true);
-    const od = orig.getContext('2d').getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE).data;
+    const od = oc.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE).data;
     const rd = rem.getContext('2d').getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE).data;
-    const changed = [];
-    for (let y = 0; y < SPRITE_SIZE; y++) {
-      for (let x = 0; x < SPRITE_SIZE; x++) {
-        const i = (y * SPRITE_SIZE + x) * 4;
-        if (od[i] !== rd[i] || od[i + 1] !== rd[i + 1] || od[i + 2] !== rd[i + 2] || od[i + 3] !== rd[i + 3]) {
-          changed.push([x, y]);
-        }
-      }
+    let changed = 0;
+    for (let i = 0; i < od.length; i += 4) {
+      if (od[i] !== rd[i] || od[i + 1] !== rd[i + 1] || od[i + 2] !== rd[i + 2]) changed += 1;
     }
-    setChangedCount(changed.length);
-    setRevealPhase('blink');
+    setChangedCount(changed);
 
     const drawImg = (src) => {
       ctx.clearRect(0, 0, S, S);
@@ -171,40 +157,18 @@ function Home({ punkData, eligiblePunks, onNavigate }) {
 
     let cancelled = false;
     let timer = null;
-    let raf = null;
-
-    const pulse = () => {
-      const startAt = performance.now();
-      const loop = (t) => {
-        if (cancelled) return;
-        drawImg(rem);
-        const a = 0.3 + 0.5 * (0.5 + 0.5 * Math.sin((t - startAt) / 220));
-        ctx.fillStyle = `rgba(255, 0, 200, ${a})`;
-        for (const [x, y] of changed) ctx.fillRect(x * ZOOM, y * ZOOM, ZOOM, ZOOM);
-        raf = requestAnimationFrame(loop);
-      };
-      raf = requestAnimationFrame(loop);
-    };
-
-    let toggles = 0;
-    const maxToggles = 6;
-    const blink = () => {
+    let showRem = true;
+    const flick = () => {
       if (cancelled) return;
-      drawImg(toggles % 2 === 0 ? orig : rem);
-      toggles += 1;
-      if (toggles <= maxToggles) {
-        timer = setTimeout(blink, 320);
-      } else {
-        setRevealPhase('diff');
-        pulse();
-      }
+      drawImg(showRem ? rem : orig);
+      showRem = !showRem;
+      timer = setTimeout(flick, 380);
     };
-    blink();
+    flick();
 
     return () => {
       cancelled = true;
       if (timer) clearTimeout(timer);
-      if (raf) cancelAnimationFrame(raf);
     };
   }, [reveal, punk]);
 
@@ -223,9 +187,7 @@ function Home({ punkData, eligiblePunks, onNavigate }) {
             height={SPRITE_SIZE * ZOOM}
           />
           <span className="hero-label">
-            {revealPhase === 'blink'
-              ? 'Watch for the flicker…'
-              : `${changedCount} pixel${changedCount === 1 ? '' : 's'} changed`}
+            {changedCount} pixel{changedCount === 1 ? '' : 's'} changed
           </span>
         </div>
       ) : (
@@ -250,10 +212,6 @@ function Home({ punkData, eligiblePunks, onNavigate }) {
         </div>
       )}
 
-      <button className="reveal-toggle" onClick={() => setReveal((v) => !v)}>
-        {reveal ? 'Back to compare' : "Can't see the difference?"}
-      </button>
-
       {punk && (
         <div className="hero-meta">
           <a
@@ -269,6 +227,10 @@ function Home({ punkData, eligiblePunks, onNavigate }) {
           ))}
         </div>
       )}
+
+      <button className="reveal-toggle" onClick={() => setReveal((v) => !v)}>
+        {reveal ? 'Back to compare' : "Can't see the difference?"}
+      </button>
 
       <div className="hero-actions">
         <button className="btn btn-secondary" onClick={goBack} disabled={pos <= 0}>
