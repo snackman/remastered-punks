@@ -25,8 +25,12 @@ function Home({ punkData, eligiblePunks, onNavigate }) {
   const [punk, setPunk] = useState(null);
   const [pos, setPos] = useState(-1);     // index into the shuffle history
   const [count, setCount] = useState(0);  // history length
+  const [reveal, setReveal] = useState(false);      // "can't see the difference?" overlay
+  const [revealPhase, setRevealPhase] = useState('blink');
+  const [changedCount, setChangedCount] = useState(0);
   const originalRef = useRef(null);
   const remasteredRef = useRef(null);
+  const overlayRef = useRef(null);
 
   // Refs so the popstate handler and callbacks always see current values.
   const historyRef = useRef([]);          // array of punk ids, in view order
@@ -121,7 +125,77 @@ function Home({ punkData, eligiblePunks, onNavigate }) {
 
     draw(originalRef.current, extractPunk(punk.id));
     draw(remasteredRef.current, compositePunk(punk, true));
-  }, [punk]);
+  }, [punk, reveal]);
+
+  // Reveal mode: overlay the two images in one spot, blink between them a few
+  // times (so the changed pixels flicker), then settle on the remaster with the
+  // changed pixels pulsing in a highlight colour.
+  useEffect(() => {
+    if (!reveal || !punk || !overlayRef.current) return;
+    const canvas = overlayRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    const S = SPRITE_SIZE * ZOOM;
+
+    const orig = extractPunk(punk.id);
+    const rem = compositePunk(punk, true);
+    const od = orig.getContext('2d').getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE).data;
+    const rd = rem.getContext('2d').getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE).data;
+    const changed = [];
+    for (let y = 0; y < SPRITE_SIZE; y++) {
+      for (let x = 0; x < SPRITE_SIZE; x++) {
+        const i = (y * SPRITE_SIZE + x) * 4;
+        if (od[i] !== rd[i] || od[i + 1] !== rd[i + 1] || od[i + 2] !== rd[i + 2] || od[i + 3] !== rd[i + 3]) {
+          changed.push([x, y]);
+        }
+      }
+    }
+    setChangedCount(changed.length);
+    setRevealPhase('blink');
+
+    const drawImg = (src) => {
+      ctx.clearRect(0, 0, S, S);
+      ctx.drawImage(src, 0, 0, SPRITE_SIZE, SPRITE_SIZE, 0, 0, S, S);
+    };
+
+    let cancelled = false;
+    let timer = null;
+    let raf = null;
+
+    const pulse = () => {
+      const startAt = performance.now();
+      const loop = (t) => {
+        if (cancelled) return;
+        drawImg(rem);
+        const a = 0.3 + 0.5 * (0.5 + 0.5 * Math.sin((t - startAt) / 220));
+        ctx.fillStyle = `rgba(255, 0, 200, ${a})`;
+        for (const [x, y] of changed) ctx.fillRect(x * ZOOM, y * ZOOM, ZOOM, ZOOM);
+        raf = requestAnimationFrame(loop);
+      };
+      raf = requestAnimationFrame(loop);
+    };
+
+    let toggles = 0;
+    const maxToggles = 6;
+    const blink = () => {
+      if (cancelled) return;
+      drawImg(toggles % 2 === 0 ? orig : rem);
+      toggles += 1;
+      if (toggles <= maxToggles) {
+        timer = setTimeout(blink, 320);
+      } else {
+        setRevealPhase('diff');
+        pulse();
+      }
+    };
+    blink();
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [reveal, punk]);
 
   return (
     <section className="home">
@@ -130,25 +204,44 @@ function Home({ punkData, eligiblePunks, onNavigate }) {
         Every eligible punk can mint a remaster that follows the original onchain.
       </p>
 
-      <div className="hero-compare">
-        <div className="hero-side">
+      {reveal ? (
+        <div className="hero-overlay">
           <canvas
-            ref={originalRef}
+            ref={overlayRef}
             width={SPRITE_SIZE * ZOOM}
             height={SPRITE_SIZE * ZOOM}
           />
-          <span className="hero-label">Original</span>
+          <span className="hero-label">
+            {revealPhase === 'blink'
+              ? 'Watch for the flicker…'
+              : `${changedCount} pixel${changedCount === 1 ? '' : 's'} changed`}
+          </span>
         </div>
-        <span className="hero-arrow">&rarr;</span>
-        <div className="hero-side">
-          <canvas
-            ref={remasteredRef}
-            width={SPRITE_SIZE * ZOOM}
-            height={SPRITE_SIZE * ZOOM}
-          />
-          <span className="hero-label">Remastered</span>
+      ) : (
+        <div className="hero-compare">
+          <div className="hero-side">
+            <canvas
+              ref={originalRef}
+              width={SPRITE_SIZE * ZOOM}
+              height={SPRITE_SIZE * ZOOM}
+            />
+            <span className="hero-label">Original</span>
+          </div>
+          <span className="hero-arrow">&rarr;</span>
+          <div className="hero-side">
+            <canvas
+              ref={remasteredRef}
+              width={SPRITE_SIZE * ZOOM}
+              height={SPRITE_SIZE * ZOOM}
+            />
+            <span className="hero-label">Remastered</span>
+          </div>
         </div>
-      </div>
+      )}
+
+      <button className="reveal-toggle" onClick={() => setReveal((v) => !v)}>
+        {reveal ? 'Back to compare' : "Can't see the difference?"}
+      </button>
 
       {punk && (
         <div className="hero-meta">
