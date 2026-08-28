@@ -23,18 +23,86 @@ function pickRandom(eligiblePunks, punkData) {
 
 function Home({ punkData, eligiblePunks, onNavigate }) {
   const [punk, setPunk] = useState(null);
+  const [pos, setPos] = useState(-1);     // index into the shuffle history
+  const [count, setCount] = useState(0);  // history length
   const originalRef = useRef(null);
   const remasteredRef = useRef(null);
 
-  const shuffle = useCallback(() => {
-    if (!punkData || !Object.keys(punkData).length) return;
-    setPunk(pickRandom(eligiblePunks, punkData));
-  }, [punkData, eligiblePunks]);
+  // Refs so the popstate handler and callbacks always see current values.
+  const historyRef = useRef([]);          // array of punk ids, in view order
+  const posRef = useRef(-1);
+  const punkDataRef = useRef(punkData);
+  const eligibleRef = useRef(eligiblePunks);
+  useEffect(() => { punkDataRef.current = punkData; }, [punkData]);
+  useEffect(() => { eligibleRef.current = eligiblePunks; }, [eligiblePunks]);
 
-  // Pick an initial punk once data is available.
+  const urlFor = (id) => `?punk=${id}${window.location.hash || '#home'}`;
+
+  // Show a brand-new punk: append to history (dropping any forward entries) and
+  // record a browser history entry so back/forward and refresh/share all work.
+  const goToNew = useCallback((id, { replace = false } = {}) => {
+    const p = punkDataRef.current[id];
+    if (!p) return;
+    const h = historyRef.current.slice(0, posRef.current + 1);
+    h.push(id);
+    historyRef.current = h;
+    const newPos = h.length - 1;
+    posRef.current = newPos;
+    setPos(newPos);
+    setCount(h.length);
+    setPunk(p);
+    const state = { punkHistory: true, pos: newPos };
+    if (replace) window.history.replaceState(state, '', urlFor(id));
+    else window.history.pushState(state, '', urlFor(id));
+  }, []);
+
+  const shuffle = useCallback(() => {
+    const data = punkDataRef.current;
+    if (!data || !Object.keys(data).length) return;
+    const p = pickRandom(eligibleRef.current, data);
+    if (p) goToNew(p.id);
+  }, [goToNew]);
+
+  // Back/Next drive the browser history, so browser arrows and these stay in sync.
+  const goBack = useCallback(() => {
+    if (posRef.current > 0) window.history.back();
+  }, []);
+  const goNext = useCallback(() => {
+    if (posRef.current < historyRef.current.length - 1) window.history.forward();
+  }, []);
+
+  // Browser back/forward (and our Back/Next buttons) land here.
   useEffect(() => {
-    shuffle();
-  }, [shuffle]);
+    const onPop = (e) => {
+      const st = e.state;
+      if (st && st.punkHistory && typeof st.pos === 'number') {
+        const id = historyRef.current[st.pos];
+        const p = id != null ? punkDataRef.current[id] : null;
+        if (p) {
+          posRef.current = st.pos;
+          setPos(st.pos);
+          setPunk(p);
+        }
+      }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  // Initial punk: honor ?punk=<id> from the URL (deep-link/refresh), else shuffle.
+  const initedRef = useRef(false);
+  useEffect(() => {
+    if (initedRef.current) return;
+    if (!punkData || !Object.keys(punkData).length) return;
+    initedRef.current = true;
+    const q = parseInt(new URLSearchParams(window.location.search).get('punk'), 10);
+    if (!Number.isNaN(q) && punkData[q]) {
+      goToNew(q, { replace: true });
+    } else {
+      const p = pickRandom(eligiblePunks, punkData);
+      if (p) goToNew(p.id, { replace: true });
+    }
+  }, [punkData, eligiblePunks, goToNew]);
 
   // Draw both punks whenever the selection changes.
   useEffect(() => {
@@ -99,7 +167,20 @@ function Home({ punkData, eligiblePunks, onNavigate }) {
       )}
 
       <div className="hero-actions">
+        <button className="btn btn-secondary" onClick={goBack} disabled={pos <= 0}>
+          &larr; Back
+        </button>
         <button className="btn" onClick={shuffle}>Shuffle &#8635;</button>
+        <button className="btn btn-secondary" onClick={goNext} disabled={pos >= count - 1}>
+          Next &rarr;
+        </button>
+      </div>
+
+      {count > 1 && (
+        <div className="hero-position">{pos + 1} / {count}</div>
+      )}
+
+      <div className="hero-actions hero-actions-secondary">
         <button className="btn btn-secondary" onClick={() => onNavigate('wallet')}>
           View my punks
         </button>

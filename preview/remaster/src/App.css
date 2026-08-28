@@ -224,6 +224,30 @@
   flex-wrap: wrap;
 }
 
+.hero-actions-secondary {
+  margin-top: 12px;
+}
+
+.hero-actions .btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.hero-actions .btn:disabled:hover {
+  background: #fff;
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.hero-position {
+  margin-top: 10px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+
 /* ===== Loading / Messages ===== */
 .loading,
 .error,
