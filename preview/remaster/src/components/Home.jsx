@@ -1,24 +1,34 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { SPRITE_SIZE } from '../lib/constants';
 import { extractPunk } from '../lib/sprites';
 import { compositePunk, getRemasters } from '../lib/remaster';
 
 const ZOOM = 9;
 
-// Pick a random eligible punk that actually has a visible remaster.
-function pickRandom(eligiblePunks, punkData) {
+// Bucket eligible punks by alteration type (the remaster trait: each hairstyle,
+// 'Bald', Regular Shades, Earring, Choker, Front Beard, Small Shades, ...).
+function buildBuckets(eligiblePunks, punkData) {
   const ids = eligiblePunks && eligiblePunks.length
     ? eligiblePunks
     : Object.keys(punkData).map(Number);
-  if (!ids.length) return null;
-
-  for (let tries = 0; tries < 60; tries++) {
-    const id = ids[Math.floor(Math.random() * ids.length)];
-    const punk = punkData[id];
-    if (punk && getRemasters(punk).length > 0) return punk;
+  const map = {};
+  for (const id of ids) {
+    const p = punkData[id];
+    if (!p) continue;
+    for (const r of getRemasters(p)) {
+      (map[r.trait] || (map[r.trait] = [])).push(id);
+    }
   }
-  // Fallback: first id with data
-  return punkData[ids[0]] || null;
+  return { keys: Object.keys(map), map };
+}
+
+// Pick a random alteration type (equal chance each), then a random punk of that
+// type - so rare alterations show as often as common ones.
+function pickRandomByType(buckets) {
+  if (!buckets.keys.length) return null;
+  const key = buckets.keys[Math.floor(Math.random() * buckets.keys.length)];
+  const bucket = buckets.map[key];
+  return bucket[Math.floor(Math.random() * bucket.length)];
 }
 
 function Home({ punkData, eligiblePunks, onNavigate }) {
@@ -36,9 +46,12 @@ function Home({ punkData, eligiblePunks, onNavigate }) {
   const historyRef = useRef([]);          // array of punk ids, in view order
   const posRef = useRef(-1);
   const punkDataRef = useRef(punkData);
-  const eligibleRef = useRef(eligiblePunks);
   useEffect(() => { punkDataRef.current = punkData; }, [punkData]);
-  useEffect(() => { eligibleRef.current = eligiblePunks; }, [eligiblePunks]);
+
+  // Alteration-type buckets for weighted shuffle (rebuilt when data changes).
+  const buckets = useMemo(() => buildBuckets(eligiblePunks, punkData), [eligiblePunks, punkData]);
+  const bucketsRef = useRef(buckets);
+  useEffect(() => { bucketsRef.current = buckets; }, [buckets]);
 
   const urlFor = (id) => `?punk=${id}${window.location.hash || '#home'}`;
 
@@ -61,10 +74,8 @@ function Home({ punkData, eligiblePunks, onNavigate }) {
   }, []);
 
   const shuffle = useCallback(() => {
-    const data = punkDataRef.current;
-    if (!data || !Object.keys(data).length) return;
-    const p = pickRandom(eligibleRef.current, data);
-    if (p) goToNew(p.id);
+    const id = pickRandomByType(bucketsRef.current);
+    if (id != null) goToNew(id);
   }, [goToNew]);
 
   // Back/Next drive the browser history, so browser arrows and these stay in sync.
@@ -97,16 +108,16 @@ function Home({ punkData, eligiblePunks, onNavigate }) {
   const initedRef = useRef(false);
   useEffect(() => {
     if (initedRef.current) return;
-    if (!punkData || !Object.keys(punkData).length) return;
+    if (!punkData || !Object.keys(punkData).length || !buckets.keys.length) return;
     initedRef.current = true;
     const q = parseInt(new URLSearchParams(window.location.search).get('punk'), 10);
     if (!Number.isNaN(q) && punkData[q]) {
       goToNew(q, { replace: true });
     } else {
-      const p = pickRandom(eligiblePunks, punkData);
-      if (p) goToNew(p.id, { replace: true });
+      const id = pickRandomByType(buckets);
+      if (id != null) goToNew(id, { replace: true });
     }
-  }, [punkData, eligiblePunks, goToNew]);
+  }, [punkData, buckets, goToNew]);
 
   // Draw both punks whenever the selection changes.
   useEffect(() => {
