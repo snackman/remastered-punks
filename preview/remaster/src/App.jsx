@@ -5,7 +5,7 @@ import {
   RainbowKitProvider,
   ConnectButton,
 } from '@rainbow-me/rainbowkit';
-import { WagmiProvider, useAccount, useChainId, useSwitchChain } from 'wagmi';
+import { WagmiProvider, useAccount, useChainId } from 'wagmi';
 import { mainnet, sepolia } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -26,10 +26,35 @@ const config = getDefaultConfig({
 const queryClient = new QueryClient();
 
 function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, connector } = useAccount();
   const chainId = useChainId();
   const isTestnet = chainId === 11155111;
-  const { switchChain, isPending: isSwitching } = useSwitchChain();
+  const [testnetStatus, setTestnetStatus] = useState('');
+
+  // Explicitly add Sepolia to the wallet (and switch to it). Using
+  // wallet_addEthereumChain directly is more reliable than switchChain, which
+  // some wallets ignore when they don't already have the network.
+  const addTestnet = async () => {
+    setTestnetStatus('pending');
+    try {
+      const provider = await connector?.getProvider();
+      if (!provider?.request) throw new Error('No wallet provider found');
+      await provider.request({
+        method: 'wallet_addEthereumChain',
+        params: [{
+          chainId: '0xaa36a7', // 11155111
+          chainName: 'Sepolia',
+          nativeCurrency: { name: 'Sepolia Ether', symbol: 'ETH', decimals: 18 },
+          rpcUrls: ['https://ethereum-sepolia-rpc.publicnode.com', 'https://rpc.sepolia.org'],
+          blockExplorerUrls: ['https://sepolia.etherscan.io'],
+        }],
+      });
+      setTestnetStatus('');
+    } catch (err) {
+      console.error('Add testnet failed:', err);
+      setTestnetStatus(err?.shortMessage || err?.message || 'Could not add the network');
+    }
+  };
 
   const VALID_TABS = ['home', 'wallet', 'lookup'];
   const [activeTab, setActiveTab] = useState(() => {
@@ -79,11 +104,13 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
           {isConnected && !isTestnet && (
             <button
               className="testnet-switch"
-              onClick={() => switchChain({ chainId: sepolia.id })}
-              disabled={isSwitching}
-              title="Add the Sepolia test network to your wallet and switch to it"
+              onClick={addTestnet}
+              disabled={testnetStatus === 'pending'}
+              title={testnetStatus && testnetStatus !== 'pending'
+                ? testnetStatus
+                : 'Add the Sepolia test network to your wallet and switch to it'}
             >
-              {isSwitching ? 'Adding…' : 'Add Testnet'}
+              {testnetStatus === 'pending' ? 'Adding…' : 'Add Testnet'}
             </button>
           )}
           <ConnectButton />
