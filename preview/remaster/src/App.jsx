@@ -5,7 +5,7 @@ import {
   RainbowKitProvider,
   ConnectButton,
 } from '@rainbow-me/rainbowkit';
-import { WagmiProvider, useAccount, useChainId } from 'wagmi';
+import { WagmiProvider, useAccount, useChainId, useSwitchChain } from 'wagmi';
 import { mainnet, sepolia } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -29,6 +29,7 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const isTestnet = chainId === 11155111;
+  const { switchChain, isPending: isSwitching } = useSwitchChain();
 
   const VALID_TABS = ['home', 'wallet', 'lookup'];
   const [activeTab, setActiveTab] = useState(() => {
@@ -75,6 +76,16 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
           <a href={traitsUrl}>All Traits</a>
         </nav>
         <div className="connect-wrapper">
+          {isConnected && !isTestnet && (
+            <button
+              className="testnet-switch"
+              onClick={() => switchChain({ chainId: sepolia.id })}
+              disabled={isSwitching}
+              title="Add the Sepolia test network to your wallet and switch to it"
+            >
+              {isSwitching ? 'Adding…' : 'Add Testnet'}
+            </button>
+          )}
           <ConnectButton />
         </div>
       </header>
