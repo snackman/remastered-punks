@@ -618,4 +618,21 @@
     margin-left: 0;
     width: 100%;
   }
+  /* Keep the Original/Remastered pair side by side on mobile */
+  .hero-compare {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  .hero-side {
+    gap: 8px;
+  }
+  .hero-side canvas {
+    width: 40vw;
+    height: 40vw;
+    max-width: 216px;
+    max-height: 216px;
+  }
+  .hero-arrow {
+    font-size: 20px;
+  }
 }
