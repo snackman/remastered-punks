@@ -31,28 +31,41 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
   const isTestnet = chainId === 11155111;
   const [testnetStatus, setTestnetStatus] = useState('');
 
-  // Explicitly add Sepolia to the wallet (and switch to it). Using
-  // wallet_addEthereumChain directly is more reliable than switchChain, which
-  // some wallets ignore when they don't already have the network.
+  // Switch the wallet to Ethereum Sepolia. Try switch first (works for wallets
+  // that already know Sepolia, e.g. MetaMask, which rejects "adding" its own
+  // default networks); only fall back to adding it if the wallet reports the
+  // chain is unknown (error 4902).
   const addTestnet = async () => {
     setTestnetStatus('pending');
     try {
       const provider = await connector?.getProvider();
       if (!provider?.request) throw new Error('No wallet provider found');
-      await provider.request({
-        method: 'wallet_addEthereumChain',
-        params: [{
-          chainId: '0xaa36a7', // 11155111
-          chainName: 'Sepolia',
-          nativeCurrency: { name: 'Sepolia Ether', symbol: 'ETH', decimals: 18 },
-          rpcUrls: ['https://ethereum-sepolia-rpc.publicnode.com', 'https://rpc.sepolia.org'],
-          blockExplorerUrls: ['https://sepolia.etherscan.io'],
-        }],
-      });
+      try {
+        await provider.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0xaa36a7' }], // 11155111
+        });
+      } catch (switchErr) {
+        const code = switchErr?.code ?? switchErr?.data?.originalError?.code;
+        if (code === 4902) {
+          await provider.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: '0xaa36a7',
+              chainName: 'Sepolia',
+              nativeCurrency: { name: 'Sepolia Ether', symbol: 'ETH', decimals: 18 },
+              rpcUrls: ['https://ethereum-sepolia-rpc.publicnode.com', 'https://rpc.sepolia.org'],
+              blockExplorerUrls: ['https://sepolia.etherscan.io'],
+            }],
+          });
+        } else {
+          throw switchErr;
+        }
+      }
       setTestnetStatus('');
     } catch (err) {
-      console.error('Add testnet failed:', err);
-      setTestnetStatus(err?.shortMessage || err?.message || 'Could not add the network');
+      console.error('Switch to testnet failed:', err);
+      setTestnetStatus(err?.shortMessage || err?.message || 'Could not switch network');
     }
   };
 
