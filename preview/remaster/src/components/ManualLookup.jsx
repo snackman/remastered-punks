@@ -35,7 +35,7 @@ function ManualLookup({ punkData, merkleProofs = {} }) {
             type="number"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Enter punk ID"
+            placeholder="Enter Punk ID"
             min="0"
             max="9999"
           />
