@@ -8,11 +8,13 @@ contract DeployRemasteredPunks is Script {
     // CryptoPunks mainnet address
     address constant CRYPTOPUNKS_MAINNET = 0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB;
 
-    // CryptoPunks Sepolia mock (you'll need to deploy this or use an existing mock)
-    address constant CRYPTOPUNKS_SEPOLIA = address(0); // TODO: Set after deploying mock
+    // CryptoPunks Sepolia mock (already deployed)
+    address constant CRYPTOPUNKS_SEPOLIA = 0x6fCdfA445bF2752D4F38AB67F08c7eEDEfEaAed8;
 
-    // Merkle root for 3,558 eligible punks (ear-visible females + bald + male traits)
-    bytes32 constant MERKLE_ROOT = 0xe0a95f0e5247bb0174ac777b2c446d3a64253cc0ebde877453d03634afe34587;
+    // Merkle root for the current eligible set (3,578 punks: ear/shades/earring/
+    // choker/beard/small-shades + the 29 frown-over-beard remasters). Regenerate
+    // with contracts/script/generateMerkleTree.js after changing eligibility.
+    bytes32 constant MERKLE_ROOT = 0x0408f10aa42e6b75de0cb29dbcd9c32c0a5f85a4bdb703be79fa457ba5dd659c;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
