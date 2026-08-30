@@ -79,9 +79,22 @@ function createArrow() {
   return arrow;
 }
 
+// Count pixels that differ (RGB) between two 24x24 source canvases - how many
+// pixels this remaster actually changes.
+function countPixelDiff(a, b) {
+  const da = a.getContext('2d').getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE).data;
+  const db = b.getContext('2d').getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE).data;
+  let n = 0;
+  for (let i = 0; i < da.length; i += 4) {
+    if (da[i] !== db[i] || da[i + 1] !== db[i + 1] || da[i + 2] !== db[i + 2]) n++;
+  }
+  return n;
+}
+
 function createComparison(skinTone, originalCanvas, remasteredCanvas) {
   const group = document.createElement('div');
   group.className = 'skin-tone-group';
+  group.dataset.pixelsChanged = String(countPixelDiff(originalCanvas, remasteredCanvas));
 
   const title = document.createElement('h4');
   title.textContent = SKIN_LABELS[skinTone];
@@ -254,6 +267,23 @@ function renderFrownBeardComparison() {
   }
 }
 
+// Show how many pixels each trait's remaster changes (max across skin tones,
+// since the count is essentially the same for each).
+function addPixelCounts() {
+  document.querySelectorAll('.section').forEach(sec => {
+    const groups = sec.querySelectorAll('.skin-tone-group[data-pixels-changed]');
+    if (!groups.length) return;
+    let max = 0;
+    groups.forEach(g => { max = Math.max(max, parseInt(g.dataset.pixelsChanged, 10) || 0); });
+    const content = sec.querySelector('.section-content');
+    if (!content) return;
+    const el = document.createElement('p');
+    el.className = 'trait-pixels';
+    el.textContent = `${max} pixel${max === 1 ? '' : 's'} changed`;
+    content.insertBefore(el, content.firstChild);
+  });
+}
+
 function setupCollapsible() {
   document.querySelectorAll('.section h2').forEach(h2 => {
     h2.addEventListener('click', () => {
@@ -397,6 +427,7 @@ async function init() {
     // Reorder sections by how many eligible punks each remaster affects.
     orderSectionsByCount();
     addTraitLinks();
+    addPixelCounts();
   } catch (err) {
     console.error('Init failed:', err);
     document.body.innerHTML = `<p style="color:red;text-align:center;padding:40px;">Error: ${err.message}</p>`;
