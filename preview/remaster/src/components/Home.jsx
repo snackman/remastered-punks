@@ -37,6 +37,7 @@ function Home({ punkData, eligiblePunks, onNavigate }) {
   const [count, setCount] = useState(0);  // history length
   const [reveal, setReveal] = useState(false);      // "can't see the difference?" overlay
   const [changedCount, setChangedCount] = useState(0);
+  const [revealShowing, setRevealShowing] = useState('remastered');
   const originalRef = useRef(null);
   const remasteredRef = useRef(null);
   const overlayRef = useRef(null);
@@ -161,6 +162,7 @@ function Home({ punkData, eligiblePunks, onNavigate }) {
     const flick = () => {
       if (cancelled) return;
       drawImg(showRem ? rem : orig);
+      setRevealShowing(showRem ? 'remastered' : 'original');
       showRem = !showRem;
       timer = setTimeout(flick, 380);
     };
@@ -187,7 +189,7 @@ function Home({ punkData, eligiblePunks, onNavigate }) {
             height={SPRITE_SIZE * ZOOM}
           />
           <span className="hero-label">
-            {changedCount} pixel{changedCount === 1 ? '' : 's'} changed
+            {revealShowing === 'remastered' ? 'Remastered' : 'Original'} · {changedCount} pixel{changedCount === 1 ? '' : 's'} changed
           </span>
         </div>
       ) : (
