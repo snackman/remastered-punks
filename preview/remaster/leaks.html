@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Type-B ear leaks · prototype</title>
+    <style>
+        :root { --accent:#1a43c8; --ink:#181818; --muted:#6b6b6b; --line:#e6e6e6; --panel:#f5f5f5; }
+        * { box-sizing:border-box; }
+        body { font-family:'Montserrat',sans-serif; color:#272727; margin:0; padding:32px 24px 72px; max-width:1180px; margin:0 auto; }
+        h1 { color:var(--ink); font-size:26px; margin:0 0 6px; }
+        .sub { color:var(--muted); font-size:14px; margin:0 0 6px; max-width:760px; line-height:1.5; }
+        .nav { margin:18px 0 24px; font-size:13px; font-weight:700; }
+        .nav a { color:var(--accent); text-decoration:none; margin-right:16px; }
+        .nav a:hover { text-decoration:underline; }
+        .legend { display:flex; gap:20px; font-size:13px; color:var(--muted); margin-bottom:18px; flex-wrap:wrap; }
+        .legend b { color:var(--ink); }
+        .montage { width:100%; border:1px solid var(--line); border-radius:8px; background:var(--panel); image-rendering:pixelated; }
+    </style>
+</head>
+<body>
+    <h1>Type-B ear leaks (baked-shift prototype)</h1>
+    <p class="sub">
+        The 139 covered-ear females where baking the ear-down shift into the base would push the
+        lowered ear's bottom edge one pixel below the eyewear/helmet, into what the original shows
+        as empty background. Each pair is <b>current (production)</b> on the left and the
+        <b>baked-shift version</b> on the right, with the leaking pixel (6,15) outlined in red.
+    </p>
+    <p class="sub">All are Big Shades / VR / Eye Mask / Pilot Helmet. Additive sprites can't restore
+        background, so these can't be patched by extending a trait sprite.</p>
+    <div class="nav">
+        <a href="/">← Home</a>
+        <a href="/#gallery">All Remasters</a>
+        <a href="/traits.html">All Traits</a>
+    </div>
+    <div class="legend">
+        <span><b>Left:</b> production (correct)</span>
+        <span><b>Right:</b> baked-shift — <span style="color:#e00">red box</span> = stray pixel at (6,15)</span>
+    </div>
+    <img class="montage" src="/leaks-typeb.png" alt="Type-B leak montage">
+</body>
+</html>

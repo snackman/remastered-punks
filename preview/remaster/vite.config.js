@@ -14,6 +14,7 @@ export default defineConfig({
         main: path.resolve(__dirname, 'index.html'),
         traits: path.resolve(__dirname, 'traits.html'),
         zero: path.resolve(__dirname, 'zero.html'),
+        leaks: path.resolve(__dirname, 'leaks.html'),
       },
     },
   },
