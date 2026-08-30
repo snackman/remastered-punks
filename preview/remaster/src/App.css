@@ -537,6 +537,11 @@
   font-weight: 700;
   color: var(--ink);
   margin-top: 2px;
+  text-decoration: none;
+}
+.gallery-tile-id:hover {
+  color: var(--accent);
+  text-decoration: underline;
 }
 .gallery-tile-px {
   font-size: 10px;

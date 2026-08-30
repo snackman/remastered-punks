@@ -85,7 +85,8 @@
         .section h2:hover {
             color: var(--accent);
         }
-        .section h2 .trait-count {
+        .section h2 .trait-count,
+        .section h2 .trait-count-link {
             float: right;
             font-size: 12px;
             font-weight: 700;
@@ -94,6 +95,14 @@
             border-radius: 999px;
             padding: 3px 12px;
             letter-spacing: 0;
+        }
+        .section h2 .trait-count-link {
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .section h2 .trait-count-link:hover {
+            background: rgba(26, 67, 200, 0.2);
+            text-decoration: underline;
         }
         .section p { color: var(--muted); font-size: 14px; font-weight: 500; }
         .trait-view-all {

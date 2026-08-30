@@ -320,11 +320,24 @@ function addTraitLinks() {
     const title = h2.textContent.replace(/^\s*\d+\.\s*/, '').replace(/\d[\d,]*\s*punks?$/, '').trim();
     const trait = title in SECTION_TRAIT_OVERRIDES ? SECTION_TRAIT_OVERRIDES[title] : title;
     if (!trait) return;
+    const href = `${base}?trait=${encodeURIComponent(trait)}#gallery`;
+
     const a = document.createElement('a');
     a.className = 'trait-view-all';
-    a.href = `${base}?trait=${encodeURIComponent(trait)}#gallery`;
+    a.href = href;
     a.textContent = `View all remasters with ${trait} →`;
     content.appendChild(a);
+
+    // Also make the "N punks" count in the heading a link to the same gallery.
+    const count = h2.querySelector('.trait-count');
+    if (count && count.textContent.trim()) {
+      const link = document.createElement('a');
+      link.className = 'trait-count-link';
+      link.href = href;
+      link.textContent = count.textContent;
+      link.addEventListener('click', (e) => e.stopPropagation()); // don't toggle collapse
+      count.replaceWith(link);
+    }
   });
 }
 

@@ -39,7 +39,7 @@ function PunkTile({ id, pixels, punk, onTrait }) {
         ref={canvasRef}
         title={`Punk #${id} - ${pixels} pixel${pixels === 1 ? '' : 's'} changed`}
       />
-      <div className="gallery-tile-id">#{id}</div>
+      <a className="gallery-tile-id" href={`?punk=${id}#home`}>#{id}</a>
       <div className="gallery-tile-px">{pixels}px</div>
       {(punk?.accessories || []).map((a, i) => (
         <button key={i} className="gallery-tile-trait" onClick={() => onTrait(a)}>{a}</button>

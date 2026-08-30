@@ -256,6 +256,16 @@ function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
       )}
 
       <div className="hero-actions hero-actions-secondary">
+        {punk && (
+          <a
+            className="btn btn-secondary"
+            href={`https://cryptopunks.app/cryptopunks/details/${punk.id}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            View on CryptoPunks
+          </a>
+        )}
         <button className="btn btn-secondary" onClick={() => onNavigate('wallet')}>
           View my punks
         </button>
