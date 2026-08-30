@@ -38,7 +38,9 @@ const SKIN_LABELS = {
 function traitSprite(spriteId, traitName) {
   let sprite = extractSprite(spriteId);
   const correction = traitName && SPRITE_COLOR_CORRECTIONS[traitName];
-  if (correction) sprite = recolorSprite(sprite, correction);
+  // The traits page renders the female sprites, so gender-gated corrections
+  // (e.g. the male-only Crazy Hair ear pixel) resolve against 'Female'.
+  if (correction) sprite = recolorSprite(sprite, correction, 'Female');
   return sprite;
 }
 
