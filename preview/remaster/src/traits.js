@@ -240,6 +240,20 @@ function renderSmallShadesComparison() {
   }
 }
 
+// Frown over a beard: in the original the beard is drawn over the frown (hiding
+// it); the remaster keeps the frown on top. Same head, just the draw order of
+// the two sprites flips.
+function renderFrownBeardComparison() {
+  const container = document.getElementById('frownBeardComparison');
+  for (const skinTone of SKIN_TONES) {
+    const beard = extractSprite(MALE_SPRITE_IDS['Normal Beard']);
+    const frown = extractSprite(MALE_SPRITE_IDS['Frown']);
+    const original = compositeOnMaleBase(skinTone, [frown, beard]);   // beard over frown
+    const remastered = compositeOnMaleBase(skinTone, [beard, frown]); // frown over beard
+    container.appendChild(createComparison(skinTone, original, remastered));
+  }
+}
+
 function setupCollapsible() {
   document.querySelectorAll('.section h2').forEach(h2 => {
     h2.addEventListener('click', () => {
@@ -257,6 +271,7 @@ const SECTION_COUNTS = {
   earringComparison: 629,
   smallShadesComparison: 378,
   frontBeardComparison: 276,
+  frownBeardComparison: 29,
   crazyHairComparison: 160,
   stringyHairComparison: 158,
   bandanaComparison: 157,
@@ -310,6 +325,7 @@ const SECTION_TRAIT_OVERRIDES = {
   'Ear Position (Base Head)': null,
   'Earring (with Ear Visible)': 'Earring',
   'Combined: Ear + Shades + Earring': null,
+  'Frown (over beard)': 'Frown',
 };
 function addTraitLinks() {
   const base = import.meta.env.BASE_URL;
@@ -376,6 +392,7 @@ async function init() {
     renderFrontBeardComparison();
     renderChokerComparison();
     renderSmallShadesComparison();
+    renderFrownBeardComparison();
 
     // Reorder sections by how many eligible punks each remaster affects.
     orderSectionsByCount();
