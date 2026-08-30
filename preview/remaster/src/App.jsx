@@ -14,6 +14,7 @@ import { loadPunkData, loadEligiblePunks } from './lib/data';
 import PunkGrid from './components/PunkGrid';
 import ManualLookup from './components/ManualLookup';
 import Home from './components/Home';
+import Gallery from './components/Gallery';
 
 import './App.css';
 
@@ -69,17 +70,34 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
     }
   };
 
-  const VALID_TABS = ['home', 'wallet', 'lookup'];
+  const VALID_TABS = ['home', 'wallet', 'lookup', 'gallery'];
   const [activeTab, setActiveTab] = useState(() => {
     const h = (typeof window !== 'undefined' ? window.location.hash : '').replace('#', '');
     return VALID_TABS.includes(h) ? h : 'home';
   });
+  // Trait filter for the gallery (deep-linkable via ?trait=Headband#gallery).
+  const [filterTrait, setFilterTrait] = useState(() => {
+    if (typeof window === 'undefined') return null;
+    return new URLSearchParams(window.location.search).get('trait') || null;
+  });
 
   // Switch tab and keep the URL hash in sync (so /#wallet deep-links work).
+  // Leaving the gallery clears any trait filter (and its ?trait query).
   const selectTab = (id) => {
     setActiveTab(id);
+    if (id !== 'gallery') setFilterTrait(null);
     if (typeof window !== 'undefined') {
       window.history.replaceState(null, '', id === 'home' ? '#home' : `#${id}`);
+    }
+  };
+
+  // Show the gallery filtered to a trait (pass null to show every remaster).
+  const selectTrait = (trait) => {
+    setFilterTrait(trait);
+    setActiveTab('gallery');
+    if (typeof window !== 'undefined') {
+      const q = trait ? `?trait=${encodeURIComponent(trait)}` : '';
+      window.history.replaceState(null, '', `${q}#gallery`);
     }
   };
 
@@ -111,6 +129,12 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
           {navButton('home', 'Home')}
           {navButton('wallet', 'My Punks')}
           {navButton('lookup', 'Lookup')}
+          <button
+            className={activeTab === 'gallery' ? 'active' : ''}
+            onClick={() => selectTrait(null)}
+          >
+            All Remasters
+          </button>
           <a href={traitsUrl}>All Traits</a>
         </nav>
         <div className="connect-wrapper">
@@ -136,6 +160,14 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
             punkData={punkData}
             eligiblePunks={eligiblePunks}
             onNavigate={selectTab}
+            onTrait={selectTrait}
+          />
+        )}
+        {activeTab === 'gallery' && (
+          <Gallery
+            punkData={punkData}
+            filterTrait={filterTrait}
+            onFilterTrait={selectTrait}
           />
         )}
         {activeTab === 'wallet' && (

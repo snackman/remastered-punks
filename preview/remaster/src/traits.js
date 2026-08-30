@@ -303,6 +303,31 @@ function orderSectionsByCount() {
   parent.insertBefore(frag, anchor);
 }
 
+// Add a "View all remasters with X" link to each section, deep-linking into the
+// main app's gallery filtered by that trait. Section titles are the trait names,
+// except for the base-head/combined sections which have no single trait.
+const SECTION_TRAIT_OVERRIDES = {
+  'Ear Position (Base Head)': null,
+  'Earring (with Ear Visible)': 'Earring',
+  'Combined: Ear + Shades + Earring': null,
+};
+function addTraitLinks() {
+  const base = import.meta.env.BASE_URL;
+  document.querySelectorAll('.section').forEach(sec => {
+    const h2 = sec.querySelector('h2');
+    const content = sec.querySelector('.section-content');
+    if (!h2 || !content) return;
+    const title = h2.textContent.replace(/^\s*\d+\.\s*/, '').replace(/\d[\d,]*\s*punks?$/, '').trim();
+    const trait = title in SECTION_TRAIT_OVERRIDES ? SECTION_TRAIT_OVERRIDES[title] : title;
+    if (!trait) return;
+    const a = document.createElement('a');
+    a.className = 'trait-view-all';
+    a.href = `${base}?trait=${encodeURIComponent(trait)}#gallery`;
+    a.textContent = `View all remasters with ${trait} →`;
+    content.appendChild(a);
+  });
+}
+
 async function init() {
   try {
     setupCollapsible();
@@ -341,6 +366,7 @@ async function init() {
 
     // Reorder sections by how many eligible punks each remaster affects.
     orderSectionsByCount();
+    addTraitLinks();
   } catch (err) {
     console.error('Init failed:', err);
     document.body.innerHTML = `<p style="color:red;text-align:center;padding:40px;">Error: ${err.message}</p>`;

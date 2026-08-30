@@ -31,7 +31,7 @@ function pickRandomByType(buckets) {
   return bucket[Math.floor(Math.random() * bucket.length)];
 }
 
-function Home({ punkData, eligiblePunks, onNavigate }) {
+function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
   const [punk, setPunk] = useState(null);
   const [pos, setPos] = useState(-1);     // index into the shuffle history
   const [count, setCount] = useState(0);  // history length
@@ -225,7 +225,14 @@ function Home({ punkData, eligiblePunks, onNavigate }) {
             Punk #{punk.id}
           </a>
           {(punk.accessories || []).map((a, i) => (
-            <span key={i} className="remaster-badge">{a}</span>
+            <button
+              key={i}
+              className="remaster-badge remaster-badge-btn"
+              onClick={() => onTrait && onTrait(a)}
+              title={`Show all remasters with ${a}`}
+            >
+              {a}
+            </button>
           ))}
         </div>
       )}
