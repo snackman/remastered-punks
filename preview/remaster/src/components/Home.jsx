@@ -209,7 +209,7 @@ function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
               width={SPRITE_SIZE * ZOOM}
               height={SPRITE_SIZE * ZOOM}
             />
-            <span className="hero-label">Remastered</span>
+            <span className="hero-label">Remaster</span>
           </div>
         </div>
       )}

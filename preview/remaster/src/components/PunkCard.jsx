@@ -170,7 +170,7 @@ function PunkCard({ punk, showRemastered = true, showEligibility = false, merkle
         <div className="not-eligible-badge">Not eligible for remaster</div>
       )}
       {isEligible && !hasRemasters && (
-        <div className="no-remaster">No remaster available</div>
+        <div className="no-remaster">No remaster needed</div>
       )}
 
       {/* Mint Button */}
