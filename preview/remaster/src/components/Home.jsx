@@ -255,24 +255,6 @@ function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
         <div className="hero-position">{pos + 1} / {count}</div>
       )}
 
-      <div className="hero-actions hero-actions-secondary">
-        {punk && (
-          <a
-            className="btn btn-secondary"
-            href={`https://cryptopunks.app/cryptopunks/details/${punk.id}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            View on CryptoPunks
-          </a>
-        )}
-        <button className="btn btn-secondary" onClick={() => onNavigate('wallet')}>
-          View my punks
-        </button>
-        <button className="btn btn-secondary" onClick={() => onNavigate('lookup')}>
-          Look up a punk
-        </button>
-      </div>
     </section>
   );
 }
