@@ -13,6 +13,7 @@ export default defineConfig({
       input: {
         main: path.resolve(__dirname, 'index.html'),
         traits: path.resolve(__dirname, 'traits.html'),
+        zero: path.resolve(__dirname, 'zero.html'),
       },
     },
   },
