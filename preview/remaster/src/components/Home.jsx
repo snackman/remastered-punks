@@ -189,7 +189,9 @@ function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
             height={SPRITE_SIZE * ZOOM}
           />
           <span className="hero-label">
-            {revealShowing === 'remastered' ? 'Remastered' : 'Original'} · {changedCount} pixel{changedCount === 1 ? '' : 's'} changed
+            {revealShowing === 'remastered'
+              ? `Remaster · ${changedCount} pixel${changedCount === 1 ? '' : 's'} changed`
+              : 'Original'}
           </span>
         </div>
       ) : (
