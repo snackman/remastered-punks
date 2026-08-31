@@ -15,6 +15,7 @@ export default defineConfig({
         traits: path.resolve(__dirname, 'traits.html'),
         zero: path.resolve(__dirname, 'zero.html'),
         leaks: path.resolve(__dirname, 'leaks.html'),
+        remasterSprites: path.resolve(__dirname, 'remaster-sprites.html'),
       },
     },
   },
