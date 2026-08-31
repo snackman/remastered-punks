@@ -16,6 +16,7 @@ export default defineConfig({
         zero: path.resolve(__dirname, 'zero.html'),
         leaks: path.resolve(__dirname, 'leaks.html'),
         remasterSprites: path.resolve(__dirname, 'remaster-sprites.html'),
+        stackingCompare: path.resolve(__dirname, 'stacking-compare.html'),
       },
     },
   },

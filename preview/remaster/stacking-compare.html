@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Prod vs stacking · prototype</title>
+    <style>
+        :root { --accent:#1a43c8; --ink:#181818; --muted:#6b6b6b; --line:#e6e6e6; }
+        * { box-sizing:border-box; }
+        body { font-family:'Montserrat',sans-serif; color:#272727; margin:0; padding:32px 24px 72px; max-width:1180px; margin:0 auto; }
+        h1 { color:var(--ink); font-size:26px; margin:0 0 6px; }
+        .sub { color:var(--muted); font-size:14px; margin:0 0 6px; max-width:820px; line-height:1.5; }
+        .stat { font-weight:700; color:var(--accent); }
+        .nav { margin:18px 0 24px; font-size:13px; font-weight:700; }
+        .nav a { color:var(--accent); text-decoration:none; margin-right:16px; }
+        .nav a:hover { text-decoration:underline; }
+        .legend { font-size:13px; color:var(--muted); margin-bottom:16px; }
+        .montage { width:100%; border:1px solid var(--line); border-radius:8px; image-rendering:pixelated; }
+    </style>
+</head>
+<body>
+    <h1>Prod vs new stacking compositor</h1>
+    <p class="sub">
+        Each pair: <b>left = production</b> (today's live overpaint-based compositor), <b>right =
+        the new stacking compositor</b> (remastered base + edited trait sprites, stacked with no
+        fills/overpaints/guards). Across all remastered punks the two are
+        <span class="stat">95.6% pixel-identical</span>.
+    </p>
+    <p class="sub">
+        The differences are mostly *improvements*: the stacking path draws hair over the earring
+        (matching the original collection), so coloured-hair earrings are more correct than prod's
+        2-pixel tint patch. The rest is a small residual to close before cutover.
+    </p>
+    <div class="nav">
+        <a href="/">← Home</a>
+        <a href="/remaster-sprites.html">Remastered traits</a>
+        <a href="/leaks.html">Baked-shift review</a>
+    </div>
+    <div class="legend"><b>Left:</b> production &nbsp;·&nbsp; <b>Right:</b> stacking</div>
+    <img class="montage" src="/stacking-compare.png" alt="Prod vs stacking comparison">
+</body>
+</html>
