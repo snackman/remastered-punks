@@ -5,17 +5,17 @@ import {
   SPRITE_SIZE,
   FEMALE_SPRITE_IDS,
   MALE_SPRITE_IDS,
-  TRAIT_FILL_COLORS,
   SPRITE_COLOR_CORRECTIONS,
 } from '@lib/constants.js';
 import { loadSpriteSheet } from './lib/sprites';
+import { loadPunkData } from './lib/data';
 import {
   extractSprite,
   recolorSprite,
-  shiftSpriteDown,
-  shiftSinglePixel,
-  compositeOnBase,
   compositeOnMaleBase,
+  compositePunk,
+  initStacking,
+  remasteredSprite,
 } from './lib/remaster';
 
 const ZOOM = 6;
@@ -31,6 +31,38 @@ const SKIN_LABELS = {
   'Medium': 'Medium',
   'Dark': 'Dark',
   'Albino': 'Albino',
+};
+
+// One source of truth for every section: the synthetic punk it renders (gender +
+// accessories) and, where the section is a single trait, the trait/sprite-sheet
+// used for the isolated view. Both the on-head comparison and the isolated sprite
+// are driven from the stacking compositor, so the page never drifts from the app.
+const SECTIONS = {
+  earComparison:          { gender: 'Female', accessories: [] },
+  shadesComparison:       { gender: 'Female', accessories: ['Regular Shades'], trait: 'Regular Shades' },
+  earringComparison:      { gender: 'Female', accessories: ['Earring'], trait: 'Earring' },
+  combinedComparison:     { gender: 'Female', accessories: ['Regular Shades', 'Earring'] },
+  mohawkComparison:       { gender: 'Female', accessories: ['Mohawk'], trait: 'Mohawk' },
+  redMohawkComparison:    { gender: 'Female', accessories: ['Red Mohawk'], trait: 'Red Mohawk' },
+  bandanaComparison:      { gender: 'Female', accessories: ['Bandana'], trait: 'Bandana' },
+  headbandComparison:     { gender: 'Female', accessories: ['Headband'], trait: 'Headband' },
+  capComparison:          { gender: 'Female', accessories: ['Cap'], trait: 'Cap' },
+  knittedCapComparison:   { gender: 'Female', accessories: ['Knitted Cap'], trait: 'Knitted Cap' },
+  tiaraComparison:        { gender: 'Female', accessories: ['Tiara'], trait: 'Tiara' },
+  weldingGogglesComparison: { gender: 'Female', accessories: ['Welding Goggles'], trait: 'Welding Goggles' },
+  pilotHelmetComparison: { gender: 'Female', accessories: ['Pilot Helmet'], trait: 'Pilot Helmet' },
+  eyeMaskComparison: { gender: 'Female', accessories: ['Eye Mask'], trait: 'Eye Mask' },
+  bigShadesComparison: { gender: 'Female', accessories: ['Big Shades'], trait: 'Big Shades' },
+  blondeBobComparison:    { gender: 'Female', accessories: ['Blonde Bob'], trait: 'Blonde Bob' },
+  blondeShortComparison:  { gender: 'Female', accessories: ['Blonde Short'], trait: 'Blonde Short' },
+  crazyHairComparison:    { gender: 'Female', accessories: ['Crazy Hair'], trait: 'Crazy Hair' },
+  orangeSideComparison:   { gender: 'Female', accessories: ['Orange Side'], trait: 'Orange Side' },
+  wildBlondeComparison:   { gender: 'Female', accessories: ['Wild Blonde'], trait: 'Wild Blonde' },
+  wildWhiteHairComparison: { gender: 'Female', accessories: ['Wild White Hair'], trait: 'Wild White Hair' },
+  clownHairGreenComparison: { gender: 'Female', accessories: ['Clown Hair Green'], trait: 'Clown Hair Green' },
+  frontBeardComparison:   { gender: 'Male', accessories: ['Front Beard'], trait: 'Front Beard' },
+  chokerComparison:       { gender: 'Female', accessories: ['Choker'], trait: 'Choker' },
+  smallShadesComparison:  { gender: 'Male', accessories: ['Small Shades'], trait: 'Small Shades' },
 };
 
 // Extract a trait sprite, applying any spritesheet colour correction (e.g. the
@@ -79,6 +111,99 @@ function createArrow() {
   return arrow;
 }
 
+// A labelled full-sprite box: the whole 24x24 sprite (uncropped) drawn on a
+// checkerboard with 0-23 column/row numbers, so coordinates are easy to read off.
+function createLabeledSpriteBox(label, sprite) {
+  const box = document.createElement('div');
+  box.className = 'punk-box';
+  const labelDiv = document.createElement('div');
+  labelDiv.className = 'label';
+  labelDiv.textContent = label;
+  box.appendChild(labelDiv);
+
+  const N = SPRITE_SIZE, Z = 9, M = 14; // pixel zoom, margin for numbers
+  const canvas = document.createElement('canvas');
+  canvas.width = M + N * Z;
+  canvas.height = M + N * Z;
+  canvas.className = 'labeled-sprite';
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // checkerboard behind the sprite so transparent pixels are visible
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    ctx.fillStyle = (x + y) % 2 ? '#e9e9e9' : '#f7f7f7';
+    ctx.fillRect(M + x * Z, M + y * Z, Z, Z);
+  }
+  ctx.drawImage(sprite, 0, 0, N, N, M, M, N * Z, N * Z);
+  // gridlines
+  ctx.strokeStyle = 'rgba(0,0,0,0.07)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= N; i++) {
+    ctx.beginPath(); ctx.moveTo(M + i * Z + 0.5, M); ctx.lineTo(M + i * Z + 0.5, M + N * Z); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(M, M + i * Z + 0.5); ctx.lineTo(M + N * Z, M + i * Z + 0.5); ctx.stroke();
+  }
+  // numbers (every other one to avoid crowding)
+  ctx.fillStyle = '#8a8a8a';
+  ctx.font = '7px monospace';
+  for (let i = 0; i < N; i++) {
+    if (i % 2 === 0) {
+      ctx.textAlign = 'center'; ctx.fillText(i, M + i * Z + Z / 2, 9);
+      ctx.textAlign = 'right'; ctx.fillText(i, M - 3, M + i * Z + Z / 2 + 3);
+    }
+  }
+  const container = document.createElement('div');
+  container.className = 'canvas-container';
+  container.appendChild(canvas);
+  box.appendChild(container);
+  return box;
+}
+
+// --- Isolated trait sprites (the trait alone, no head behind it) ------------
+function spritesEqual(a, b) {
+  const da = a.getContext('2d').getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE).data;
+  const db = b.getContext('2d').getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE).data;
+  for (let i = 0; i < da.length; i++) if (da[i] !== db[i]) return false;
+  return true;
+}
+
+// Prepend an "isolated sprite" row to a section: the trait sprite on its own,
+// with no base head. Shows Original -> Remastered when the stacking sprite differs
+// from the raw sprite, or a single sprite when it's unchanged.
+function prependIsolated(containerId, orig, rem) {
+  const container = document.getElementById(containerId);
+  if (!container || !orig) return;
+  const group = document.createElement('div');
+  group.className = 'skin-tone-group isolated-group';
+
+  const title = document.createElement('h4');
+  title.textContent = 'Isolated sprite';
+  group.appendChild(title);
+
+  const pair = document.createElement('div');
+  pair.className = 'punk-pair';
+  if (!rem || spritesEqual(orig, rem)) {
+    pair.appendChild(createLabeledSpriteBox('Trait sprite', orig));
+  } else {
+    pair.appendChild(createLabeledSpriteBox('Original', orig));
+    pair.appendChild(createArrow());
+    pair.appendChild(createLabeledSpriteBox('Remastered', rem));
+  }
+  group.appendChild(pair);
+  container.insertBefore(group, container.firstChild);
+}
+
+// For each single-trait section, show the raw sprite vs the stacking compositor's
+// remastered sprite (which is exactly what the app renders).
+function renderIsolatedSprites() {
+  for (const [cid, spec] of Object.entries(SECTIONS)) {
+    if (!spec.trait) continue;
+    const id = (spec.gender === 'Male' ? MALE_SPRITE_IDS : FEMALE_SPRITE_IDS)[spec.trait];
+    if (id == null) continue;
+    prependIsolated(cid, traitSprite(id, spec.trait), remasteredSprite(spec.trait));
+  }
+}
+
 // Count pixels that differ (RGB) between two 24x24 source canvases - how many
 // pixels this remaster actually changes.
 function countPixelDiff(a, b) {
@@ -111,158 +236,29 @@ function createComparison(skinTone, originalCanvas, remasteredCanvas) {
   return group;
 }
 
-function renderEarComparison() {
-  const container = document.getElementById('earComparison');
-  for (const skinTone of SKIN_TONES) {
-    const original = compositeOnBase(skinTone, [], false);
-    const remastered = compositeOnBase(skinTone, [], true);
-    container.appendChild(createComparison(skinTone, original, remastered));
-  }
-}
-
-function renderShadesComparison() {
-  const container = document.getElementById('shadesComparison');
-  for (const skinTone of SKIN_TONES) {
-    const shades = extractSprite(FEMALE_SPRITE_IDS['Regular Shades']);
-    const shadesShifted = shiftSpriteDown(extractSprite(FEMALE_SPRITE_IDS['Regular Shades']), 1);
-
-    const original = compositeOnBase(skinTone, [shades], false);
-    const remastered = compositeOnBase(skinTone, [shadesShifted], true);
-    container.appendChild(createComparison(skinTone, original, remastered));
-  }
-}
-
-function renderEarringComparison() {
-  const container = document.getElementById('earringComparison');
-  for (const skinTone of SKIN_TONES) {
-    const earring = extractSprite(FEMALE_SPRITE_IDS['Earring']);
-    const earringShifted = shiftSpriteDown(extractSprite(FEMALE_SPRITE_IDS['Earring']), 1);
-
-    const original = compositeOnBase(skinTone, [earring], false);
-    const remastered = compositeOnBase(skinTone, [earringShifted], true);
-    container.appendChild(createComparison(skinTone, original, remastered));
-  }
-}
-
-function renderCombinedComparison() {
-  const container = document.getElementById('combinedComparison');
-  for (const skinTone of SKIN_TONES) {
-    const shades = extractSprite(FEMALE_SPRITE_IDS['Regular Shades']);
-    const earring = extractSprite(FEMALE_SPRITE_IDS['Earring']);
-    const shadesShifted = shiftSpriteDown(extractSprite(FEMALE_SPRITE_IDS['Regular Shades']), 1);
-    const earringShifted = shiftSpriteDown(extractSprite(FEMALE_SPRITE_IDS['Earring']), 1);
-
-    const original = compositeOnBase(skinTone, [shades, earring], false);
-    const remastered = compositeOnBase(skinTone, [shadesShifted, earringShifted], true);
-    container.appendChild(createComparison(skinTone, original, remastered));
-  }
-}
-
-function renderTraitWithEar(containerId, traitName) {
+// Render a section as a synthetic punk wearing just the trait(s): Original is the
+// un-remastered composite, Remastered is the stacking composite - the exact path
+// the app renders, so the preview can never drift from production.
+function renderPunkSection(containerId, gender, accessories) {
   const container = document.getElementById(containerId);
-  const fillConfig = TRAIT_FILL_COLORS[traitName];
-
+  if (!container) return;
   for (const skinTone of SKIN_TONES) {
-    const trait = traitSprite(FEMALE_SPRITE_IDS[traitName], traitName);
-
-    let remasteredTrait = traitSprite(FEMALE_SPRITE_IDS[traitName], traitName);
-    if (fillConfig && fillConfig.shiftPixel) {
-      remasteredTrait = shiftSinglePixel(remasteredTrait, fillConfig.shiftPixel.x, fillConfig.shiftPixel.y);
-    }
-
-    const original = compositeOnBase(skinTone, [trait], false, traitName);
-    const remastered = compositeOnBase(skinTone, [remasteredTrait], true, traitName);
+    const punk = { id: 0, type: 'Human', gender, skinTone, accessories };
+    const original = compositePunk(punk, false);
+    const remastered = compositePunk(punk, true);
     container.appendChild(createComparison(skinTone, original, remastered));
   }
 }
 
-function renderFrontBeardComparison() {
-  const container = document.getElementById('frontBeardComparison');
-
-  for (const skinTone of SKIN_TONES) {
-    const trait = extractSprite(MALE_SPRITE_IDS['Front Beard']);
-    const original = compositeOnMaleBase(skinTone, [trait]);
-
-    const remastered = compositeOnMaleBase(skinTone, [trait]);
-    const ctx = remastered.getContext('2d');
-    const imageData = ctx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
-    const data = imageData.data;
-    // Sample the beard's own colour so the added corners match exactly.
-    const sampleIdx = (20 * SPRITE_SIZE + 12) * 4;
-    const beard = { r: data[sampleIdx], g: data[sampleIdx + 1], b: data[sampleIdx + 2] };
-    for (const x of [10, 14]) {
-      const idx = (20 * SPRITE_SIZE + x) * 4;
-      data[idx] = beard.r;
-      data[idx + 1] = beard.g;
-      data[idx + 2] = beard.b;
-      data[idx + 3] = 255;
-    }
-    ctx.putImageData(imageData, 0, 0);
-
-    container.appendChild(createComparison(skinTone, original, remastered));
-  }
-}
-
-function renderChokerComparison() {
-  const container = document.getElementById('chokerComparison');
-  const CHOKER_COLOR = { r: 0, g: 0, b: 0 };
-
-  for (const skinTone of SKIN_TONES) {
-    const trait = extractSprite(FEMALE_SPRITE_IDS['Choker']);
-    const original = compositeOnBase(skinTone, [trait], false);
-
-    const remastered = compositeOnBase(skinTone, [], false);
-    const ctx = remastered.getContext('2d');
-    const imageData = ctx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
-    const data = imageData.data;
-    for (const x of [9, 10, 11]) {
-      const idx = (22 * SPRITE_SIZE + x) * 4;
-      data[idx] = CHOKER_COLOR.r;
-      data[idx + 1] = CHOKER_COLOR.g;
-      data[idx + 2] = CHOKER_COLOR.b;
-      data[idx + 3] = 255;
-    }
-    ctx.putImageData(imageData, 0, 0);
-
-    container.appendChild(createComparison(skinTone, original, remastered));
-  }
-}
-
-function renderSmallShadesComparison() {
-  const container = document.getElementById('smallShadesComparison');
-
-  for (const skinTone of SKIN_TONES) {
-    const trait = extractSprite(MALE_SPRITE_IDS['Small Shades']);
-    const original = compositeOnMaleBase(skinTone, [trait]);
-
-    const remasteredTrait = extractSprite(MALE_SPRITE_IDS['Small Shades']);
-    const traitCtx = remasteredTrait.getContext('2d');
-    const imageData = traitCtx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
-    const data = imageData.data;
-    for (const y of [12, 13]) {
-      const idx = (y * SPRITE_SIZE + 11) * 4;
-      data[idx] = 0;
-      data[idx + 1] = 0;
-      data[idx + 2] = 0;
-      data[idx + 3] = 255;
-    }
-    traitCtx.putImageData(imageData, 0, 0);
-
-    const remastered = compositeOnMaleBase(skinTone, [remasteredTrait]);
-    container.appendChild(createComparison(skinTone, original, remastered));
-  }
-}
-
-// Frown over a beard: in the original the beard is drawn over the frown (hiding
-// it); the remaster keeps the frown on top. Same head, just the draw order of
-// the two sprites flips.
+// Frown over a beard: the Original draws the beard over the frown (hiding it) via
+// an explicit sprite order; the Remastered uses the stacking path (frown on top).
 function renderFrownBeardComparison() {
   const container = document.getElementById('frownBeardComparison');
   for (const skinTone of SKIN_TONES) {
     const beard = extractSprite(MALE_SPRITE_IDS['Normal Beard']);
     const frown = extractSprite(MALE_SPRITE_IDS['Frown']);
     const original = compositeOnMaleBase(skinTone, [frown, beard]);   // beard over frown
-    const remastered = compositeOnMaleBase(skinTone, [beard, frown]); // frown over beard
+    const remastered = compositePunk({ id: 0, type: 'Human', gender: 'Male', skinTone, accessories: ['Normal Beard', 'Frown'] }, true);
     container.appendChild(createComparison(skinTone, original, remastered));
   }
 }
@@ -303,19 +299,14 @@ const SECTION_COUNTS = {
   frontBeardComparison: 276,
   frownBeardComparison: 29,
   crazyHairComparison: 160,
-  stringyHairComparison: 158,
   bandanaComparison: 157,
-  messyHairComparison: 153,
   mohawkComparison: 149,
-  mohawkThinComparison: 147,
-  mohawkDarkComparison: 143,
   blondeBobComparison: 143,
   redMohawkComparison: 141,
   wildBlondeComparison: 138,
   wildWhiteHairComparison: 131,
   blondeShortComparison: 123,
   knittedCapComparison: 97,
-  pigtailsComparison: 93,
   capComparison: 91,
   headbandComparison: 90,
   weldingGogglesComparison: 86,
@@ -393,36 +384,21 @@ async function init() {
     const basePath = import.meta.env.DEV ? '../..' : '';
     await loadSpriteSheet(`${basePath}/data/cryptopunks-assets/punks/config/punks-24x24.png`);
 
-    renderEarComparison();
-    renderShadesComparison();
-    renderEarringComparison();
-    renderCombinedComparison();
-    // Ear-visible traits
-    renderTraitWithEar('mohawkComparison', 'Mohawk');
-    renderTraitWithEar('mohawkDarkComparison', 'Mohawk Dark');
-    renderTraitWithEar('mohawkThinComparison', 'Mohawk Thin');
-    renderTraitWithEar('redMohawkComparison', 'Red Mohawk');
-    renderTraitWithEar('bandanaComparison', 'Bandana');
-    renderTraitWithEar('headbandComparison', 'Headband');
-    renderTraitWithEar('capComparison', 'Cap');
-    renderTraitWithEar('knittedCapComparison', 'Knitted Cap');
-    renderTraitWithEar('tiaraComparison', 'Tiara');
-    renderTraitWithEar('weldingGogglesComparison', 'Welding Goggles');
-    renderTraitWithEar('blondeBobComparison', 'Blonde Bob');
-    renderTraitWithEar('blondeShortComparison', 'Blonde Short');
-    renderTraitWithEar('crazyHairComparison', 'Crazy Hair');
-    renderTraitWithEar('messyHairComparison', 'Messy Hair');
-    renderTraitWithEar('orangeSideComparison', 'Orange Side');
-    renderTraitWithEar('pigtailsComparison', 'Pigtails');
-    renderTraitWithEar('stringyHairComparison', 'Stringy Hair');
-    renderTraitWithEar('wildBlondeComparison', 'Wild Blonde');
-    renderTraitWithEar('wildWhiteHairComparison', 'Wild White Hair');
-    renderTraitWithEar('clownHairGreenComparison', 'Clown Hair Green');
-    // Non-ear traits
-    renderFrontBeardComparison();
-    renderChokerComparison();
-    renderSmallShadesComparison();
+    // The whole page renders through the stacking compositor, so it needs the
+    // punk map (to derive the remastered base + hair sprites) the same way the app
+    // builds it in App.jsx.
+    const punks = await loadPunkData(`${basePath}/data/punks-attributes/original/cryptopunks.csv`);
+    initStacking(punks);
+
+    // Every section is a synthetic punk wearing just its trait(s); frown-over-beard
+    // needs an explicit original ordering so it's rendered on its own.
+    for (const [cid, spec] of Object.entries(SECTIONS)) {
+      renderPunkSection(cid, spec.gender, spec.accessories);
+    }
     renderFrownBeardComparison();
+
+    // Prepend the isolated trait sprite (no head) to each single-trait section.
+    renderIsolatedSprites();
 
     // Reorder sections by how many eligible punks each remaster affects.
     orderSectionsByCount();

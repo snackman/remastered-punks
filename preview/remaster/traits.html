@@ -189,6 +189,19 @@
             font-weight: 700;
             text-align: center;
         }
+        /* Isolated trait sprite (no head): render on a checkerboard so the
+           transparent areas of the sprite are visible. */
+        .isolated-group h4 { color: var(--accent, #1a43c8); }
+        .isolated-group .canvas-container canvas {
+            background-color: #f6f6f6;
+            background-image:
+                linear-gradient(45deg, #dcdcdc 25%, transparent 25%),
+                linear-gradient(-45deg, #dcdcdc 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #dcdcdc 75%),
+                linear-gradient(-45deg, transparent 75%, #dcdcdc 75%);
+            background-size: 12px 12px;
+            background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+        }
     </style>
 </head>
 <body>
@@ -206,7 +219,7 @@
         </nav>
     </header>
     <h1>Remastered Traits</h1>
-    <p class="subtitle">Each remastered trait shown on a plain punk head with no other accessories</p>
+    <p class="subtitle">Each remastered trait shown as an isolated sprite (no head) and on a plain punk head with no other accessories</p>
 
     <div class="section" data-section="1">
         <h2>1. Ear Position (Base Head)</h2>
@@ -247,19 +260,6 @@
         </div>
     </div>
 
-    <div class="section" data-section="6">
-        <h2>6. Mohawk Dark</h2>
-        <div class="section-content">
-            <div class="skin-tones" id="mohawkDarkComparison"></div>
-        </div>
-    </div>
-
-    <div class="section" data-section="7">
-        <h2>7. Mohawk Thin</h2>
-        <div class="section-content">
-            <div class="skin-tones" id="mohawkThinComparison"></div>
-        </div>
-    </div>
 
     <div class="section" data-section="8">
         <h2>8. Red Mohawk</h2>
@@ -310,6 +310,27 @@
         </div>
     </div>
 
+    <div class="section" data-section="30">
+        <h2>30. Pilot Helmet</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="pilotHelmetComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="31">
+        <h2>31. Eye Mask</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="eyeMaskComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="32">
+        <h2>32. Big Shades</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="bigShadesComparison"></div>
+        </div>
+    </div>
+
     <div class="section" data-section="15">
         <h2>15. Blonde Bob</h2>
         <div class="section-content">
@@ -331,31 +352,10 @@
         </div>
     </div>
 
-    <div class="section" data-section="18">
-        <h2>18. Messy Hair</h2>
-        <div class="section-content">
-            <div class="skin-tones" id="messyHairComparison"></div>
-        </div>
-    </div>
-
     <div class="section" data-section="20">
         <h2>20. Orange Side</h2>
         <div class="section-content">
             <div class="skin-tones" id="orangeSideComparison"></div>
-        </div>
-    </div>
-
-    <div class="section" data-section="21">
-        <h2>21. Pigtails</h2>
-        <div class="section-content">
-            <div class="skin-tones" id="pigtailsComparison"></div>
-        </div>
-    </div>
-
-    <div class="section" data-section="22">
-        <h2>22. Stringy Hair</h2>
-        <div class="section-content">
-            <div class="skin-tones" id="stringyHairComparison"></div>
         </div>
     </div>
 

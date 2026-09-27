@@ -30,7 +30,9 @@
       "Bash(nvm use:*)",
       "Bash(npm run generate:*)",
       "Bash(git stash drop:*)",
-      "Bash(git status:*)"
+      "Bash(git status:*)",
+      "Bash(security find-generic-password -a airdrop -s remastered-airdrop-sepolia:*)",
+      "Bash(forge script script/Deploy.s.sol:*)"
     ]
   }
 }

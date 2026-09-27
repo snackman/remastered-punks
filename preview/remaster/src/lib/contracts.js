@@ -2,7 +2,7 @@
 export const CONTRACTS = {
   // Sepolia testnet
   sepolia: {
-    remasteredPunks: '0x5Ac5eC4d2b0107F3521084045fe401E3366Cd62F',
+    remasteredPunks: '0x177B9d4655ecd6Ac6AFd7D1126B5CA34Fe5d3E0c', // merkle root 0x9188c0… (3434), setBaseURI + Ownable
     cryptoPunks: '0x6fCdfA445bF2752D4F38AB67F08c7eEDEfEaAed8', // Mock
   },
   // Mainnet (to be deployed)

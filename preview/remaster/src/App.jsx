@@ -11,6 +11,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { loadAssets } from './lib/sprites';
 import { loadPunkData, loadEligiblePunks } from './lib/data';
+import { initStacking } from './lib/remaster';
 import PunkGrid from './components/PunkGrid';
 import ManualLookup from './components/ManualLookup';
 import Home from './components/Home';
@@ -223,6 +224,9 @@ function App() {
         // Load punk data
         const data = await loadPunkData(`${basePath}/data/punks-attributes/original/cryptopunks.csv`);
         setPunkData(data);
+
+        // Build the stacking compositor now that the sprite sheet + punk map exist.
+        initStacking(data);
 
         // Load eligible punks
         const eligible = await loadEligiblePunks(`${basePath}/data/all-eligible-punks.json`);

@@ -6,9 +6,16 @@
   "functions": {
     "api/*.js": {
       "includeFiles": "data/**"
+    },
+    "api/metadata/*.js": {
+      "includeFiles": "data/**"
     }
   },
   "rewrites": [
+    {
+      "source": "/api/metadata/:id(\\d+).json",
+      "destination": "/api/metadata/:id"
+    },
     {
       "source": "/:punkId(\\d+)",
       "destination": "/api/:punkId"

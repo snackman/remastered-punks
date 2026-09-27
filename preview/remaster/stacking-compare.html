@@ -23,22 +23,26 @@
 <body>
     <h1>Prod vs new stacking compositor</h1>
     <p class="sub">
-        Each pair: <b>left = production</b> (today's live overpaint-based compositor), <b>right =
-        the new stacking compositor</b> (remastered base + edited trait sprites, stacked with no
-        fills/overpaints/guards). Across all remastered punks the two are
-        <span class="stat">95.6% pixel-identical</span>.
+        Each row shows three: <b>original</b> (canonical CryptoPunk, on the signature blue-grey
+        background), <b>old remaster</b> (today's live overpaint-based compositor), and <b>new
+        stacking</b> (remastered base + edited trait sprites, stacked with no fills/overpaints/guards).
+        Shown below are the <span class="stat">87 punks with substantive differences</span> —
+        earrings under hair, cleaned-up glasses sprites, vampire-hair over beard, and similar.
     </p>
     <p class="sub">
-        The differences are mostly *improvements*: the stacking path draws hair over the earring
-        (matching the original collection), so coloured-hair earrings are more correct than prod's
-        2-pixel tint patch. The rest is a small residual to close before cutover.
+        A further <span class="stat">1,490 punks</span> differ only by a single pixel: the
+        <b>(6,12) head-side outline</b> just above the ear. The live compositor mis-renders it as
+        background on ~1,500 female punks (it matches the canonical on only 759/2,270); the stacking
+        model sources it from the base outline and matches 2,249/2,270. Those one-pixel fixes aren't
+        shown here to keep the review focused. Compare each new-stacking cell against the original on
+        its left.
     </p>
     <div class="nav">
         <a href="/">← Home</a>
         <a href="/remaster-sprites.html">Remastered traits</a>
         <a href="/leaks.html">Baked-shift review</a>
     </div>
-    <div class="legend"><b>Left:</b> production &nbsp;·&nbsp; <b>Right:</b> stacking</div>
+    <div class="legend"><b>Each trio, left→right:</b> original &nbsp;·&nbsp; old remaster &nbsp;·&nbsp; new stacking</div>
     <img class="montage" src="/stacking-compare.png" alt="Prod vs stacking comparison">
 </body>
 </html>

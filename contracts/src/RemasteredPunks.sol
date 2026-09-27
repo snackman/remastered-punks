@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
@@ -12,7 +13,7 @@ interface ICryptoPunks {
 /// @title RemasteredPunks
 /// @notice NFT collection where ownership dynamically follows the original CryptoPunk
 /// @dev Implements EIP-5192 (Soulbound) - tokens cannot be transferred, only activated/deactivated
-contract RemasteredPunks is ERC721 {
+contract RemasteredPunks is ERC721, Ownable {
     using Strings for uint256;
 
     ICryptoPunks public immutable cryptoPunks;
@@ -32,14 +33,24 @@ contract RemasteredPunks is ERC721 {
     /// @notice EIP-5192 event - emitted when token lock status changes
     event Locked(uint256 tokenId);
 
+    /// @notice Emitted when the metadata base URI is updated
+    event BaseURIUpdated(string newBaseURI);
+
     constructor(
         address _cryptoPunks,
         bytes32 _merkleRoot,
         string memory _baseURI
-    ) ERC721("Remastered Punks", "RMPUNK") {
+    ) ERC721("Remastered Punks", "RMPUNK") Ownable(msg.sender) {
         cryptoPunks = ICryptoPunks(_cryptoPunks);
         merkleRoot = _merkleRoot;
         baseURI = _baseURI;
+    }
+
+    /// @notice Update the metadata base URI (e.g. server -> IPFS migration)
+    /// @dev Owner-only. Renounce ownership to permanently freeze the metadata.
+    function setBaseURI(string calldata newBaseURI) external onlyOwner {
+        baseURI = newBaseURI;
+        emit BaseURIUpdated(newBaseURI);
     }
 
     /// @notice Activate the remastered version of your punk

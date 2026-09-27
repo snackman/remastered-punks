@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 import { createCompositor } from '../lib/compositor.js';
+import { createStackCompositor } from '../lib/stack-compositor.js';
 import { SPRITE_SIZE } from '../lib/constants.js';
 
 // Cached data
@@ -15,6 +16,20 @@ const gfx = createCompositor({
   createCanvas: (w, h) => createCanvas(w, h),
   getSpriteSheet: () => spriteSheet,
 });
+
+// The stacking compositor needs the sprite sheet + full punk map up front, so it's
+// built lazily on the first request once both are cached.
+let stack = null;
+function getStack() {
+  if (!stack && spriteSheet && punkData) {
+    stack = createStackCompositor({
+      createCanvas: (w, h) => createCanvas(w, h),
+      getSpriteSheet: () => spriteSheet,
+      punks: punkData,
+    });
+  }
+  return stack;
+}
 
 // Load sprite sheet
 async function loadSpriteSheet(path) {
@@ -106,8 +121,10 @@ export default async function handler(req, res) {
     });
   }
 
-  // Generate remastered image
-  const canvas = gfx.compositePunk(punk, true);
+  // Generate remastered image via the stacking compositor (falls back to the old
+  // compositor if the stack couldn't be built).
+  const stackGfx = getStack();
+  const canvas = stackGfx ? stackGfx.stackPunk(punk) : gfx.compositePunk(punk, true);
   const outputCanvas = outputSize === SPRITE_SIZE ? canvas : scaleCanvas(canvas, outputSize);
 
   // Send PNG
