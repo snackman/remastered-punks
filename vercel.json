@@ -13,6 +13,10 @@
   },
   "rewrites": [
     {
+      "source": "/api/metadata/contract.json",
+      "destination": "/api/metadata/contract"
+    },
+    {
       "source": "/api/metadata/:id(\\d+).json",
       "destination": "/api/metadata/:id"
     },

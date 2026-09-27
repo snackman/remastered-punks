@@ -24,17 +24,25 @@ contract RemasteredPunks is ERC721, Ownable {
     mapping(uint256 => bool) public activated;
     uint256 public totalActivated;
 
+    /// @notice Owner most recently announced via a Transfer event, per token.
+    /// @dev Lets syncOwnership emit a correct `from` after the underlying punk changes hands.
+    mapping(uint256 => address) public announcedOwner;
+
     error NotEligible();
     error NotPunkOwner();
     error AlreadyActivated();
     error TransferDisabled();
     error NotActivated();
+    error AlreadySynced();
 
     /// @notice EIP-5192 event - emitted when token lock status changes
     event Locked(uint256 tokenId);
 
     /// @notice Emitted when the metadata base URI is updated
     event BaseURIUpdated(string newBaseURI);
+
+    /// @notice ERC-7572 event - signals marketplaces to refetch contractURI()
+    event ContractURIUpdated();
 
     constructor(
         address _cryptoPunks,
@@ -51,6 +59,12 @@ contract RemasteredPunks is ERC721, Ownable {
     function setBaseURI(string calldata newBaseURI) external onlyOwner {
         baseURI = newBaseURI;
         emit BaseURIUpdated(newBaseURI);
+        emit ContractURIUpdated();
+    }
+
+    /// @notice ERC-7572 collection-level metadata, served alongside token metadata
+    function contractURI() external view returns (string memory) {
+        return string(abi.encodePacked(baseURI, "contract.json"));
     }
 
     /// @notice Activate the remastered version of your punk
@@ -76,6 +90,7 @@ contract RemasteredPunks is ERC721, Ownable {
         // 4. Mark as activated
         activated[punkId] = true;
         totalActivated++;
+        announcedOwner[punkId] = msg.sender;
 
         // Emit Transfer from zero address to signal "creation"
         emit Transfer(address(0), msg.sender, punkId);
@@ -101,8 +116,27 @@ contract RemasteredPunks is ERC721, Ownable {
         activated[punkId] = false;
         totalActivated--;
 
-        // Emit burn event
-        emit Transfer(msg.sender, address(0), punkId);
+        // Burn from the last-announced owner so indexers see a consistent history
+        address announced = announcedOwner[punkId];
+        delete announcedOwner[punkId];
+        emit Transfer(announced, address(0), punkId);
+    }
+
+    /// @notice Emit a Transfer from the last-announced owner to the current punk owner
+    /// @dev Permissionless. ownerOf is always live; this only lets log-based indexers
+    ///      (marketplaces) catch up after the underlying CryptoPunk changes hands.
+    function syncOwnership(uint256 tokenId) external {
+        if (!activated[tokenId]) {
+            revert NotActivated();
+        }
+        address current = cryptoPunks.punkIndexToAddress(tokenId);
+        address announced = announcedOwner[tokenId];
+        // current == 0 would read as a burn while the token is still active
+        if (current == announced || current == address(0)) {
+            revert AlreadySynced();
+        }
+        announcedOwner[tokenId] = current;
+        emit Transfer(announced, current, tokenId);
     }
 
     /// @notice Dynamic ownership - returns current punk owner
