@@ -146,7 +146,7 @@ contract RemasteredPunks is ERC721, Ownable {
             revert ERC721InvalidOwner(address(0));
         }
         // Returning 0 here - use off-chain indexing for accurate counts
-        // A full implementation would iterate all 2,291 eligible punks
+        // A full implementation would iterate all 3,434 eligible punks
         return 0;
     }
 
