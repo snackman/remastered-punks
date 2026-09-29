@@ -6,9 +6,9 @@ _Status as of 2026-09-27. Branch: `prototype/base-ear-shift`._
 The stacking-compositor remaster is wired app-wide, the ERC-721 metadata endpoint is
 live, and the contract passed a **full end-to-end Sepolia dress rehearsal**. Mainnet is
 prepped and config-locked; it's blocked only on a real funded wallet + Etherscan key +
-your go/no-go. Both pre-deploy contract decisions are now **done** (`contractURI` +
-`syncOwnership`), but the Sepolia rehearsal contract predates them, so **re-run the
-Sepolia rehearsal once** before mainnet.
+your go/no-go. Both pre-deploy contract decisions are **done** (`contractURI` + `syncOwnership`) and
+**re-rehearsed on Sepolia** (2026-09-29). Prod needs a deploy of this branch so
+`/api/metadata/contract.json` is live before mainnet.
 
 ## What this is
 An NFT collection pairing remastered artwork with specific CryptoPunks. Ownership is
@@ -64,11 +64,15 @@ as: a punk is eligible iff the old (unremastered) composite differs from `stackP
 - Verified: `tokenURI` → live JSON (200) → image (200 png).
 
 ### Sepolia dress rehearsal — PASSED end-to-end
-- Contract: `0x177B9d4655ecd6Ac6AFd7D1126B5CA34Fe5d3E0c` (final root, deployer owner,
+- Contract: `0x7bfc1458fD8BC7D176b2D3B8020f07C335fe117B` (final root, deployer owner,
   baseURI = `https://punksremastered.com/api/metadata/`).
 - Mock CryptoPunks: `0x6fCdfA445bF2752D4F38AB67F08c7eEDEfEaAed8`.
-- Flow on punk #7: `claimPunk` → `activate(proof)` → `ownerOf` = wallet, `locked` = true,
-  `tokenURI` → live JSON → live image. All ✅.
+- Flow on punk #7 (2026-09-29, new contract): `activate` → `Transfer(0→W)`; `syncOwnership`
+  unchanged → reverts `AlreadySynced`; mock sale W→0x…B0B5 → `syncOwnership` →
+  `Transfer(W→B0B5)`, `ownerOf`/`announcedOwner` = B0B5; sale back → `Transfer(B0B5→W)`;
+  `deactivate` → `Transfer(W→0)`; reactivate ✅. `contractURI`/`tokenURI` correct.
+  Gas: activate 108.7k, syncOwnership 37.3k, deactivate 36.4k.
+- Previous rehearsal contract (superseded): `0x177B9d4655ecd6Ac6AFd7D1126B5CA34Fe5d3E0c`.
 - Frontend `contracts.js` re-pointed to the new Sepolia address; prod redeployed.
 
 ## Contract design tradeoffs (intentional, not bugs)
@@ -114,8 +118,6 @@ Sepolia rehearsal passed).
 ## Backlog (additive anytime — no redeploy)
 - Independent merkle-root verification script + doc (regenerate 3,434 set + root from
   source, confirm match) — trust/transparency for launch.
-- Re-run Sepolia rehearsal with the new contract (activate → sale → `syncOwnership`
-  → `contractURI` round-trip), then re-point `contracts.js`.
 - Subgraph for accurate ownership on our site (+ optional `syncOwnership` bot on punk sales).
 - IPFS migration of metadata + images (planned; `setBaseURI`).
 - Launch runbook (README) of deploy/verify/wire steps.
@@ -127,7 +129,7 @@ Sepolia rehearsal passed).
 |---|---|
 | Merkle root (final) | `0x9188c058fe5b7bbe641defd3a0444b4d475f8194ab77a9f36b5d424261dd1324` |
 | Eligible count | 3,434 |
-| Sepolia RemasteredPunks | `0x177B9d4655ecd6Ac6AFd7D1126B5CA34Fe5d3E0c` |
+| Sepolia RemasteredPunks | `0x7bfc1458fD8BC7D176b2D3B8020f07C335fe117B` |
 | Sepolia mock CryptoPunks | `0x6fCdfA445bF2752D4F38AB67F08c7eEDEfEaAed8` |
 | CryptoPunks mainnet (real) | `0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB` |
 | Live site | https://punksremastered.com |
