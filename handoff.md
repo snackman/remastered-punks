@@ -93,7 +93,7 @@ Deploy command (fires once wallet + key are provided):
 ```bash
 PRIVATE_KEY=<mainnet key> \
 BASE_URI=https://punksremastered.com/api/metadata/ \
-ETHERSCAN_API_KEY=<key> \
+ETHERSCAN_API_KEY="$(security find-generic-password -l etherscan -a remastered-punks -w)" \
 forge script script/Deploy.s.sol:DeployRemasteredPunks \
   --rpc-url <mainnet RPC> --broadcast --verify
 ```
@@ -106,7 +106,7 @@ Sepolia rehearsal passed).
 ### Blocking (needs Snax)
 1. A separate, REAL funded mainnet wallet — **do NOT reuse the Sepolia airdrop key**
    (`remastered-airdrop-sepolia` / `airdrop`, 0x709C4b…). ~0.02–0.05 ETH for gas + headroom.
-2. `ETHERSCAN_API_KEY` for source verification.
+2. ~~`ETHERSCAN_API_KEY`~~ — **done**: in login keychain (`-l etherscan -a remastered-punks`); verified the Sepolia contract with it.
 3. Explicit per-action go/no-go before broadcasting.
 
 ## Decisions (settled 2026-09-27)
