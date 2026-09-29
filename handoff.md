@@ -7,8 +7,8 @@ The stacking-compositor remaster is wired app-wide, the ERC-721 metadata endpoin
 live, and the contract passed a **full end-to-end Sepolia dress rehearsal**. Mainnet is
 prepped and config-locked; it's blocked only on a real funded wallet + Etherscan key +
 your go/no-go. Both pre-deploy contract decisions are **done** (`contractURI` + `syncOwnership`) and
-**re-rehearsed on Sepolia** (2026-09-29). Prod needs a deploy of this branch so
-`/api/metadata/contract.json` is live before mainnet.
+**re-rehearsed on Sepolia** (2026-09-29). Prod deployed from this branch
+(2026-09-29): `contract.json`, token JSON, and image all 200 on punksremastered.com.
 
 ## What this is
 An NFT collection pairing remastered artwork with specific CryptoPunks. Ownership is
