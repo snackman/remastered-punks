@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
@@ -12,7 +13,7 @@ interface ICryptoPunks {
 /// @title RemasteredPunks
 /// @notice NFT collection where ownership dynamically follows the original CryptoPunk
 /// @dev Implements EIP-5192 (Soulbound) - tokens cannot be transferred, only activated/deactivated
-contract RemasteredPunks is ERC721 {
+contract RemasteredPunks is ERC721, Ownable {
     using Strings for uint256;
 
     ICryptoPunks public immutable cryptoPunks;
@@ -23,23 +24,47 @@ contract RemasteredPunks is ERC721 {
     mapping(uint256 => bool) public activated;
     uint256 public totalActivated;
 
+    /// @notice Owner most recently announced via a Transfer event, per token.
+    /// @dev Lets syncOwnership emit a correct `from` after the underlying punk changes hands.
+    mapping(uint256 => address) public announcedOwner;
+
     error NotEligible();
     error NotPunkOwner();
     error AlreadyActivated();
     error TransferDisabled();
     error NotActivated();
+    error AlreadySynced();
 
     /// @notice EIP-5192 event - emitted when token lock status changes
     event Locked(uint256 tokenId);
+
+    /// @notice Emitted when the metadata base URI is updated
+    event BaseURIUpdated(string newBaseURI);
+
+    /// @notice ERC-7572 event - signals marketplaces to refetch contractURI()
+    event ContractURIUpdated();
 
     constructor(
         address _cryptoPunks,
         bytes32 _merkleRoot,
         string memory _baseURI
-    ) ERC721("Remastered Punks", "RMPUNK") {
+    ) ERC721("Remastered Punks", "RMPUNK") Ownable(msg.sender) {
         cryptoPunks = ICryptoPunks(_cryptoPunks);
         merkleRoot = _merkleRoot;
         baseURI = _baseURI;
+    }
+
+    /// @notice Update the metadata base URI (e.g. server -> IPFS migration)
+    /// @dev Owner-only. Renounce ownership to permanently freeze the metadata.
+    function setBaseURI(string calldata newBaseURI) external onlyOwner {
+        baseURI = newBaseURI;
+        emit BaseURIUpdated(newBaseURI);
+        emit ContractURIUpdated();
+    }
+
+    /// @notice ERC-7572 collection-level metadata, served alongside token metadata
+    function contractURI() external view returns (string memory) {
+        return string(abi.encodePacked(baseURI, "contract.json"));
     }
 
     /// @notice Activate the remastered version of your punk
@@ -65,6 +90,7 @@ contract RemasteredPunks is ERC721 {
         // 4. Mark as activated
         activated[punkId] = true;
         totalActivated++;
+        announcedOwner[punkId] = msg.sender;
 
         // Emit Transfer from zero address to signal "creation"
         emit Transfer(address(0), msg.sender, punkId);
@@ -90,8 +116,27 @@ contract RemasteredPunks is ERC721 {
         activated[punkId] = false;
         totalActivated--;
 
-        // Emit burn event
-        emit Transfer(msg.sender, address(0), punkId);
+        // Burn from the last-announced owner so indexers see a consistent history
+        address announced = announcedOwner[punkId];
+        delete announcedOwner[punkId];
+        emit Transfer(announced, address(0), punkId);
+    }
+
+    /// @notice Emit a Transfer from the last-announced owner to the current punk owner
+    /// @dev Permissionless. ownerOf is always live; this only lets log-based indexers
+    ///      (marketplaces) catch up after the underlying CryptoPunk changes hands.
+    function syncOwnership(uint256 tokenId) external {
+        if (!activated[tokenId]) {
+            revert NotActivated();
+        }
+        address current = cryptoPunks.punkIndexToAddress(tokenId);
+        address announced = announcedOwner[tokenId];
+        // current == 0 would read as a burn while the token is still active
+        if (current == announced || current == address(0)) {
+            revert AlreadySynced();
+        }
+        announcedOwner[tokenId] = current;
+        emit Transfer(announced, current, tokenId);
     }
 
     /// @notice Dynamic ownership - returns current punk owner
@@ -135,7 +180,7 @@ contract RemasteredPunks is ERC721 {
             revert ERC721InvalidOwner(address(0));
         }
         // Returning 0 here - use off-chain indexing for accurate counts
-        // A full implementation would iterate all 2,291 eligible punks
+        // A full implementation would iterate all 3,434 eligible punks
         return 0;
     }
 

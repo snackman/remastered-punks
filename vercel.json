@@ -1,14 +1,25 @@
 {
-  "buildCommand": "cd preview/remaster && npm install && npm run build && cp -r ../../data dist/data && cp ../../preview/traits.html dist/traits.html",
+  "buildCommand": "cd preview/remaster && npm install && npm run build && cp -r ../../data dist/data",
   "outputDirectory": "preview/remaster/dist",
   "installCommand": "cd api && npm install && cd .. && cd preview/remaster && npm install",
   "framework": null,
   "functions": {
     "api/*.js": {
       "includeFiles": "data/**"
+    },
+    "api/metadata/*.js": {
+      "includeFiles": "data/**"
     }
   },
   "rewrites": [
+    {
+      "source": "/api/metadata/contract.json",
+      "destination": "/api/metadata/contract"
+    },
+    {
+      "source": "/api/metadata/:id(\\d+).json",
+      "destination": "/api/metadata/:id"
+    },
     {
       "source": "/:punkId(\\d+)",
       "destination": "/api/:punkId"

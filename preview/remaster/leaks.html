@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Type-B ear leaks · prototype</title>
+    <style>
+        :root { --accent:#1a43c8; --ink:#181818; --muted:#6b6b6b; --line:#e6e6e6; --panel:#f5f5f5; }
+        * { box-sizing:border-box; }
+        body { font-family:'Montserrat',sans-serif; color:#272727; margin:0; padding:32px 24px 72px; max-width:1180px; margin:0 auto; }
+        h1 { color:var(--ink); font-size:26px; margin:0 0 6px; }
+        .sub { color:var(--muted); font-size:14px; margin:0 0 6px; max-width:760px; line-height:1.5; }
+        .nav { margin:18px 0 24px; font-size:13px; font-weight:700; }
+        .nav a { color:var(--accent); text-decoration:none; margin-right:16px; }
+        .nav a:hover { text-decoration:underline; }
+        .legend { display:flex; gap:20px; font-size:13px; color:var(--muted); margin-bottom:18px; flex-wrap:wrap; }
+        .legend b { color:var(--ink); }
+        .montage { width:100%; border:1px solid var(--line); border-radius:8px; background:var(--panel); image-rendering:pixelated; }
+    </style>
+</head>
+<body>
+    <h1>Baked-shift prototype — all remastered</h1>
+    <p class="sub">
+        The 233 previously-non-remastered females whose look changes once the ear-down shift is
+        baked in. Left is <b>current production</b>, right is <b>remastered</b>:
+    </p>
+    <p class="sub">
+        &bull; <b>Pilot Helmet</b>: left ear flap shifted down 1px to follow the ear.<br>
+        &bull; <b>Big Shades</b>: black pixel added at the left edge, nose-bridge height (6,12).<br>
+        &bull; <b>Wild Blonde</b>: remastered hair outline baked into the trait.<br>
+        &bull; <b>Eyewear-covered ears</b> (VR, Eye Mask, Big Shades' lower edge): just remasters
+        — the covered ear shows one pixel lower.<br>
+        &bull; <b>Hair-covered ears</b> (Dark Hair, Straight Hair, …): <b>excluded</b> — the ear-tip
+        below the hair is part of the original and stays put.
+    </p>
+    <div class="nav">
+        <a href="/">← Home</a>
+        <a href="/#gallery">All Remasters</a>
+        <a href="/traits.html">All Traits</a>
+    </div>
+    <div class="legend">
+        <span><b>Left:</b> current production</span>
+        <span><b>Right:</b> baked shift + covering fix</span>
+    </div>
+    <img class="montage" src="/leaks-typeb.png" alt="Type-B leak montage">
+</body>
+</html>

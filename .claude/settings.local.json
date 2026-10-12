@@ -20,16 +20,19 @@
       "Bash(gh api:*)",
       "Bash(git checkout:*)",
       "Bash(git merge:*)",
-      "Bash(vercel --version:*)",
-      "Bash(vercel ls:*)",
-      "Bash(python -m uv run python:*)",
-      "Bash(vercel deploy:*)",
-      "Bash(vercel domains add:*)",
-      "Bash(vercel domains:*)",
-      "Bash(vercel inspect:*)",
-      "Bash(npm --version)",
-      "Bash(nslookup:*)",
-      "Bash(cmd //c:*)"
+      "Bash(npm create:*)",
+      "Bash(source:*)",
+      "Bash(nvm list:*)",
+      "Bash(nvm use node)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(xargs:*)",
+      "Bash(nvm use:*)",
+      "Bash(npm run generate:*)",
+      "Bash(git stash drop:*)",
+      "Bash(git status:*)",
+      "Bash(security find-generic-password -a airdrop -s remastered-airdrop-sepolia:*)",
+      "Bash(forge script script/Deploy.s.sol:*)"
     ]
   }
 }

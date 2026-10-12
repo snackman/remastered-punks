@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useReadContracts, useChainId } from 'wagmi';
+import { useReadContracts, useChainId, usePublicClient } from 'wagmi';
 import { fetchOwnedPunks } from '../lib/ownedPunks';
 import { hasRemasters } from '../lib/remaster';
-import { REMASTERED_PUNKS_ABI, getContractAddress } from '../lib/contracts';
+import { REMASTERED_PUNKS_ABI, MOCK_CRYPTOPUNKS_ABI, getContractAddress, getCryptoPunksAddress } from '../lib/contracts';
 import PunkCard from './PunkCard';
 
 function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {}, isTestnet = false }) {
@@ -13,6 +13,7 @@ function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {}, isTestn
 
   const chainId = useChainId();
   const contractAddress = getContractAddress(chainId);
+  const publicClient = usePublicClient();
 
   // Create a Set for O(1) lookup
   const eligibleSet = new Set(eligiblePunks);
@@ -28,9 +29,23 @@ function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {}, isTestn
         let owned;
 
         if (isTestnet) {
-          // On testnet, show all eligible punks (anyone can claim on mock contract)
-          owned = eligiblePunks
-            .filter(punkId => punkData[punkId])
+          // On testnet, show the eligible punks this wallet owns on the mock
+          // CryptoPunks contract (assigned via setPunkOwner - no claim step).
+          const mockAddress = getCryptoPunksAddress(chainId);
+          const eligibleIds = eligiblePunks.filter(punkId => punkData[punkId]);
+          const results = await publicClient.multicall({
+            contracts: eligibleIds.map(punkId => ({
+              address: mockAddress,
+              abi: MOCK_CRYPTOPUNKS_ABI,
+              functionName: 'punkIndexToAddress',
+              args: [BigInt(punkId)],
+            })),
+            allowFailure: true,
+            batchSize: 100_000,
+          });
+          owned = eligibleIds
+            .filter((punkId, i) => results[i]?.status === 'success'
+              && results[i].result?.toLowerCase() === address.toLowerCase())
             .map(punkId => ({
               ...punkData[punkId],
               isEligible: true,
@@ -66,7 +81,7 @@ function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {}, isTestn
     }
 
     loadPunks();
-  }, [address, punkData, eligiblePunks, isTestnet]);
+  }, [address, punkData, eligiblePunks, isTestnet, chainId, publicClient]);
 
   // Punks that CAN be remastered (owned + eligible).
   const eligibleOwned = ownedPunks.filter(p => p.isEligible);
@@ -88,7 +103,7 @@ function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {}, isTestn
   if (loading) {
     return (
       <div className="loading">
-        <p>{isTestnet ? 'Loading eligible punks...' : 'Fetching CryptoPunks for this wallet...'}</p>
+        <p>{isTestnet ? 'Fetching your punks (testnet)...' : 'Fetching CryptoPunks for this wallet...'}</p>
       </div>
     );
   }

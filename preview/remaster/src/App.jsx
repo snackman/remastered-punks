@@ -11,9 +11,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { loadAssets } from './lib/sprites';
 import { loadPunkData, loadEligiblePunks } from './lib/data';
+import { initStacking } from './lib/remaster';
 import PunkGrid from './components/PunkGrid';
 import ManualLookup from './components/ManualLookup';
 import Home from './components/Home';
+import Gallery from './components/Gallery';
 
 import './App.css';
 
@@ -26,26 +28,82 @@ const config = getDefaultConfig({
 const queryClient = new QueryClient();
 
 function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, connector } = useAccount();
   const chainId = useChainId();
   const isTestnet = chainId === 11155111;
+  const [testnetStatus, setTestnetStatus] = useState('');
 
-  const VALID_TABS = ['home', 'wallet', 'lookup'];
+  // Switch the wallet to Ethereum Sepolia. Try switch first (works for wallets
+  // that already know Sepolia, e.g. MetaMask, which rejects "adding" its own
+  // default networks); only fall back to adding it if the wallet reports the
+  // chain is unknown (error 4902).
+  const addTestnet = async () => {
+    setTestnetStatus('pending');
+    try {
+      const provider = await connector?.getProvider();
+      if (!provider?.request) throw new Error('No wallet provider found');
+      try {
+        await provider.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0xaa36a7' }], // 11155111
+        });
+      } catch (switchErr) {
+        const code = switchErr?.code ?? switchErr?.data?.originalError?.code;
+        if (code === 4902) {
+          await provider.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: '0xaa36a7',
+              chainName: 'Sepolia',
+              nativeCurrency: { name: 'Sepolia Ether', symbol: 'ETH', decimals: 18 },
+              rpcUrls: ['https://ethereum-sepolia-rpc.publicnode.com', 'https://rpc.sepolia.org'],
+              blockExplorerUrls: ['https://sepolia.etherscan.io'],
+            }],
+          });
+        } else {
+          throw switchErr;
+        }
+      }
+      setTestnetStatus('');
+    } catch (err) {
+      console.error('Switch to testnet failed:', err);
+      setTestnetStatus(err?.shortMessage || err?.message || 'Could not switch network');
+    }
+  };
+
+  const VALID_TABS = ['home', 'wallet', 'lookup', 'gallery'];
   const [activeTab, setActiveTab] = useState(() => {
     const h = (typeof window !== 'undefined' ? window.location.hash : '').replace('#', '');
     return VALID_TABS.includes(h) ? h : 'home';
   });
+  // Trait filter for the gallery (deep-linkable via ?trait=Headband#gallery).
+  const [filterTrait, setFilterTrait] = useState(() => {
+    if (typeof window === 'undefined') return null;
+    return new URLSearchParams(window.location.search).get('trait') || null;
+  });
 
   // Switch tab and keep the URL hash in sync (so /#wallet deep-links work).
+  // Leaving the gallery clears any trait filter (and its ?trait query).
   const selectTab = (id) => {
     setActiveTab(id);
+    if (id !== 'gallery') setFilterTrait(null);
     if (typeof window !== 'undefined') {
       window.history.replaceState(null, '', id === 'home' ? '#home' : `#${id}`);
     }
   };
 
+  // Show the gallery filtered to a trait (pass null to show every remaster).
+  const selectTrait = (trait) => {
+    setFilterTrait(trait);
+    setActiveTab('gallery');
+    if (typeof window !== 'undefined') {
+      const q = trait ? `?trait=${encodeURIComponent(trait)}` : '';
+      window.history.replaceState(null, '', `${q}#gallery`);
+    }
+  };
+
   const base = import.meta.env.BASE_URL;
-  const traitsUrl = `${base}../../traits.html`;
+  const traitsUrl = `${base}traits.html`;
   const faviconUrl = `${base}favicon.png`;
 
   if (!assetsLoaded) {
@@ -72,9 +130,27 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
           {navButton('home', 'Home')}
           {navButton('wallet', 'My Punks')}
           {navButton('lookup', 'Lookup')}
+          <button
+            className={activeTab === 'gallery' ? 'active' : ''}
+            onClick={() => selectTrait(null)}
+          >
+            All Remasters
+          </button>
           <a href={traitsUrl}>All Traits</a>
         </nav>
         <div className="connect-wrapper">
+          {isConnected && !isTestnet && (
+            <button
+              className="testnet-switch"
+              onClick={addTestnet}
+              disabled={testnetStatus === 'pending'}
+              title={testnetStatus && testnetStatus !== 'pending'
+                ? testnetStatus
+                : 'Add the Sepolia test network to your wallet and switch to it'}
+            >
+              {testnetStatus === 'pending' ? 'Adding…' : 'Add Testnet'}
+            </button>
+          )}
           <ConnectButton />
         </div>
       </header>
@@ -85,6 +161,14 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
             punkData={punkData}
             eligiblePunks={eligiblePunks}
             onNavigate={selectTab}
+            onTrait={selectTrait}
+          />
+        )}
+        {activeTab === 'gallery' && (
+          <Gallery
+            punkData={punkData}
+            filterTrait={filterTrait}
+            onFilterTrait={selectTrait}
           />
         )}
         {activeTab === 'wallet' && (
@@ -140,6 +224,9 @@ function App() {
         // Load punk data
         const data = await loadPunkData(`${basePath}/data/punks-attributes/original/cryptopunks.csv`);
         setPunkData(data);
+
+        // Build the stacking compositor now that the sprite sheet + punk map exist.
+        initStacking(data);
 
         // Load eligible punks
         const eligible = await loadEligiblePunks(`${basePath}/data/all-eligible-punks.json`);

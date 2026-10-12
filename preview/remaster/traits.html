@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Punks Remastered</title>
+    <style>
+        :root {
+            --accent: #1a43c8;
+            --accent-dark: #1637a4;
+            --ink: #181818;
+            --text: #272727;
+            --muted: #6b6b6b;
+            --line: #e6e6e6;
+            --panel: #f5f5f5;
+            --punk-bg: #638596;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+            background: #ffffff;
+            color: var(--text);
+            padding: 0 0 72px;
+            margin: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+        /* Shared nav bar (matches the app) */
+        .tp-nav {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            max-width: 1040px;
+            margin: 0 auto;
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--line);
+            flex-wrap: wrap;
+        }
+        .tp-brand { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+        .tp-brand img { width: 32px; height: 32px; border-radius: 6px; image-rendering: pixelated; display: block; }
+        .tp-brand span { font-weight: 800; font-size: 17px; letter-spacing: 0.04em; color: var(--ink); text-transform: uppercase; }
+        .tp-links { display: flex; gap: 2px; margin-left: 6px; flex-wrap: wrap; }
+        .tp-links a {
+            font-weight: 700; font-size: 12.5px; letter-spacing: 0.04em; text-transform: uppercase;
+            color: var(--text); text-decoration: none; padding: 8px 15px; border-radius: 50px; transition: all 0.15s ease;
+        }
+        .tp-links a:hover { color: var(--accent); }
+        .tp-links a.active { background: var(--accent); color: #fff; }
+        h1 { text-align: center; color: var(--ink); font-weight: 800; margin: 36px 0 8px; }
+        .subtitle { text-align: center; color: var(--muted); margin-bottom: 40px; font-weight: 500; }
+        .section {
+            margin-bottom: 28px;
+            padding: 24px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            max-width: 1000px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .section h2 {
+            color: var(--ink);
+            font-weight: 800;
+            margin-top: 0;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 12px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .section h2::before {
+            content: '\25BC ';
+            font-size: 12px;
+            margin-right: 8px;
+            color: var(--accent);
+        }
+        .section.collapsed h2::before {
+            content: '\25B6 ';
+        }
+        .section.collapsed .section-content {
+            display: none;
+        }
+        .section h2:hover {
+            color: var(--accent);
+        }
+        .section h2 .trait-count,
+        .section h2 .trait-count-link {
+            float: right;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent);
+            background: rgba(26, 67, 200, 0.1);
+            border-radius: 999px;
+            padding: 3px 12px;
+            letter-spacing: 0;
+        }
+        .section h2 .trait-count-link {
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .section h2 .trait-count-link:hover {
+            background: rgba(26, 67, 200, 0.2);
+            text-decoration: underline;
+        }
+        .section p { color: var(--muted); font-size: 14px; font-weight: 500; }
+        .trait-pixels {
+            display: inline-block;
+            font-size: 12px !important;
+            font-weight: 700 !important;
+            color: var(--accent) !important;
+            background: rgba(26, 67, 200, 0.08);
+            border-radius: 999px;
+            padding: 3px 12px;
+            margin: 0 0 4px !important;
+        }
+        .trait-view-all {
+            display: inline-block;
+            margin-top: 22px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent, #1a43c8);
+            text-decoration: none;
+        }
+        .trait-view-all:hover { text-decoration: underline; }
+        .comparison-row {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .comparison-item {
+            text-align: center;
+        }
+        .comparison-item h4 {
+            color: var(--muted);
+            margin: 0 0 10px 0;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .punk-pair {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        .punk-box {
+            text-align: center;
+        }
+        .punk-box .label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+        .canvas-container {
+            background: var(--punk-bg);
+            padding: 0;
+            border-radius: 6px;
+            display: inline-block;
+        }
+        canvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            display: block;
+        }
+        .arrow {
+            font-size: 24px;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            padding-bottom: 20px;
+        }
+        .skin-tones {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .skin-tone-group h4 {
+            color: var(--muted);
+            margin: 0 0 10px 0;
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+        }
+        /* Isolated trait sprite (no head): render on a checkerboard so the
+           transparent areas of the sprite are visible. */
+        .isolated-group h4 { color: var(--accent, #1a43c8); }
+        .isolated-group .canvas-container canvas {
+            background-color: #f6f6f6;
+            background-image:
+                linear-gradient(45deg, #dcdcdc 25%, transparent 25%),
+                linear-gradient(-45deg, #dcdcdc 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #dcdcdc 75%),
+                linear-gradient(-45deg, transparent 75%, #dcdcdc 75%);
+            background-size: 12px 12px;
+            background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+        }
+    </style>
+</head>
+<body>
+    <header class="tp-nav">
+        <a class="tp-brand" href="/#home">
+            <img src="/favicon.png" alt="">
+            <span>Punks Remastered</span>
+        </a>
+        <nav class="tp-links">
+            <a href="/#home">Home</a>
+            <a href="/#wallet">My Punks</a>
+            <a href="/#lookup">Lookup</a>
+            <a href="/#gallery">All Remasters</a>
+            <a class="active" href="traits.html">All Traits</a>
+        </nav>
+    </header>
+    <h1>Remastered Traits</h1>
+    <p class="subtitle">Each remastered trait shown as an isolated sprite (no head) and on a plain punk head with no other accessories</p>
+
+    <div class="section" data-section="1">
+        <h2>1. Ear Position (Base Head)</h2>
+        <div class="section-content">
+            <p>The ear on the female base head is moved down 1 pixel. This affects punks with ear-visible hairstyles.</p>
+            <div class="skin-tones" id="earComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="2">
+        <h2>2. Regular Shades</h2>
+        <div class="section-content">
+            <p>Regular Shades are moved down 1 pixel to sit lower on the face.</p>
+            <div class="skin-tones" id="shadesComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="3">
+        <h2>3. Earring (with Ear Visible)</h2>
+        <div class="section-content">
+            <p>When the ear is visible (and moved down), the Earring is also moved down 1 pixel to stay aligned.</p>
+            <div class="skin-tones" id="earringComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="4">
+        <h2>4. Combined: Ear + Shades + Earring</h2>
+        <div class="section-content">
+            <p>A punk with all remastered elements: moved ear, moved shades, and moved earring.</p>
+            <div class="skin-tones" id="combinedComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="5">
+        <h2>5. Mohawk</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="mohawkComparison"></div>
+        </div>
+    </div>
+
+
+    <div class="section" data-section="8">
+        <h2>8. Red Mohawk</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="redMohawkComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="9">
+        <h2>9. Bandana</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="bandanaComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="10">
+        <h2>10. Headband</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="headbandComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="11">
+        <h2>11. Cap</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="capComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="12">
+        <h2>12. Knitted Cap</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="knittedCapComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="13">
+        <h2>13. Tiara</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="tiaraComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="14">
+        <h2>14. Welding Goggles</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="weldingGogglesComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="30">
+        <h2>30. Pilot Helmet</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="pilotHelmetComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="31">
+        <h2>31. Eye Mask</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="eyeMaskComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="32">
+        <h2>32. Big Shades</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="bigShadesComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="15">
+        <h2>15. Blonde Bob</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="blondeBobComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="16">
+        <h2>16. Blonde Short</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="blondeShortComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="17">
+        <h2>17. Crazy Hair</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="crazyHairComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="20">
+        <h2>20. Orange Side</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="orangeSideComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="23">
+        <h2>23. Wild Blonde</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="wildBlondeComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="24">
+        <h2>24. Wild White Hair</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="wildWhiteHairComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="25">
+        <h2>25. Clown Hair Green</h2>
+        <div class="section-content">
+            <div class="skin-tones" id="clownHairGreenComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="26">
+        <h2>26. Front Beard</h2>
+        <div class="section-content">
+            <p>Add beard color pixels at chin area.</p>
+            <div class="skin-tones" id="frontBeardComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="27">
+        <h2>27. Choker</h2>
+        <div class="section-content">
+            <p>Replace choker with 3 pixels.</p>
+            <div class="skin-tones" id="chokerComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="28">
+        <h2>28. Small Shades</h2>
+        <div class="section-content">
+            <p>Add two black pixels for nose bridge.</p>
+            <div class="skin-tones" id="smallShadesComparison"></div>
+        </div>
+    </div>
+
+    <div class="section" data-section="29">
+        <h2>29. Frown (over beard)</h2>
+        <div class="section-content">
+            <p>Keep the frown visible on top of a beard that hides it in the original.</p>
+            <div class="skin-tones" id="frownBeardComparison"></div>
+        </div>
+    </div>
+
+    <script type="module" src="/src/traits.js"></script>
+</body>
+</html>

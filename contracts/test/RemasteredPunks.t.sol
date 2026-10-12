@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "../src/RemasteredPunks.sol";
 import "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @dev Mock CryptoPunks contract for testing
 contract MockCryptoPunks {
@@ -331,5 +332,123 @@ contract RemasteredPunksTest is Test {
         vm.prank(bob);
         remastered.activate(203, proof203);
         assertEq(remastered.totalSupply(), 3);
+    }
+
+    // ============ setBaseURI Tests ============
+
+    function test_OwnerIsDeployer() public view {
+        assertEq(remastered.owner(), address(this));
+    }
+
+    function test_SetBaseURIUpdatesTokenURI() public {
+        vm.prank(alice);
+        remastered.activate(70, proof70);
+        assertEq(remastered.tokenURI(70), "ipfs://QmTest/70.json");
+
+        remastered.setBaseURI("https://punksremastered.com/api/metadata/");
+        assertEq(remastered.tokenURI(70), "https://punksremastered.com/api/metadata/70.json");
+    }
+
+    function test_SetBaseURIEmitsEvent() public {
+        vm.expectEmit(false, false, false, true);
+        emit RemasteredPunks.BaseURIUpdated("ipfs://QmNew/");
+        remastered.setBaseURI("ipfs://QmNew/");
+        assertEq(remastered.baseURI(), "ipfs://QmNew/");
+    }
+
+    function test_SetBaseURIRevertsForNonOwner() public {
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+        remastered.setBaseURI("ipfs://QmHacker/");
+    }
+
+    function test_RenounceOwnershipFreezesBaseURI() public {
+        remastered.renounceOwnership();
+        assertEq(remastered.owner(), address(0));
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, address(this)));
+        remastered.setBaseURI("ipfs://QmFrozen/");
+    }
+
+    // ============ contractURI Tests ============
+
+    function test_ContractURI() public view {
+        assertEq(remastered.contractURI(), "ipfs://QmTest/contract.json");
+    }
+
+    function test_SetBaseURIUpdatesContractURIAndEmits() public {
+        vm.expectEmit(false, false, false, false);
+        emit RemasteredPunks.ContractURIUpdated();
+        remastered.setBaseURI("https://punksremastered.com/api/metadata/");
+        assertEq(remastered.contractURI(), "https://punksremastered.com/api/metadata/contract.json");
+    }
+
+    // ============ syncOwnership Tests ============
+
+    function test_ActivateRecordsAnnouncedOwner() public {
+        vm.prank(alice);
+        remastered.activate(70, proof70);
+        assertEq(remastered.announcedOwner(70), alice);
+    }
+
+    function test_SyncOwnershipEmitsTransferAfterSale() public {
+        vm.prank(alice);
+        remastered.activate(70, proof70);
+        punks.setPunkOwner(70, bob);
+
+        // Permissionless: a third party can poke it
+        vm.prank(address(0xCAFE));
+        vm.expectEmit(true, true, true, true);
+        emit IERC721.Transfer(alice, bob, 70);
+        remastered.syncOwnership(70);
+
+        assertEq(remastered.announcedOwner(70), bob);
+        assertEq(remastered.ownerOf(70), bob);
+    }
+
+    function test_SyncOwnershipChainsAcrossSales() public {
+        address carol = address(0xCA201);
+        vm.prank(alice);
+        remastered.activate(70, proof70);
+
+        punks.setPunkOwner(70, bob);
+        remastered.syncOwnership(70);
+
+        punks.setPunkOwner(70, carol);
+        vm.expectEmit(true, true, true, true);
+        emit IERC721.Transfer(bob, carol, 70);
+        remastered.syncOwnership(70);
+    }
+
+    function test_SyncOwnershipRevertsWhenAlreadySynced() public {
+        vm.prank(alice);
+        remastered.activate(70, proof70);
+        vm.expectRevert(RemasteredPunks.AlreadySynced.selector);
+        remastered.syncOwnership(70);
+    }
+
+    function test_SyncOwnershipRevertsForZeroOwner() public {
+        vm.prank(alice);
+        remastered.activate(70, proof70);
+        punks.setPunkOwner(70, address(0));
+        vm.expectRevert(RemasteredPunks.AlreadySynced.selector);
+        remastered.syncOwnership(70);
+    }
+
+    function test_SyncOwnershipRevertsIfNotActivated() public {
+        vm.expectRevert(RemasteredPunks.NotActivated.selector);
+        remastered.syncOwnership(70);
+    }
+
+    function test_DeactivateAfterUnsyncedSaleBurnsFromAnnounced() public {
+        vm.prank(alice);
+        remastered.activate(70, proof70);
+        punks.setPunkOwner(70, bob);
+
+        // Indexers still think alice holds it, so the burn must come from alice
+        vm.prank(bob);
+        vm.expectEmit(true, true, true, true);
+        emit IERC721.Transfer(alice, address(0), 70);
+        remastered.deactivate(70);
+        assertEq(remastered.announcedOwner(70), address(0));
     }
 }
