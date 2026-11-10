@@ -1,1 +1,4 @@
 .vercel
+
+# Claude Code local permissions (can contain secrets)
+.claude/settings.local.json
