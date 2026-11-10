@@ -2,3 +2,6 @@
 .env*
 .claude/worktrees/
 node_modules/
+
+# Claude Code local permissions (can contain secrets)
+.claude/settings.local.json
