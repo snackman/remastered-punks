@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import PunkCard from './PunkCard';
 
-function ManualLookup({ punkData, merkleProofs = {}, merkleStatus = 'loading' }) {
+function ManualLookup({ punkData, eligiblePunks = [], merkleProofs = {}, merkleStatus = 'loading' }) {
   const [inputValue, setInputValue] = useState('');
   const [punk, setPunk] = useState(null);
   const [error, setError] = useState(null);
@@ -11,12 +11,12 @@ function ManualLookup({ punkData, merkleProofs = {}, merkleStatus = 'loading' })
     setError(null);
     setPunk(null);
 
-    const punkId = parseInt(inputValue.trim());
-
-    if (isNaN(punkId) || punkId < 0 || punkId > 9999) {
-      setError('Please enter a valid punk ID (0-9999)');
+    const raw = inputValue.trim().replace(/^#/, '');
+    if (!/^\d{1,4}$/.test(raw)) {
+      setError('Enter a whole-number punk ID from 0 to 9999');
       return;
     }
+    const punkId = Number(raw);
 
     const foundPunk = punkData[punkId];
     if (!foundPunk) {
@@ -27,23 +27,43 @@ function ManualLookup({ punkData, merkleProofs = {}, merkleStatus = 'loading' })
     setPunk(foundPunk);
   };
 
+  const randomEligible = () => {
+    if (!eligiblePunks.length) return;
+    const id = eligiblePunks[Math.floor(Math.random() * eligiblePunks.length)];
+    setError(null);
+    setInputValue(String(id));
+    setPunk(punkData[id] || null);
+  };
+
   return (
     <div className="manual-lookup">
       <form onSubmit={handleSubmit}>
         <div className="input-row">
+          <label htmlFor="punk-id-input" className="sr-only">Punk ID (0–9999)</label>
           <input
-            type="number"
+            id="punk-id-input"
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder="Enter Punk ID"
-            min="0"
-            max="9999"
+            aria-invalid={!!error}
+            aria-describedby={error ? 'lookup-error' : undefined}
           />
           <button type="submit">Lookup</button>
         </div>
       </form>
+      <button
+        type="button"
+        className="link-button"
+        onClick={randomEligible}
+        disabled={!eligiblePunks.length}
+      >
+        Random eligible punk
+      </button>
 
-      {error && <div className="lookup-error">{error}</div>}
+      {error && <div id="lookup-error" className="lookup-error" role="alert">{error}</div>}
 
       {punk && (
         <div className="lookup-result">

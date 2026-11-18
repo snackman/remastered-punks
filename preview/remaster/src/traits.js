@@ -280,10 +280,26 @@ function addPixelCounts() {
   });
 }
 
-function setupCollapsible() {
-  document.querySelectorAll('.section h2').forEach(h2 => {
-    h2.addEventListener('click', () => {
-      h2.parentElement.classList.toggle('collapsed');
+// Turn each section heading into a real <button aria-expanded>. Runs last in
+// init() so orderSectionsByCount's innerHTML rewrite can't destroy the buttons.
+// The count link stays a sibling (a link inside a button is invalid).
+function wireToggles() {
+  document.querySelectorAll('.section').forEach((sec, i) => {
+    const h2 = sec.querySelector('h2');
+    const content = sec.querySelector('.section-content');
+    if (!h2 || !content) return;
+    content.id = `sec-${i}-content`;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'section-toggle';
+    btn.setAttribute('aria-expanded', String(!sec.classList.contains('collapsed')));
+    btn.setAttribute('aria-controls', content.id);
+    [...h2.childNodes]
+      .filter(n => !(n.nodeType === 1 && n.matches('.trait-count, .trait-count-link')))
+      .forEach(n => btn.appendChild(n));
+    h2.insertBefore(btn, h2.firstChild);
+    btn.addEventListener('click', () => {
+      btn.setAttribute('aria-expanded', String(!sec.classList.toggle('collapsed')));
     });
   });
 }
@@ -380,7 +396,6 @@ function addTraitLinks() {
 
 async function init() {
   try {
-    setupCollapsible();
     const basePath = import.meta.env.DEV ? '../..' : '';
     await loadSpriteSheet(`${basePath}/data/cryptopunks-assets/punks/config/punks-24x24.png`);
 
@@ -404,6 +419,7 @@ async function init() {
     orderSectionsByCount();
     addTraitLinks();
     addPixelCounts();
+    wireToggles();
   } catch (err) {
     console.error('Init failed:', err);
     document.body.innerHTML = `<p style="color:red;text-align:center;padding:40px;">Error: ${err.message}</p>`;

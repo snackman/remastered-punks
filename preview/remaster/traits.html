@@ -84,22 +84,37 @@
             margin-top: 0;
             border-bottom: 1px solid var(--line);
             padding-bottom: 12px;
-            cursor: pointer;
             user-select: none;
         }
-        .section h2::before {
+        .section-toggle {
+            all: unset;
+            display: inline-flex;
+            align-items: center;
+            min-height: 44px;
+            padding: 4px 8px 4px 0;
+            cursor: pointer;
+            font: inherit;
+            color: inherit;
+        }
+        .section-toggle:focus-visible {
+            outline: 3px solid var(--accent);
+            outline-offset: 2px;
+            border-radius: 6px;
+        }
+        .section-toggle::before {
             content: '\25BC ';
             font-size: 12px;
             margin-right: 8px;
             color: var(--accent);
         }
-        .section.collapsed h2::before {
+        .section.collapsed .section-toggle::before {
             content: '\25B6 ';
         }
         .section.collapsed .section-content {
             display: none;
         }
-        .section h2:hover {
+        .section h2:hover,
+        .section-toggle:hover {
             color: var(--accent);
         }
         .section h2 .trait-count,

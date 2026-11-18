@@ -8,6 +8,7 @@ import { loadAssets } from './lib/sprites';
 import { loadPunkData, loadEligiblePunks } from './lib/data';
 import { initEligibility } from './lib/eligibility';
 import { initStacking } from './lib/remaster';
+import { parseUrl, buildUrl } from './lib/urlState';
 import { wagmiConfig, IS_MAINNET, TARGET_CHAIN } from './lib/network';
 import { getContractAddress } from './lib/contracts';
 import { useNetwork } from './lib/useNetwork';
@@ -20,7 +21,7 @@ import './App.css';
 
 const queryClient = new QueryClient();
 
-function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs, merkleStatus }) {
+function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs, merkleStatus, loadError, onRetry }) {
   const { address, connector } = useAccount();
   const { isConnected, isSupported, isTestnet } = useNetwork();
   const { switchChain } = useSwitchChain();
@@ -64,36 +65,38 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs, merkl
     }
   };
 
-  const VALID_TABS = ['home', 'wallet', 'lookup', 'gallery'];
-  const [activeTab, setActiveTab] = useState(() => {
-    const h = (typeof window !== 'undefined' ? window.location.hash : '').replace('#', '');
-    return VALID_TABS.includes(h) ? h : 'home';
-  });
+  const [activeTab, setActiveTab] = useState(() => parseUrl(window.location).tab);
   // Trait filter for the gallery (deep-linkable via ?trait=Headband#gallery).
-  const [filterTrait, setFilterTrait] = useState(() => {
-    if (typeof window === 'undefined') return null;
-    return new URLSearchParams(window.location.search).get('trait') || null;
-  });
+  const [filterTrait, setFilterTrait] = useState(() => parseUrl(window.location).trait);
 
-  // Switch tab and keep the URL hash in sync (so /#wallet deep-links work).
-  // Leaving the gallery clears any trait filter (and its ?trait query).
-  const selectTab = (id) => {
-    setActiveTab(id);
-    if (id !== 'gallery') setFilterTrait(null);
-    if (typeof window !== 'undefined') {
-      window.history.replaceState(null, '', id === 'home' ? '#home' : `#${id}`);
-    }
-  };
-
-  // Show the gallery filtered to a trait (pass null to show every remaster).
-  const selectTrait = (trait) => {
+  // Every tab/trait change is a history entry, so the browser Back/Forward
+  // buttons move between tabs. The query is rebuilt from scratch so a stale
+  // ?trait= / ?punk= never survives a tab switch.
+  const nav = (tab, trait = null) => {
+    setActiveTab(tab);
     setFilterTrait(trait);
-    setActiveTab('gallery');
-    if (typeof window !== 'undefined') {
-      const q = trait ? `?trait=${encodeURIComponent(trait)}` : '';
-      window.history.replaceState(null, '', `${q}#gallery`);
+    const loc = window.location;
+    const url = buildUrl({
+      pathname: loc.pathname, search: loc.search, tab, trait, keepDev: import.meta.env.DEV,
+    });
+    if (url !== loc.pathname + loc.search + loc.hash) {
+      window.history.pushState({ tab, trait }, '', url);
     }
+    window.scrollTo(0, 0);
   };
+  const selectTab = (id) => nav(id);
+  // Show the gallery filtered to a trait (pass null to show every remaster).
+  const selectTrait = (trait) => nav('gallery', trait);
+
+  useEffect(() => {
+    const onPop = () => {
+      const s = parseUrl(window.location);
+      setActiveTab(s.tab);
+      setFilterTrait(s.trait);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   // Per-tab document title (home string must match index.html's <title>).
   useEffect(() => {
@@ -108,10 +111,6 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs, merkl
   const base = import.meta.env.BASE_URL;
   const traitsUrl = `${base}traits.html`;
   const faviconUrl = `${base}favicon.png`;
-
-  if (!assetsLoaded) {
-    return <div className="loading">Loading assets...</div>;
-  }
 
   const navButton = (id, label) => (
     <button
@@ -129,7 +128,7 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs, merkl
           <img className="brand-logo" src={faviconUrl} alt="" />
           <span className="brand-name">Punks Remastered</span>
         </button>
-        <nav className="site-nav">
+        <nav className="site-nav" aria-label="Main">
           {navButton('home', 'Home')}
           {navButton('wallet', 'My Punks')}
           {navButton('lookup', 'Lookup')}
@@ -163,16 +162,30 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs, merkl
               Wrong network
             </button>
           )}
-          <ConnectButton />
+          <ConnectButton
+            showBalance={false}
+            chainStatus={{ smallScreen: 'icon', largeScreen: 'full' }}
+            accountStatus={{ smallScreen: 'avatar', largeScreen: 'full' }}
+          />
         </div>
       </header>
 
       <main>
+        {loadError ? (
+          <div className="error" role="alert">
+            <p>Couldn&apos;t load punk data. {loadError}</p>
+            <button className="btn" onClick={onRetry}>Retry</button>
+          </div>
+        ) : !assetsLoaded ? (
+          <div className="loading" role="status" aria-live="polite">
+            <span className="spinner" aria-hidden="true" />
+            <p>Loading punks…</p>
+          </div>
+        ) : (<>
         {activeTab === 'home' && (
           <Home
             punkData={punkData}
             eligiblePunks={eligiblePunks}
-            onNavigate={selectTab}
             onTrait={selectTrait}
           />
         )}
@@ -194,13 +207,20 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs, merkl
             />
           ) : (
             <div className="connect-prompt">
-              <p>Connect your wallet to view your CryptoPunks.</p>
+              <p>Connect your wallet to see which of your CryptoPunks can mint a remaster.</p>
+              <div className="connect-prompt-actions">
+                <ConnectButton.Custom>{({ openConnectModal, mounted }) => (
+                  <button className="btn" onClick={openConnectModal} disabled={!mounted}>Connect wallet</button>
+                )}</ConnectButton.Custom>
+                <button className="link-button" onClick={() => selectTab('lookup')}>or look up any punk</button>
+              </div>
             </div>
           )
         )}
         {activeTab === 'lookup' && (
-          <ManualLookup punkData={punkData} merkleProofs={merkleProofs} merkleStatus={merkleStatus} />
+          <ManualLookup punkData={punkData} eligiblePunks={eligiblePunks} merkleProofs={merkleProofs} merkleStatus={merkleStatus} />
         )}
+        </>)}
       </main>
 
       <footer className="site-footer">
@@ -222,6 +242,8 @@ function App() {
   const [merkleStatus, setMerkleStatus] = useState('loading'); // 'loading' | 'ready' | 'error'
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [error, setError] = useState(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const retry = () => { setError(null); setLoadAttempt((n) => n + 1); };
 
   useEffect(() => {
     async function init() {
@@ -270,11 +292,7 @@ function App() {
     }
 
     init();
-  }, []);
-
-  if (error) {
-    return <div className="error">Error loading: {error}</div>;
-  }
+  }, [loadAttempt]);
 
   return (
     <WagmiProvider config={wagmiConfig}>
@@ -286,6 +304,8 @@ function App() {
             merkleProofs={merkleProofs}
             merkleStatus={merkleStatus}
             assetsLoaded={assetsLoaded}
+            loadError={error}
+            onRetry={retry}
           />
         </RainbowKitProvider>
       </QueryClientProvider>

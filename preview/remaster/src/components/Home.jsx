@@ -2,10 +2,34 @@ import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { SPRITE_SIZE } from '../lib/constants';
 import { extractPunk } from '../lib/sprites';
 import { compositePunk, remasterTraits } from '../lib/remaster';
+import { buildUrl } from '../lib/urlState';
 import { buildBuckets, isEligibleId, noRemasterCopy } from '../lib/eligibility';
 import HomeExplainer from './HomeExplainer';
 
 const ZOOM = 9;
+const REVEAL_BG = '#638596';
+
+// Composite the original onto the same background as the remaster (extractPunk's
+// background is transparent, which would otherwise all count as "changed"
+// against the remaster's opaque background) and count differing pixels.
+function countChangedPixels(punk) {
+  const orig = document.createElement('canvas');
+  orig.width = SPRITE_SIZE;
+  orig.height = SPRITE_SIZE;
+  const oc = orig.getContext('2d');
+  oc.fillStyle = REVEAL_BG;
+  oc.fillRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+  oc.drawImage(extractPunk(punk.id), 0, 0);
+
+  const rem = compositePunk(punk, true);
+  const od = oc.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE).data;
+  const rd = rem.getContext('2d').getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE).data;
+  let changed = 0;
+  for (let i = 0; i < od.length; i += 4) {
+    if (od[i] !== rd[i] || od[i + 1] !== rd[i + 1] || od[i + 2] !== rd[i + 2]) changed += 1;
+  }
+  return { orig, rem, changed };
+}
 
 // Pick a random alteration type (equal chance each), then a random punk of that
 // type - so rare alterations show as often as common ones.
@@ -16,18 +40,17 @@ function pickRandomByType(buckets) {
   return bucket[Math.floor(Math.random() * bucket.length)];
 }
 
-function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
+function Home({ punkData, eligiblePunks, onTrait }) {
   const [punk, setPunk] = useState(null);
   const [pos, setPos] = useState(-1);     // index into the shuffle history
   const [count, setCount] = useState(0);  // history length
   const [reveal, setReveal] = useState(false);      // "can't see the difference?" overlay
-  const [changedCount, setChangedCount] = useState(0);
   const [revealShowing, setRevealShowing] = useState('remastered');
   const originalRef = useRef(null);
   const remasteredRef = useRef(null);
   const overlayRef = useRef(null);
 
-  // Refs so the popstate handler and callbacks always see current values.
+  // Refs so callbacks always see current values.
   const historyRef = useRef([]);          // array of punk ids, in view order
   const posRef = useRef(-1);
   const punkDataRef = useRef(punkData);
@@ -38,7 +61,11 @@ function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
   const bucketsRef = useRef(buckets);
   useEffect(() => { bucketsRef.current = buckets; }, [buckets]);
 
-  const urlFor = (id) => `?punk=${id}${window.location.hash || '#home'}`;
+  // Home only renders on the home tab; shuffles replace (not push) the history entry.
+  const urlFor = (id) => buildUrl({
+    pathname: window.location.pathname, search: window.location.search,
+    tab: 'home', punk: id, keepDev: import.meta.env.DEV,
+  });
 
   // Show the punk at a given history index and mirror it into the URL.
   const showAt = useCallback((p) => {
@@ -109,35 +136,22 @@ function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
     if (eligible && remasteredRef.current) draw(remasteredRef.current, compositePunk(punk, true));
   }, [punk, reveal, eligible]);
 
+  const revealData = useMemo(
+    () => (reveal && eligible && punk ? countChangedPixels(punk) : null),
+    [reveal, eligible, punk],
+  );
+
   // Reveal mode: overlay the two images in one spot and flicker between them so
   // the changed pixels stand out. Both are drawn on the same background, so the
   // diff count reflects only real pixel changes (not the transparent-vs-grey bg).
   useEffect(() => {
-    if (!reveal || !punk || !eligible || !overlayRef.current) return;
+    if (!revealData || !overlayRef.current) return;
     const canvas = overlayRef.current;
     const ctx = canvas.getContext('2d');
     ctx.imageSmoothingEnabled = false;
     const S = SPRITE_SIZE * ZOOM;
 
-    // Composite the original onto the same background as the remaster
-    // (extractPunk's background is transparent, which would otherwise all count
-    // as "changed" against the remaster's opaque background).
-    const orig = document.createElement('canvas');
-    orig.width = SPRITE_SIZE;
-    orig.height = SPRITE_SIZE;
-    const oc = orig.getContext('2d');
-    oc.fillStyle = '#638596';
-    oc.fillRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
-    oc.drawImage(extractPunk(punk.id), 0, 0);
-
-    const rem = compositePunk(punk, true);
-    const od = oc.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE).data;
-    const rd = rem.getContext('2d').getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE).data;
-    let changed = 0;
-    for (let i = 0; i < od.length; i += 4) {
-      if (od[i] !== rd[i] || od[i + 1] !== rd[i + 1] || od[i + 2] !== rd[i + 2]) changed += 1;
-    }
-    setChangedCount(changed);
+    const { orig, rem } = revealData;
 
     const drawImg = (src) => {
       ctx.clearRect(0, 0, S, S);
@@ -146,7 +160,7 @@ function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
 
     let cancelled = false;
     let timer = null;
-    let showRem = true;
+    let showRem = false;
     const flick = () => {
       if (cancelled) return;
       drawImg(showRem ? rem : orig);
@@ -154,13 +168,14 @@ function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
       showRem = !showRem;
       timer = setTimeout(flick, 380);
     };
-    flick();
+    drawImg(rem);
+    timer = setTimeout(flick, 380);
 
     return () => {
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [reveal, punk, eligible]);
+  }, [reveal, punk, eligible, revealData]);
 
   return (
     <section className="home">
@@ -173,12 +188,14 @@ function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
         <div className="hero-overlay">
           <canvas
             ref={overlayRef}
+            role="img"
+            aria-label={`Punk #${punk.id}, alternating between original and remaster`}
             width={SPRITE_SIZE * ZOOM}
             height={SPRITE_SIZE * ZOOM}
           />
           <span className="hero-label">
             {revealShowing === 'remastered'
-              ? `Remaster · ${changedCount} pixel${changedCount === 1 ? '' : 's'} changed`
+              ? `Remaster · ${revealData?.changed ?? 0} pixel${revealData?.changed === 1 ? '' : 's'} changed`
               : 'Original'}
           </span>
         </div>
@@ -187,6 +204,8 @@ function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
           <div className="hero-side">
             <canvas
               ref={originalRef}
+              role="img"
+              aria-label={punk ? `Punk #${punk.id}${eligible ? ', original' : ''}` : 'Loading punk'}
               width={SPRITE_SIZE * ZOOM}
               height={SPRITE_SIZE * ZOOM}
             />
@@ -198,6 +217,8 @@ function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
               <div className="hero-side">
                 <canvas
                   ref={remasteredRef}
+                  role="img"
+                  aria-label={punk ? `Punk #${punk.id}, remastered` : 'Loading punk'}
                   width={SPRITE_SIZE * ZOOM}
                   height={SPRITE_SIZE * ZOOM}
                 />
@@ -234,7 +255,7 @@ function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
       {punk && !eligible && <div className="no-remaster">{noRemasterCopy(punk.id)}</div>}
 
       {eligible && (
-        <button className="reveal-toggle" onClick={() => setReveal((v) => !v)}>
+        <button className="reveal-toggle" onClick={() => { setRevealShowing('remastered'); setReveal((v) => !v); }}>
           {reveal ? 'Back to compare' : "Can't see the difference?"}
         </button>
       )}
