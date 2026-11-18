@@ -44,35 +44,41 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, loadError, onRetry 
   const [activeTab, setActiveTab] = useState(() => parseUrl(window.location).tab);
   // Trait filter for the gallery (deep-linkable via ?trait=Headband#gallery).
   const [filterTrait, setFilterTrait] = useState(() => parseUrl(window.location).trait);
+  // Punk selected via ?punk=<id>#home (gallery links, deep links); Home shows it.
+  const [selectedPunk, setSelectedPunk] = useState(() => parseUrl(window.location).punk);
 
   // Every tab/trait change is a history entry, so the browser Back/Forward
   // buttons move between tabs. The query is rebuilt from scratch so a stale
   // ?trait= / ?punk= never survives a tab switch.
-  const nav = (tab, trait = null) => {
-    if (tab === activeTab && (tab !== 'gallery' || trait === filterTrait)) {
+  const nav = (tab, trait = null, punk = null) => {
+    if (tab === activeTab && (tab !== 'gallery' || trait === filterTrait) && (punk == null || punk === selectedPunk)) {
       window.scrollTo(0, 0);
       return;
     }
     setActiveTab(tab);
     setFilterTrait(trait);
+    setSelectedPunk(punk);
     const loc = window.location;
     const url = buildUrl({
-      pathname: loc.pathname, search: loc.search, tab, trait, keepDev: import.meta.env.DEV,
+      pathname: loc.pathname, search: loc.search, tab, trait, punk, keepDev: import.meta.env.DEV,
     });
     if (url !== loc.pathname + loc.search + loc.hash) {
-      window.history.pushState({ tab, trait }, '', url);
+      window.history.pushState({ tab, trait, punk }, '', url);
     }
     window.scrollTo(0, 0);
   };
   const selectTab = (id) => nav(id);
   // Show the gallery filtered to a trait (pass null to show every remaster).
   const selectTrait = (trait) => nav('gallery', trait);
+  // Open a punk on Home (pass an id) without reloading the app.
+  const selectPunk = (id) => nav('home', null, id);
 
   useEffect(() => {
     const onPop = () => {
       const s = parseUrl(window.location);
       setActiveTab(s.tab);
       setFilterTrait(s.trait);
+      setSelectedPunk(s.punk);
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
@@ -168,6 +174,7 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, loadError, onRetry 
           <Home
             punkData={punkData}
             eligiblePunks={eligiblePunks}
+            selectedPunk={selectedPunk}
             onNavigate={selectTab}
             onTrait={selectTrait}
           />
@@ -177,6 +184,7 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, loadError, onRetry 
             punkData={punkData}
             filterTrait={filterTrait}
             onFilterTrait={selectTrait}
+            onSelectPunk={selectPunk}
           />
         )}
         {needsWallet && (<>

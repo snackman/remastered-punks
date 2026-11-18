@@ -45,7 +45,7 @@ function loadPunkData(csvPath) {
 
   const text = readFileSync(csvPath, 'utf-8');
   const lines = text.trim().replace(/\r\n/g, '\n').split('\n');
-  punkData = {};
+  const parsed = {};
 
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i].trim();
@@ -59,9 +59,10 @@ function loadPunkData(csvPath) {
       const skinTone = match[4] || null;
       const accessoriesStr = match[6].trim();
       const accessories = accessoriesStr ? accessoriesStr.split(' / ').map(a => a.trim()) : [];
-      punkData[id] = { id, type, gender, skinTone, accessories };
+      parsed[id] = { id, type, gender, skinTone, accessories };
     }
   }
+  punkData = parsed;
   return punkData;
 }
 
@@ -84,6 +85,17 @@ function scaleCanvas(sourceCanvas, targetSize) {
 
 // Vercel serverless handler
 export default async function handler(req, res) {
+  try {
+    return await render(req, res);
+  } catch (err) {
+    console.error('[api/punkId]', req.query?.punkId, err);
+    if (res.headersSent) return undefined;
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(500).json({ error: 'Internal error' });
+  }
+}
+
+async function render(req, res) {
   const { punkId, size } = req.query;
   const id = parseInt(punkId);
 

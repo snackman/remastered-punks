@@ -41,7 +41,7 @@ function pickRandomByType(buckets) {
   return bucket[Math.floor(Math.random() * bucket.length)];
 }
 
-function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
+function Home({ punkData, eligiblePunks, selectedPunk = null, onNavigate, onTrait }) {
   const [punk, setPunk] = useState(null);
   const [pos, setPos] = useState(-1);     // index into the shuffle history
   const [count, setCount] = useState(0);  // history length
@@ -108,14 +108,20 @@ function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
     if (initedRef.current) return;
     if (!punkData || !Object.keys(punkData).length || !buckets.keys.length) return;
     initedRef.current = true;
-    const q = parseInt(new URLSearchParams(window.location.search).get('punk'), 10);
-    if (!Number.isNaN(q) && punkData[q]) {
+    const q = selectedPunk;
+    if (q != null && punkData[q]) {
       goToNew(q);
     } else {
       const id = pickRandomByType(buckets);
       if (id != null) goToNew(id);
     }
-  }, [punkData, buckets, goToNew]);
+  }, [punkData, buckets, goToNew, selectedPunk]);
+
+  // App changed the selected punk while Home is mounted (in-app link, Back/Forward).
+  useEffect(() => {
+    if (!initedRef.current || selectedPunk == null || !punkData[selectedPunk]) return;
+    if (historyRef.current[posRef.current] !== selectedPunk) goToNew(selectedPunk);
+  }, [selectedPunk, punkData, goToNew]);
 
   // A deep link can land on a non-eligible punk: show only the original.
   const eligible = !!punk && isEligibleId(punk.id);

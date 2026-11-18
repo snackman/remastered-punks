@@ -18,7 +18,7 @@ const MAX_CHIPS = 3;
 
 // One punk tile. Only mounted while near the viewport (see useWindowedGrid), so it
 // draws straight from the tile cache; no per-tile IntersectionObserver.
-function PunkTile({ id, pixels, punk, onTrait, filterTrait }) {
+function PunkTile({ id, pixels, punk, onTrait, filterTrait, onSelectPunk }) {
   const canvasRef = useRef(null);
   const [retry, setRetry] = useState(0);
 
@@ -36,6 +36,13 @@ function PunkTile({ id, pixels, punk, onTrait, filterTrait }) {
     ctx.clearRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
     ctx.drawImage(tile, 0, 0);
   }, [punk, retry]);
+
+  // Plain left click navigates in-app; modified clicks keep the href (new tab, copy link).
+  const openPunk = (e) => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    onSelectPunk(id);
+  };
 
   // When filtering by a trait, list it first so the matching chip is always shown.
   const raw = punk?.accessories || [];
@@ -55,7 +62,7 @@ function PunkTile({ id, pixels, punk, onTrait, filterTrait }) {
         title={`Punk #${id} - ${pixels} pixel${pixels === 1 ? '' : 's'} changed`}
       />
       <div className="gallery-tile-meta">
-        <a className="gallery-tile-id" href={`?punk=${id}#home`}>#{id}</a>
+        <a className="gallery-tile-id" href={`?punk=${id}#home`} onClick={openPunk}>#{id}</a>
         <span className="gallery-tile-px">{pixels}px</span>
       </div>
       {shown.map((a, i) => (
@@ -63,7 +70,7 @@ function PunkTile({ id, pixels, punk, onTrait, filterTrait }) {
       ))}
       {overflow && (
         <a className="gallery-tile-trait gallery-tile-more" href={`?punk=${id}#home`}
-          title={accessories.slice(MAX_CHIPS - 1).join(', ')}>
+          onClick={openPunk} title={accessories.slice(MAX_CHIPS - 1).join(', ')}>
           +{accessories.length - (MAX_CHIPS - 1)} more
         </a>
       )}
@@ -71,7 +78,7 @@ function PunkTile({ id, pixels, punk, onTrait, filterTrait }) {
   );
 }
 
-function Gallery({ punkData, filterTrait, onFilterTrait }) {
+function Gallery({ punkData, filterTrait, onFilterTrait, onSelectPunk }) {
   const [counts, setCounts] = useState(null);
   const sectionRef = useRef(null);
 
@@ -142,7 +149,7 @@ function Gallery({ punkData, filterTrait, onFilterTrait }) {
           }}
         >
           {rows.slice(startIndex, endIndex).map(c => (
-            <PunkTile key={c.id} id={c.id} pixels={c.pixels} punk={punkData[c.id]} onTrait={onFilterTrait} filterTrait={filterTrait} />
+            <PunkTile key={c.id} id={c.id} pixels={c.pixels} punk={punkData[c.id]} onTrait={onFilterTrait} onSelectPunk={onSelectPunk} filterTrait={filterTrait} />
           ))}
         </div>
       </div>
