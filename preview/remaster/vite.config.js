@@ -70,6 +70,20 @@ export default defineConfig(({ command, mode }) => {
     build: {
       outDir: 'dist',
       rollupOptions: {
+        output: {
+          // Keep react in its own long-cached chunk. The wallet stack is split off by the
+          // dynamic import in App.jsx (src/wallet/WalletIslands.jsx); do NOT group it with
+          // manualChunks: that merges RainbowKit's lazily-imported locales/icons/connectors
+          // (2.9 MB) into one chunk. node_modules only, so lazy app code is never pulled in.
+          manualChunks(id) {
+            // Rollup's tiny shared helpers must live in the eager vendor-react chunk, else the
+            // entry would import them from vendor-wallet and drag it into the first load.
+            if (id.includes('vite/preload-helper') || id.includes('commonjsHelpers')) return 'vendor-react'
+            if (!id.includes('node_modules')) return undefined
+            if (/node_modules\/(react|react-dom|scheduler)\//.test(id)) return 'vendor-react'
+            return undefined
+          },
+        },
         input: {
           main: path.resolve(__dirname, 'index.html'),
           traits: path.resolve(__dirname, 'traits.html'),

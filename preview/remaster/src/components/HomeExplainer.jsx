@@ -1,4 +1,4 @@
-import { IS_MAINNET } from '../lib/network';
+import { IS_MAINNET } from '../lib/netFlag';
 import './HomeExplainer.css';
 
 const STEPS = [

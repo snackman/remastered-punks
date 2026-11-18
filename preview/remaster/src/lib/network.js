@@ -4,9 +4,12 @@
 import { fallback, http } from 'viem';
 import { mainnet, sepolia } from 'wagmi/chains';
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
+import { IS_MAINNET } from './netFlag';
 
-// Direct comparison on import.meta.env so the bundler can drop Sepolia-only code in mainnet builds.
-export const IS_MAINNET = import.meta.env.VITE_NETWORK === 'mainnet';
+// IS_MAINNET lives in netFlag.js (dependency-free, so the app shell can use it without
+// loading the wallet stack); it is a direct comparison on import.meta.env so the bundler
+// can drop Sepolia-only code in mainnet builds.
+export { IS_MAINNET };
 export const NETWORK = IS_MAINNET ? 'mainnet' : 'sepolia';
 
 // The chain mint, reads and "switch to" point at.
