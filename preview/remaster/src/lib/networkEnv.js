@@ -2,8 +2,8 @@
 // imported by vite.config.js (Node) and by the node:test file.
 import { isAddress, getAddress } from 'viem';
 
-export const SEPOLIA_REMASTERED_PUNKS = '0x7bfc1458fD8BC7D176b2D3B8020f07C335fe117B'; // merkle root 0x9188c0… (3434), contractURI + syncOwnership
-export const SEPOLIA_CRYPTOPUNKS_MOCK = '0x6fCdfA445bF2752D4F38AB67F08c7eEDEfEaAed8'; // Mock
+export { SEPOLIA_REMASTERED_PUNKS, SEPOLIA_CRYPTOPUNKS_MOCK } from './netAddresses.js';
+import { SEPOLIA_REMASTERED_PUNKS, SEPOLIA_CRYPTOPUNKS_MOCK } from './netAddresses.js';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 

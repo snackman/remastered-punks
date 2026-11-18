@@ -50,6 +50,7 @@ export default async function handler(req, res) {
   const raw = String(req.query.id ?? '').replace(/\.json$/i, '');
   const id = parseInt(raw, 10);
   if (isNaN(id) || id < 0 || id > 9999) {
+    res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
     return res.status(400).json({ error: 'Invalid punk ID. Must be 0-9999.' });
   }
 
@@ -60,6 +61,7 @@ export default async function handler(req, res) {
 
   const punk = punkData[id];
   if (!punk || !eligiblePunks.has(id)) {
+    res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
     return res.status(404).json({ error: `Punk #${id} is not an eligible remaster.`, eligible: false, punkId: id });
   }
 

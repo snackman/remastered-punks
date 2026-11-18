@@ -5,8 +5,10 @@ import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { isAddressEqual, zeroAddress } from 'viem';
 import { SPRITE_SIZE } from '../lib/constants';
 import { extractPunk } from '../lib/sprites';
+import { useOriginalsReady } from '../lib/useOriginalsReady';
+import { useMerkleProof } from '../lib/merkle';
 import { compositePunk } from '../lib/remaster';
-import { remasterState, noRemasterCopy } from '../lib/eligibility';
+import { remasterState, noRemasterCopy, isEligibleId } from '../lib/eligibility';
 import { TARGET_CHAIN } from '../lib/network';
 import { useNetwork } from '../lib/useNetwork';
 import { REMASTERED_PUNKS_ABI, CRYPTOPUNKS_ABI } from '../lib/contracts';
@@ -14,7 +16,7 @@ import { describeTxError, REVERTED } from '../lib/mintErrors';
 
 const ZOOM = 4;
 
-function PunkCard({ punk, showRemastered = true, merkleProof, merkleStatus = 'loading' }) {
+function PunkCard({ punk, showRemastered = true }) {
   const originalRef = useRef(null);
   const remasteredRef = useRef(null);
   const [txError, setTxError] = useState(null);
@@ -33,7 +35,9 @@ function PunkCard({ punk, showRemastered = true, merkleProof, merkleStatus = 'lo
   const publicClient = usePublicClient({ chainId: TARGET_CHAIN.id });
 
   // Eligibility = membership in all-eligible-punks.json (same set as the server and merkle tree).
+  const { proof: merkleProof, status: merkleStatus } = useMerkleProof(punk.id, isEligibleId(punk.id));
   const { eligible, hasProof, proofPending, proofMissing } = remasterState(punk.id, merkleProof, merkleStatus);
+  const originalsReady = useOriginalsReady();
 
   // Check if already activated
   const { data: isActivated, refetch: refetchActivated } = useReadContract({
@@ -111,9 +115,12 @@ function PunkCard({ punk, showRemastered = true, merkleProof, merkleStatus = 'lo
     // Clear and draw original
     const origCtx = originalRef.current.getContext('2d');
     origCtx.clearRect(0, 0, SPRITE_SIZE * ZOOM, SPRITE_SIZE * ZOOM);
-    const originalCanvas = extractPunk(punk.id);
+    // punks.png loads in the background; redraw once it arrives (originalsReady dep).
+    const originalCanvas = originalsReady ? extractPunk(punk.id) : null;
     origCtx.imageSmoothingEnabled = false;
-    origCtx.drawImage(originalCanvas, 0, 0, SPRITE_SIZE, SPRITE_SIZE, 0, 0, SPRITE_SIZE * ZOOM, SPRITE_SIZE * ZOOM);
+    if (originalCanvas) {
+      origCtx.drawImage(originalCanvas, 0, 0, SPRITE_SIZE, SPRITE_SIZE, 0, 0, SPRITE_SIZE * ZOOM, SPRITE_SIZE * ZOOM);
+    }
 
     // Clear and draw remastered if applicable
     if (eligible && showRemastered && remasteredRef.current) {
@@ -123,7 +130,7 @@ function PunkCard({ punk, showRemastered = true, merkleProof, merkleStatus = 'lo
       remCtx.imageSmoothingEnabled = false;
       remCtx.drawImage(remasteredCanvas, 0, 0, SPRITE_SIZE, SPRITE_SIZE, 0, 0, SPRITE_SIZE * ZOOM, SPRITE_SIZE * ZOOM);
     }
-  }, [punk, eligible, showRemastered]);
+  }, [punk, eligible, showRemastered, originalsReady]);
 
   // Simulate first (a plain eth_call, no signature) so reverts show their decoded reason before
   // the wallet prompt. Rejections / write errors are decoded by describeTxError at render time.

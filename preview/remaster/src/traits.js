@@ -8,6 +8,7 @@ import {
   SPRITE_COLOR_CORRECTIONS,
 } from '@lib/constants.js';
 import { loadSpriteSheet } from './lib/sprites';
+import { dataUrl } from './lib/dataUrl';
 import { loadPunkData } from './lib/data';
 import {
   extractSprite,
@@ -397,13 +398,12 @@ function addTraitLinks() {
 
 async function init() {
   try {
-    const basePath = import.meta.env.DEV ? '../..' : '';
-    await loadSpriteSheet(`${basePath}/data/cryptopunks-assets/punks/config/punks-24x24.png`);
+    await loadSpriteSheet(dataUrl('cryptopunks-assets/punks/config/punks-24x24.png'));
 
     // The whole page renders through the stacking compositor, so it needs the
     // punk map (to derive the remastered base + hair sprites) the same way the app
     // builds it in App.jsx.
-    const punks = await loadPunkData(`${basePath}/data/punks-attributes/original/cryptopunks.csv`);
+    const punks = await loadPunkData(dataUrl('punks-attributes/original/cryptopunks.csv'));
     initStacking(punks);
 
     // Every section is a synthetic punk wearing just its trait(s); frown-over-beard

@@ -1,10 +1,13 @@
 // Asserts the UI's eligibility logic agrees with the canonical eligible set,
 // merkle proofs and gallery pixel counts, for all 10k punks. Node only, no canvas.
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { initEligibility, remasterState, buildBuckets } from '../preview/remaster/src/lib/eligibility.js';
 import { remasterTraits } from '../lib/remaster-logic.js';
+import { decodeCompact } from '../preview/remaster/src/lib/punkCodec.js';
+import { buildPublicData } from './build-public-data.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
@@ -48,6 +51,25 @@ const fallback = (b.map['Remaster'] || []).length;
 if (fallback) fail(`${fallback} ids in fallback 'Remaster' bucket`);
 
 if (!sameSet(new Set(Object.keys(proofs).map(Number)), eligibleSet)) fail('proof keys != eligible set');
+// Public-data parity: the per-punk proof shards and compact punk file the browser fetches
+// must reproduce the full merkle tree / CSV parse exactly.
+{
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'public-data-'));
+  try {
+    const { proofs: n } = buildPublicData(tmp);
+    if (n !== eligibleSet.size) fail(`${n} proof shards != ${eligibleSet.size} eligible`);
+    const shardIds = fs.readdirSync(path.join(tmp, 'proofs')).map((f) => +f.replace('.json', ''));
+    if (!sameSet(new Set(shardIds), eligibleSet)) fail('proof shard ids != eligible set');
+    for (const id of shardIds) {
+      const shard = JSON.parse(fs.readFileSync(path.join(tmp, 'proofs', `${id}.json`), 'utf8'));
+      if (JSON.stringify(shard) !== JSON.stringify(proofs[id])) { fail(`proof shard #${id} != merkle-tree.json`); break; }
+    }
+    const compact = JSON.parse(fs.readFileSync(path.join(tmp, 'punks-compact.json'), 'utf8'));
+    if (JSON.stringify(decodeCompact(compact)) !== JSON.stringify(punkData)) fail('punks-compact.json decodes != CSV parse');
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
 const countIds = new Set(counts.filter((c) => c.pixels > 0).map((c) => c.id));
 if (!sameSet(countIds, eligibleSet)) fail('pixel-count ids != eligible set');
 

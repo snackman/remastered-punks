@@ -16,7 +16,7 @@ function useViewAs(address) {
   return as && isAddress(as) ? as : address;
 }
 
-function PunkGrid({ address: connectedAddress, punkData, eligiblePunks, merkleProofs = {}, merkleStatus = 'loading' }) {
+function PunkGrid({ address: connectedAddress, punkData, eligiblePunks }) {
   const [filter, setFilter] = useState('all'); // 'all' or 'unminted'
   const address = useViewAs(connectedAddress);
 
@@ -142,12 +142,7 @@ function PunkGrid({ address: connectedAddress, punkData, eligiblePunks, merklePr
 
       <div className="punk-grid">
         {filteredPunks.map(punk => (
-          <PunkCard
-            key={punk.id}
-            punk={punk}
-            merkleProof={merkleProofs[punk.id]}
-            merkleStatus={merkleStatus}
-          />
+          <PunkCard key={punk.id} punk={punk} />
         ))}
       </div>
 
