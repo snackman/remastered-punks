@@ -13,8 +13,8 @@ function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {}, isTestn
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all'); // 'all' or 'remastered'
 
-  const { chainId, contractAddress } = useNetwork();
-  const publicClient = usePublicClient({ chainId: TARGET_CHAIN.id }) // only used on the Sepolia mock path;
+  const { chainId, readAddress } = useNetwork();
+  const publicClient = usePublicClient({ chainId: TARGET_CHAIN.id }) ; // only used on the Sepolia mock path
 
   // Create a Set for O(1) lookup
   const eligibleSet = new Set(eligiblePunks);
@@ -90,13 +90,13 @@ function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {}, isTestn
   // Of those, how many have actually been remastered (minted/activated on-chain).
   const { data: activatedResults } = useReadContracts({
     contracts: eligibleOwned.map(p => ({
-      address: contractAddress,
+      address: readAddress,
       abi: REMASTERED_PUNKS_ABI,
       functionName: 'activated',
       args: [BigInt(p.id)],
       chainId: TARGET_CHAIN.id,
     })),
-    query: { enabled: !!contractAddress && eligibleOwned.length > 0 },
+    query: { enabled: !!readAddress && eligibleOwned.length > 0 },
   });
   const remasteredCount = activatedResults
     ? activatedResults.filter(r => r?.result === true).length

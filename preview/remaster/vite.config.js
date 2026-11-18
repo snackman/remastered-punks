@@ -21,7 +21,7 @@ export default defineConfig(({ command, mode }) => {
     } catch { /* validated above in mainnet mode; ignore otherwise */ }
     const network = env.VITE_NETWORK || 'sepolia'
     console.log(
-      `[network] mode=${network} address=${network === 'mainnet' ? env.VITE_REMASTERED_PUNKS_MAINNET : 'n/a'} rpc=${rpcHost}`
+      `[network] mode=${network} vercelEnv=${process.env.VERCEL_ENV || 'n/a'} address=${network === 'mainnet' ? env.VITE_REMASTERED_PUNKS_MAINNET : 'n/a'} rpc=${rpcHost}`
     )
   }
 

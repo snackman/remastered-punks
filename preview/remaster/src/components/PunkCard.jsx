@@ -17,18 +17,18 @@ function PunkCard({ punk, showRemastered = true, showEligibility = false, merkle
   const { address } = useAccount();
   const {
     chainId, isConnected, isSupported, isTarget, isTestnet,
-    contractAddress, cryptoPunksAddress: mockPunksAddress,
+    contractAddress, readAddress, cryptoPunksAddress: mockPunksAddress,
   } = useNetwork();
 
   // Check if already activated
   const { data: isActivated, refetch: refetchActivated } = useReadContract({
-    address: contractAddress,
+    address: readAddress,
     abi: REMASTERED_PUNKS_ABI,
     functionName: 'activated',
     args: [BigInt(punk.id)],
     chainId: TARGET_CHAIN.id,
     query: {
-      enabled: !!contractAddress,
+      enabled: !!readAddress,
     },
   });
 

@@ -59,6 +59,11 @@ test('mainnet + bad-checksum address errors', () => {
   assert.equal(validateNetworkEnv(mainnet({ VITE_REMASTERED_PUNKS_MAINNET: bad }), {}).length, 1);
 });
 
+test('mainnet + all-lowercase address errors', () => {
+  const lower = GOOD_ADDR.toLowerCase();
+  assert.equal(validateNetworkEnv(mainnet({ VITE_REMASTERED_PUNKS_MAINNET: lower }), {}).length, 1);
+});
+
 test('mainnet + http:// RPC errors', () => {
   assert.equal(validateNetworkEnv(mainnet({ VITE_MAINNET_RPC_URL: 'http://x.example' }), {}).length, 1);
 });

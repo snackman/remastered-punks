@@ -91,7 +91,7 @@ Decided config:
 
 Deploy command (fires once wallet + key are provided):
 ```bash
-PRIVATE_KEY=<mainnet key> \
+PRIVATE_KEY="$(security find-generic-password -l remastered-mainnet -a remastered-punks -w)" \
 BASE_URI=https://punksremastered.com/api/metadata/ \
 ETHERSCAN_API_KEY="$(security find-generic-password -l etherscan -a remastered-punks -w)" \
 forge script script/Deploy.s.sol:DeployRemasteredPunks \
@@ -108,7 +108,7 @@ Every step that broadcasts needs Snax's explicit go/no-go first.
 1. **Wallet.** New, real, funded mainnet deployer (~0.02-0.05 ETH), NOT the Sepolia airdrop key
    (`remastered-airdrop-sepolia` / 0x709C4b...). Store in keychain, e.g.
    `security add-generic-password -l remastered-mainnet -a remastered-punks -w`. Never echo it.
-2. **Dry run.** From `contracts/`, run the deploy command above WITHOUT `--broadcast`. Check the output shows
+2. **Dry run.** From `contracts/`, run the deploy command above, dropping `--broadcast --verify`. Check the output shows
    `BASE_URI=https://punksremastered.com/api/metadata/` (unset BASE_URI silently becomes
    `ipfs://QmPlaceholder/`, Deploy.s.sol:22), CryptoPunks `0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB`,
    and root `0x9188c058...1324`.
@@ -130,7 +130,7 @@ Every step that broadcasts needs Snax's explicit go/no-go first.
    (tx confirms, card shows Already Minted); `tokenURI(id)` returns
    `https://punksremastered.com/api/metadata/<id>` (200 JSON + image); OpenSea/Etherscan pick up the token;
    a wallet on Sepolia/Polygon shows Wrong network.
-8. **Rollback.** Set Production `VITE_NETWORK=sepolia`, redeploy. Contract stays deployed; only the UI returns to pre-launch mode.
+8. **Rollback.** Set Production `VITE_NETWORK=sepolia`, redeploy (faster: promote the previous prod deployment in Vercel). Contract stays deployed; only the UI returns to pre-launch mode.
 9. **Afterwards.** Update memory/handoff with the mainnet address; optionally commit it as the in-code default;
    mark the TASKS.md row done.
 
