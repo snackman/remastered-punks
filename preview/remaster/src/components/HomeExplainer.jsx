@@ -60,7 +60,7 @@ function HomeExplainer({ onNavigate, onTrait }) {
         </details>
         <details>
           <summary>My punk is wrapped.</summary>
-          <p>Wrapped punks are held by the wrapper contract, so unwrap it first, then mint.</p>
+          <p>Wrapped punks are held by the wrapper contract, so unwrap it first, then mint. If you wrap it again later, the remaster follows the punk to the wrapper contract.</p>
         </details>
         <details>
           <summary>What does "Sync to marketplaces" do?</summary>
