@@ -60,6 +60,27 @@ export const REMASTERED_PUNKS_ABI = [
     inputs: [],
     outputs: [{ name: '', type: 'uint256' }],
   },
+  {
+    name: 'syncOwnership',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    outputs: [],
+  },
+  {
+    name: 'announcedOwner',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: '', type: 'uint256' }],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  // Custom errors (contracts/src/RemasteredPunks.sol) so viem can decode reverts by name.
+  { type: 'error', name: 'NotEligible', inputs: [] },
+  { type: 'error', name: 'NotPunkOwner', inputs: [] },
+  { type: 'error', name: 'AlreadyActivated', inputs: [] },
+  { type: 'error', name: 'TransferDisabled', inputs: [] },
+  { type: 'error', name: 'NotActivated', inputs: [] },
+  { type: 'error', name: 'AlreadySynced', inputs: [] },
 ];
 
 // CryptoPunks ABI lives in the pure ownedPunks module (scripts import it from node).

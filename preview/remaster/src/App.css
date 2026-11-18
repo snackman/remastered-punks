@@ -746,6 +746,36 @@
   font-weight: 600;
 }
 
+.mint-note {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #7a7a7a;
+  text-align: center;
+}
+
+.mint-error a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.sync-button {
+  margin-top: 8px;
+  width: 100%;
+  padding: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.sync-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* ===== Footer ===== */
 .site-footer {
   margin-top: 56px;

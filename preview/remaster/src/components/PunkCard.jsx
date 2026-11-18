@@ -1,25 +1,37 @@
 import { useEffect, useRef, useState } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, usePublicClient } from 'wagmi';
+import { useQueryClient } from '@tanstack/react-query';
+import { isAddressEqual, zeroAddress } from 'viem';
 import { SPRITE_SIZE } from '../lib/constants';
 import { extractPunk } from '../lib/sprites';
 import { compositePunk } from '../lib/remaster';
 import { remasterState, noRemasterCopy } from '../lib/eligibility';
 import { TARGET_CHAIN } from '../lib/network';
 import { useNetwork } from '../lib/useNetwork';
-import { REMASTERED_PUNKS_ABI, MOCK_CRYPTOPUNKS_ABI } from '../lib/contracts';
+import { REMASTERED_PUNKS_ABI, CRYPTOPUNKS_ABI } from '../lib/contracts';
+import { describeTxError, REVERTED } from '../lib/mintErrors';
 
 const ZOOM = 4;
 
 function PunkCard({ punk, showRemastered = true, merkleProof, merkleStatus = 'loading' }) {
   const originalRef = useRef(null);
   const remasteredRef = useRef(null);
-  const [mintStatus, setMintStatus] = useState(null);
+  const [txError, setTxError] = useState(null);
+  const [simulating, setSimulating] = useState(false);
+  const [syncTxError, setSyncTxError] = useState(null);
+  const [syncSimulating, setSyncSimulating] = useState(false);
+  const handledHashes = useRef(new Set());
+  const queryClient = useQueryClient();
 
   const { address } = useAccount();
   const {
-    chainId, isConnected, isSupported, isTarget, isTestnet,
-    contractAddress, readAddress, cryptoPunksAddress: mockPunksAddress,
+    chainId, isConnected, isSupported, isTarget,
+    contractAddress, readAddress, cryptoPunksAddress: punksAddress,
   } = useNetwork();
+  const publicClient = usePublicClient({ chainId: TARGET_CHAIN.id });
+
+  // Eligibility = membership in all-eligible-punks.json (same set as the server and merkle tree).
+  const { eligible, hasProof, proofPending, proofMissing } = remasterState(punk.id, merkleProof, merkleStatus);
 
   // Check if already activated
   const { data: isActivated, refetch: refetchActivated } = useReadContract({
@@ -33,46 +45,63 @@ function PunkCard({ punk, showRemastered = true, merkleProof, merkleStatus = 'lo
     },
   });
 
-  // Check punk ownership on mock contract (testnet only). On testnet punks are
-  // pre-assigned to owners (no claim step); mint is enabled only for punks you own.
-  const { data: punkOwner } = useReadContract({
-    address: mockPunksAddress,
-    abi: MOCK_CRYPTOPUNKS_ABI,
+  // Current CryptoPunks owner (mock on Sepolia, the real contract on mainnet). Only read for
+  // cards that can show a mint/sync button.
+  const {
+    data: punkOwner,
+    isLoading: ownerLoading,
+    isError: ownerError,
+    refetch: refetchOwner,
+  } = useReadContract({
+    address: punksAddress,
+    abi: CRYPTOPUNKS_ABI,
     functionName: 'punkIndexToAddress',
     args: [BigInt(punk.id)],
-    chainId: TARGET_CHAIN.id, // mock owner read only runs in sepolia mode (enabled below)
+    chainId: TARGET_CHAIN.id,
     query: {
-      enabled: !!mockPunksAddress && isTestnet,
+      enabled: !!punksAddress && isConnected && isTarget && eligible,
     },
   });
 
-  const zeroAddress = '0x0000000000000000000000000000000000000000';
-  const ownsPunkOnMock = punkOwner && punkOwner !== zeroAddress && address && punkOwner.toLowerCase() === address.toLowerCase();
+  const ownsPunk = !!address && !!punkOwner && punkOwner !== zeroAddress && isAddressEqual(punkOwner, address);
 
-  // Write contract hook for minting
-  const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
-
-  // Wait for mint transaction
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash,
+  // Owner last announced by the RemasteredPunks Transfer event (for the sync button).
+  const { data: announcedOwner, refetch: refetchAnnounced } = useReadContract({
+    address: readAddress,
+    abi: REMASTERED_PUNKS_ABI,
+    functionName: 'announcedOwner',
+    args: [BigInt(punk.id)],
+    chainId: TARGET_CHAIN.id,
+    query: {
+      enabled: !!readAddress && !!isActivated,
+    },
   });
 
-  // Update status based on mint transaction state
-  useEffect(() => {
-    if (isPending) {
-      setMintStatus('confirming');
-    } else if (isConfirming) {
-      setMintStatus('minting');
-    } else if (isSuccess) {
-      setMintStatus('success');
-      refetchActivated();
-    } else if (writeError) {
-      setMintStatus('error');
-    }
-  }, [isPending, isConfirming, isSuccess, writeError, refetchActivated]);
+  // Mint tx
+  const { writeContract, data: hash, isPending, error: writeError, reset } = useWriteContract();
+  const {
+    isLoading: isConfirming, isSuccess, isError: receiptFailed,
+  } = useWaitForTransactionReceipt({ hash, chainId: TARGET_CHAIN.id, query: { retry: 1 } });
 
-  // Eligibility = membership in all-eligible-punks.json (same set as the server and merkle tree).
-  const { eligible, hasProof, proofPending, proofMissing } = remasterState(punk.id, merkleProof, merkleStatus);
+  // Sync tx
+  const {
+    writeContract: writeSync, data: syncHash, isPending: syncPending,
+    error: syncWriteError, reset: resetSync,
+  } = useWriteContract();
+  const {
+    isLoading: syncConfirming, isSuccess: syncSuccess, isError: syncReceiptFailed,
+  } = useWaitForTransactionReceipt({ hash: syncHash, chainId: TARGET_CHAIN.id });
+
+  // Once per mined tx (success or revert): refresh every contract read (this card's activated /
+  // owner state and PunkGrid's "N remastered" count) so the UI matches the chain.
+  useEffect(() => {
+    for (const [h, done] of [[hash, isSuccess || receiptFailed], [syncHash, syncSuccess || syncReceiptFailed]]) {
+      if (!h || !done || handledHashes.current.has(h)) continue;
+      handledHashes.current.add(h);
+      queryClient.invalidateQueries({ queryKey: ['readContract'] });
+      queryClient.invalidateQueries({ queryKey: ['readContracts'] });
+    }
+  }, [hash, isSuccess, receiptFailed, syncHash, syncSuccess, syncReceiptFailed, queryClient]);
 
   useEffect(() => {
     if (!originalRef.current) return;
@@ -94,24 +123,59 @@ function PunkCard({ punk, showRemastered = true, merkleProof, merkleStatus = 'lo
     }
   }, [punk, eligible, showRemastered]);
 
-  const handleMint = () => {
+  // Simulate first (a plain eth_call, no signature) so reverts show their decoded reason before
+  // the wallet prompt. Rejections / write errors are decoded by describeTxError at render time.
+  const handleMint = async () => {
     if (!contractAddress || !merkleProof) return;
+    reset();
+    setTxError(null);
+    setSimulating(true);
+    try {
+      const { request } = await publicClient.simulateContract({
+        address: contractAddress,
+        abi: REMASTERED_PUNKS_ABI,
+        functionName: 'activate',
+        args: [BigInt(punk.id), merkleProof],
+        account: address,
+      });
+      writeContract({ ...request, abi: REMASTERED_PUNKS_ABI, chainId: TARGET_CHAIN.id });
+    } catch (e) {
+      setTxError(describeTxError(e));
+      refetchActivated();
+      refetchOwner();
+    } finally {
+      setSimulating(false);
+    }
+  };
 
-    setMintStatus('confirming');
-    writeContract({
-      address: contractAddress,
-      abi: REMASTERED_PUNKS_ABI,
-      functionName: 'activate',
-      args: [BigInt(punk.id), merkleProof],
-      chainId: TARGET_CHAIN.id,
-    });
+  const handleSync = async () => {
+    if (!contractAddress) return;
+    resetSync();
+    setSyncTxError(null);
+    setSyncSimulating(true);
+    try {
+      const { request } = await publicClient.simulateContract({
+        address: contractAddress,
+        abi: REMASTERED_PUNKS_ABI,
+        functionName: 'syncOwnership',
+        args: [BigInt(punk.id)],
+        account: address,
+      });
+      writeSync({ ...request, abi: REMASTERED_PUNKS_ABI, chainId: TARGET_CHAIN.id });
+    } catch (e) {
+      setSyncTxError(describeTxError(e));
+      refetchAnnounced();
+      refetchOwner();
+    } finally {
+      setSyncSimulating(false);
+    }
   };
 
   const cardClass = `punk-card${!eligible ? ' not-eligible' : ''}`;
 
   // Determine mint button state
-  const canMint = isConnected && isTarget && contractAddress && eligible && hasProof && !isActivated && (!isTestnet || ownsPunkOnMock);
-  const buttonDisabled = !canMint || isPending || isConfirming;
+  const canMint = isConnected && isTarget && contractAddress && eligible && hasProof && !isActivated && ownsPunk;
+  const buttonDisabled = !canMint || isPending || simulating || isConfirming;
 
   let buttonText = 'Mint Remaster';
   if (!isConnected) buttonText = 'Connect Wallet';
@@ -120,10 +184,35 @@ function PunkCard({ punk, showRemastered = true, merkleProof, merkleStatus = 'lo
   else if (isActivated) buttonText = 'Already Minted';
   else if (proofPending) buttonText = 'Loading proof…';
   else if (proofMissing) buttonText = 'Proof unavailable';
-  else if (isTestnet && !ownsPunkOnMock) buttonText = 'Not Your Punk';
-  else if (isPending) buttonText = 'Confirm in Wallet...';
+  else if (ownerLoading) buttonText = 'Checking ownership…';
+  else if (ownerError) buttonText = "Couldn't check ownership";
+  else if (!ownsPunk) buttonText = 'Not Your Punk';
+  else if (isPending || simulating) buttonText = 'Confirm in Wallet...';
   else if (isConfirming) buttonText = 'Minting...';
   else if (isSuccess) buttonText = 'Minted!';
+
+  const shownError = txError ?? (writeError ? describeTxError(writeError) : null) ?? (receiptFailed ? REVERTED : null);
+  const shownSyncError = syncTxError ?? (syncWriteError ? describeTxError(syncWriteError) : null)
+    ?? (syncReceiptFailed ? REVERTED : null);
+  const explorer = TARGET_CHAIN.id === 1 ? 'https://etherscan.io' : 'https://sepolia.etherscan.io';
+  const errorBox = (err, txHash) => err && (
+    <div className={err.kind === 'cancelled' ? 'mint-note' : 'mint-error'}>
+      {err.message}
+      {err === REVERTED && txHash && (
+        <>
+          {' '}
+          <a href={`${explorer}/tx/${txHash}`} target="_blank" rel="noreferrer">View tx</a>
+        </>
+      )}
+    </div>
+  );
+
+  // Marketplaces show the owner from the last Transfer event; offer a permissionless re-announce
+  // when the punk has since changed hands.
+  const needsSync = !!isActivated && !!announcedOwner && !!punkOwner && punkOwner !== zeroAddress
+    && !isAddressEqual(announcedOwner, punkOwner);
+  const syncBusy = syncPending || syncSimulating || syncConfirming;
+  const canSync = isConnected && isTarget && !!contractAddress && !syncBusy;
 
   return (
     <div className={cardClass}>
@@ -183,21 +272,21 @@ function PunkCard({ punk, showRemastered = true, merkleProof, merkleStatus = 'lo
             <div className="minted-badge">Minted</div>
           ) : (
             <button
-              className={`mint-button ${mintStatus === 'success' ? 'success' : ''}`}
+              className={`mint-button ${isSuccess ? 'success' : ''}`}
               onClick={handleMint}
               disabled={buttonDisabled}
             >
               {buttonText}
             </button>
           )}
-          {writeError && (
-            <div className="mint-error">
-              {writeError.message?.includes('NotPunkOwner')
-                ? "You don't own this punk"
-                : writeError.message?.includes('AlreadyActivated')
-                ? 'Already minted'
-                : 'Error minting'}
-            </div>
+          {errorBox(shownError, hash)}
+          {needsSync && (
+            <>
+              <button className="sync-button" onClick={handleSync} disabled={!canSync}>
+                {syncPending || syncSimulating ? 'Confirm in Wallet...' : syncConfirming ? 'Syncing...' : 'Sync to marketplaces'}
+              </button>
+              {errorBox(shownSyncError, syncHash)}
+            </>
           )}
         </div>
       )}
