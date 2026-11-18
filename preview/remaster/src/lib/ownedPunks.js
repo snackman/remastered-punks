@@ -1,95 +1,91 @@
-const CRYPTOPUNKS_ADDRESS = '0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB';
+// Finds the eligible punks a wallet owns with on-chain multicalls (no indexer/API).
+// Pure module (no import.meta.env, no React) so scripts/check-owned-punks.mjs can import it.
 
-// Alchemy API key - get free key at https://alchemy.com
-// For production, use environment variable: import.meta.env.VITE_ALCHEMY_API_KEY
-const ALCHEMY_API_KEY = import.meta.env.VITE_ALCHEMY_API_KEY || 'demo';
+// Minimal ABIs. The mock on Sepolia and the real CryptoPunks contract share this signature.
+export const CRYPTOPUNKS_ABI = [
+  {
+    name: 'punkIndexToAddress',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'punkIndex', type: 'uint256' }],
+    outputs: [{ name: '', type: 'address' }],
+  },
+];
 
-/**
- * Fetch all CryptoPunks owned by an address
- * Tries multiple APIs with fallbacks
- */
-export async function fetchOwnedPunks(address) {
-  const normalizedAddress = address.toLowerCase();
-  console.log(`Fetching punks for address: ${normalizedAddress}`);
+export const ERC721_OWNER_OF_ABI = [
+  {
+    name: 'ownerOf',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    outputs: [{ name: '', type: 'address' }],
+  },
+];
 
-  // Try APIs in order of reliability
-  const apis = [
-    { name: 'Alchemy', fn: () => fetchFromAlchemy(normalizedAddress) },
-    { name: 'Reservoir', fn: () => fetchFromReservoir(normalizedAddress) },
-  ];
+// Mainnet wrappers that hold punks on behalf of their owners: WPUNKS and CryptoPunks 721.
+export const PUNK_WRAPPERS = [
+  '0xb7F7F6C52F2e2fdb1963Eab30438024864c313F6',
+  '0x000000000000003607fce1aC9e043a86675C5C2F',
+];
 
-  for (const api of apis) {
-    try {
-      console.log(`Trying ${api.name}...`);
-      const result = await api.fn();
-      console.log(`Found ${result.length} punks via ${api.name}`);
-      return result;
-    } catch (error) {
-      console.error(`${api.name} failed:`, error.message);
-    }
-  }
-
-  throw new Error('All APIs failed to fetch owned punks');
-}
-
-/**
- * Fetch from Reservoir API
- */
-async function fetchFromReservoir(address) {
-  const punks = [];
-  let continuation = null;
-  let pageCount = 0;
-
-  do {
-    const url = new URL(`https://api.reservoir.tools/users/${address}/tokens/v10`);
-    url.searchParams.set('collection', CRYPTOPUNKS_ADDRESS);
-    url.searchParams.set('limit', '200');
-    if (continuation) {
-      url.searchParams.set('continuation', continuation);
-    }
-
-    const response = await fetch(url.toString(), {
-      headers: { 'accept': 'application/json' },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    for (const token of data.tokens || []) {
-      const tokenId = token.token?.tokenId;
-      if (tokenId != null) {
-        punks.push(parseInt(tokenId, 10));
-      }
-    }
-
-    continuation = data.continuation;
-    pageCount++;
-  } while (continuation && pageCount < 10);
-
-  return [...new Set(punks)].sort((a, b) => a - b);
-}
+// viem's multicall `batchSize` counts calldata BYTES, not calls. One punkIndexToAddress call is
+// ~36 bytes (~224 bytes of aggregate3 calldata), so 500 calls per chunk keeps each eth_call at
+// ~112 KB / ~2.8M gas, under public RPC body and gas limits.
+export const PUNKS_SCAN_BATCH_BYTES = 500 * 36;
 
 /**
- * Fetch from Alchemy NFT API
+ * Which of `eligibleIds` does `owner` own on the punks contract at `punksAddress`?
+ * Throws if any chunk fails (never returns a partial list as if complete).
+ * If `wrappers` is given, also reports eligible punks held by a wrapper that `owner` owns there
+ * (best effort: a failed wrapper lookup just yields no `wrapped` entries).
+ * @returns {Promise<{ owned: number[], wrapped: { id: number, wrapper: string }[] }>}
  */
-async function fetchFromAlchemy(address) {
-  const url = `https://eth-mainnet.g.alchemy.com/nft/v3/${ALCHEMY_API_KEY}/getNFTsForOwner?owner=${address}&contractAddresses[]=${CRYPTOPUNKS_ADDRESS}&withMetadata=false&pageSize=100`;
+export async function fetchOwnedEligiblePunks({ client, punksAddress, owner, eligibleIds, wrappers = [] }) {
+  const me = owner.toLowerCase();
+  const wrapperSet = new Set(wrappers.map((w) => w.toLowerCase()));
 
-  const response = await fetch(url, {
-    headers: { 'accept': 'application/json' },
+  const owners = await client.multicall({
+    contracts: eligibleIds.map((id) => ({
+      address: punksAddress,
+      abi: CRYPTOPUNKS_ABI,
+      functionName: 'punkIndexToAddress',
+      args: [BigInt(id)],
+    })),
+    allowFailure: false,
+    batchSize: PUNKS_SCAN_BATCH_BYTES,
   });
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
+  const owned = [];
+  const heldByWrapper = []; // { id, wrapper }
+  eligibleIds.forEach((id, i) => {
+    const o = String(owners[i]).toLowerCase();
+    if (o === me) owned.push(id);
+    else if (wrapperSet.has(o)) heldByWrapper.push({ id, wrapper: o });
+  });
+
+  const wrapped = [];
+  if (heldByWrapper.length > 0) {
+    try {
+      const wrappedOwners = await client.multicall({
+        contracts: heldByWrapper.map(({ id, wrapper }) => ({
+          address: wrapper,
+          abi: ERC721_OWNER_OF_ABI,
+          functionName: 'ownerOf',
+          args: [BigInt(id)],
+        })),
+        allowFailure: true,
+        batchSize: PUNKS_SCAN_BATCH_BYTES,
+      });
+      heldByWrapper.forEach((h, i) => {
+        const r = wrappedOwners[i];
+        if (r?.status === 'success' && String(r.result).toLowerCase() === me) wrapped.push(h);
+      });
+    } catch {
+      // Wrapped notice is informational; ignore lookup failures.
+    }
   }
 
-  const data = await response.json();
-  const punks = (data.ownedNfts || [])
-    .map(nft => parseInt(nft.tokenId, 10))
-    .filter(id => !isNaN(id));
-
-  return [...new Set(punks)].sort((a, b) => a - b);
+  owned.sort((a, b) => a - b);
+  wrapped.sort((a, b) => a.id - b.id);
+  return { owned, wrapped };
 }

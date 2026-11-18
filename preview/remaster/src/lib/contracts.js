@@ -1,4 +1,5 @@
 import { IS_MAINNET, SUPPORTED_CHAIN_IDS } from './network';
+import { CRYPTOPUNKS_ABI, ERC721_OWNER_OF_ABI, PUNK_WRAPPERS } from './ownedPunks';
 import { SEPOLIA_REMASTERED_PUNKS, SEPOLIA_CRYPTOPUNKS_MOCK } from './networkEnv';
 
 // Contract addresses
@@ -61,17 +62,8 @@ export const REMASTERED_PUNKS_ABI = [
   },
 ];
 
-// CryptoPunks ABI. The real mainnet contract has the same punkIndexToAddress signature as the
-// Sepolia mock; claimPunk exists on the mock only.
-export const CRYPTOPUNKS_ABI = [
-  {
-    name: 'punkIndexToAddress',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'punkIndex', type: 'uint256' }],
-    outputs: [{ name: '', type: 'address' }],
-  },
-];
+// CryptoPunks ABI lives in the pure ownedPunks module (scripts import it from node).
+export { CRYPTOPUNKS_ABI, ERC721_OWNER_OF_ABI, PUNK_WRAPPERS };
 
 // Mock CryptoPunks ABI (testnet only - for claiming punks)
 export const MOCK_CRYPTOPUNKS_ABI = [

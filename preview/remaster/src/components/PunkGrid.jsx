@@ -1,131 +1,114 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useReadContracts, usePublicClient } from 'wagmi';
+import { useQuery } from '@tanstack/react-query';
+import { isAddress } from 'viem';
+import { mainnet } from 'wagmi/chains';
 import { TARGET_CHAIN } from '../lib/network';
 import { useNetwork } from '../lib/useNetwork';
-import { fetchOwnedPunks } from '../lib/ownedPunks';
-import { hasRemasters } from '../lib/remaster';
-import { REMASTERED_PUNKS_ABI, MOCK_CRYPTOPUNKS_ABI, getCryptoPunksAddress } from '../lib/contracts';
+import { fetchOwnedEligiblePunks, PUNK_WRAPPERS } from '../lib/ownedPunks';
+import { REMASTERED_PUNKS_ABI, getCryptoPunksAddress } from '../lib/contracts';
 import PunkCard from './PunkCard';
 
-function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {}, isTestnet = false }) {
-  const [ownedPunks, setOwnedPunks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [filter, setFilter] = useState('all'); // 'all' or 'remastered'
+// Dev only: ?as=0x... views another wallet's punks read-only (Mint will not work for them).
+function useViewAs(address) {
+  if (!import.meta.env.DEV) return address;
+  const as = new URLSearchParams(window.location.search).get('as');
+  return as && isAddress(as) ? as : address;
+}
 
-  const { chainId, readAddress } = useNetwork();
-  const publicClient = usePublicClient({ chainId: TARGET_CHAIN.id }) ; // only used on the Sepolia mock path
+function PunkGrid({ address: connectedAddress, punkData, eligiblePunks, merkleProofs = {} }) {
+  const [filter, setFilter] = useState('all'); // 'all' or 'unminted'
+  const address = useViewAs(connectedAddress);
 
-  // Create a Set for O(1) lookup
-  const eligibleSet = new Set(eligiblePunks);
+  const { isTestnet, readAddress } = useNetwork();
 
-  useEffect(() => {
-    if (!address) return;
+  // Which punks contract to read: the Sepolia mock when the wallet is on Sepolia (sepolia builds),
+  // otherwise the real CryptoPunks on mainnet. Independent of the wallet chain otherwise, so a
+  // wallet on an unsupported chain still sees its mainnet punks.
+  const source = isTestnet
+    ? { chainId: TARGET_CHAIN.id, address: getCryptoPunksAddress(TARGET_CHAIN.id), wrappers: [] }
+    : { chainId: mainnet.id, address: getCryptoPunksAddress(mainnet.id), wrappers: PUNK_WRAPPERS };
+  const client = usePublicClient({ chainId: source.chainId });
 
-    async function loadPunks() {
-      setLoading(true);
-      setError(null);
+  const eligibleIds = useMemo(
+    () => eligiblePunks.filter((id) => punkData[id]),
+    [eligiblePunks, punkData],
+  );
 
-      try {
-        let owned;
+  // Keyed by [chain, address]: a slow response for a previous account can't overwrite the current one.
+  const { data, isPending, error, refetch, isFetching } = useQuery({
+    queryKey: ['ownedEligiblePunks', source.chainId, address?.toLowerCase(), eligibleIds.length],
+    queryFn: () => fetchOwnedEligiblePunks({
+      client,
+      punksAddress: source.address,
+      owner: address,
+      eligibleIds,
+      wrappers: source.wrappers,
+    }),
+    enabled: !!address && !!client && !!source.address && eligibleIds.length > 0,
+    staleTime: 60_000,
+    retry: 2,
+    refetchOnWindowFocus: false,
+  });
 
-        if (isTestnet) {
-          // On testnet, show the eligible punks this wallet owns on the mock
-          // CryptoPunks contract (assigned via setPunkOwner - no claim step).
-          const mockAddress = getCryptoPunksAddress(chainId);
-          const eligibleIds = eligiblePunks.filter(punkId => punkData[punkId]);
-          const results = await publicClient.multicall({
-            contracts: eligibleIds.map(punkId => ({
-              address: mockAddress,
-              abi: MOCK_CRYPTOPUNKS_ABI,
-              functionName: 'punkIndexToAddress',
-              args: [BigInt(punkId)],
-            })),
-            allowFailure: true,
-            batchSize: 100_000,
-          });
-          owned = eligibleIds
-            .filter((punkId, i) => results[i]?.status === 'success'
-              && results[i].result?.toLowerCase() === address.toLowerCase())
-            .map(punkId => ({
-              ...punkData[punkId],
-              isEligible: true,
-            }));
-        } else {
-          // On mainnet, query actual ownership
-          const punkIds = await fetchOwnedPunks(address);
-          owned = punkIds.map(punkId => {
-            if (punkData[punkId]) {
-              return {
-                ...punkData[punkId],
-                isEligible: eligibleSet.has(punkId),
-              };
-            }
-            return {
-              id: punkId,
-              type: 'Unknown',
-              gender: 'Unknown',
-              skinTone: null,
-              accessories: [],
-              isEligible: false,
-            };
-          });
-        }
-
-        setOwnedPunks(owned);
-      } catch (err) {
-        console.error('Failed to fetch owned punks:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadPunks();
-  }, [address, punkData, eligiblePunks, isTestnet, chainId, publicClient]);
-
-  // Punks that CAN be remastered (owned + eligible).
-  const eligibleOwned = ownedPunks.filter(p => p.isEligible);
+  // Only eligible punks are shown: those are the ones that can mint.
+  const ownedPunks = useMemo(
+    () => (data?.owned ?? []).map((id) => ({ ...punkData[id], isEligible: true })),
+    [data, punkData],
+  );
+  const wrapped = data?.wrapped ?? [];
 
   // Of those, how many have actually been remastered (minted/activated on-chain).
   const { data: activatedResults } = useReadContracts({
-    contracts: eligibleOwned.map(p => ({
+    contracts: ownedPunks.map(p => ({
       address: readAddress,
       abi: REMASTERED_PUNKS_ABI,
       functionName: 'activated',
       args: [BigInt(p.id)],
       chainId: TARGET_CHAIN.id,
     })),
-    query: { enabled: !!readAddress && eligibleOwned.length > 0 },
+    query: { enabled: !!readAddress && ownedPunks.length > 0 },
   });
   const remasteredCount = activatedResults
     ? activatedResults.filter(r => r?.result === true).length
     : 0;
 
-  if (loading) {
-    return (
-      <div className="loading">
-        <p>{isTestnet ? 'Fetching your punks (testnet)...' : 'Fetching CryptoPunks for this wallet...'}</p>
-      </div>
-    );
-  }
+  const wrappedNotice = wrapped.length > 0 && (
+    <div className="wrapped-notice">
+      <p>
+        {wrapped.length} of your eligible punk{wrapped.length !== 1 ? 's are' : ' is'} wrapped (
+        {wrapped.map((w) => `#${w.id}`).join(', ')}). Unwrap {wrapped.length !== 1 ? 'them' : 'it'} at{' '}
+        <a href="https://cryptopunks.app" target="_blank" rel="noopener noreferrer">cryptopunks.app</a> to mint.
+      </p>
+    </div>
+  );
 
   if (error) {
     return (
       <div className="error">
-        <p>Error fetching punks: {error}</p>
+        <p>Couldn&apos;t read punk ownership{isTestnet ? ' (testnet)' : ' from Ethereum'}. {error.shortMessage ?? error.message}</p>
+        <button onClick={() => refetch()} disabled={isFetching}>Retry</button>
       </div>
     );
   }
 
-  const filteredPunks = filter === 'eligible'
-    ? eligibleOwned
+  if (isPending) {
+    return (
+      <div className="loading">
+        <p>Checking which eligible punks this wallet owns{isTestnet ? ' (testnet)' : ''}...</p>
+      </div>
+    );
+  }
+
+  const filteredPunks = filter === 'unminted'
+    ? ownedPunks.filter((_, i) => activatedResults?.[i]?.result !== true)
     : ownedPunks;
 
   if (ownedPunks.length === 0) {
     return (
       <div className="no-punks">
-        <p>No CryptoPunks found in this wallet.</p>
+        <p>None of this wallet&apos;s punks have a remaster.</p>
+        {wrappedNotice}
       </div>
     );
   }
@@ -134,9 +117,7 @@ function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {}, isTestn
     <div className="punk-grid-container">
       <div className="grid-header">
         <div className="stats">
-          <span>{ownedPunks.length} punk{ownedPunks.length !== 1 ? 's' : ''} found</span>
-          <span className="divider">|</span>
-          <span>{eligibleOwned.length} eligible to be remastered</span>
+          <span>{ownedPunks.length} eligible punk{ownedPunks.length !== 1 ? 's' : ''}</span>
           <span className="divider">|</span>
           <span>{remasteredCount} remastered</span>
         </div>
@@ -148,13 +129,16 @@ function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {}, isTestn
             All
           </button>
           <button
-            className={filter === 'eligible' ? 'active' : ''}
-            onClick={() => setFilter('eligible')}
+            className={filter === 'unminted' ? 'active' : ''}
+            onClick={() => setFilter('unminted')}
           >
-            Eligible Only
+            Not minted
           </button>
         </div>
       </div>
+
+      <p className="grid-note">Only punks with a remaster are shown. Look up any punk in Lookup.</p>
+      {wrappedNotice}
 
       <div className="punk-grid">
         {filteredPunks.map(punk => (
@@ -167,9 +151,9 @@ function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {}, isTestn
         ))}
       </div>
 
-      {filteredPunks.length === 0 && filter === 'eligible' && (
+      {filteredPunks.length === 0 && filter === 'unminted' && (
         <div className="no-results">
-          <p>None of your punks are eligible to be remastered.</p>
+          <p>All of your eligible punks are already minted.</p>
         </div>
       )}
     </div>
