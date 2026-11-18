@@ -19,10 +19,14 @@ export const SUPPORTED_CHAIN_IDS = CHAINS.map((c) => c.id);
 const MAINNET_RPC = import.meta.env.VITE_MAINNET_RPC_URL;
 const SEPOLIA_RPC = import.meta.env.VITE_SEPOLIA_RPC_URL;
 
-// Dedicated RPC first (batched JSON-RPC), public default as fallback. Unset var -> plain http().
-const mainnetTransport = MAINNET_RPC
-  ? fallback([http(MAINNET_RPC, { batch: true }), http()])
-  : http();
+// Dedicated RPC first, then public RPCs that accept large eth_calls. No JSON-RPC batching:
+// it would merge the owned-punks multicall chunks back into one oversized POST.
+// viem's default mainnet RPC (eth.merkle.io) is Cloudflare-challenged, so don't rely on http().
+const mainnetTransport = fallback([
+  ...(MAINNET_RPC ? [http(MAINNET_RPC)] : []),
+  http('https://ethereum-rpc.publicnode.com'),
+  http('https://eth.drpc.org'),
+]);
 
 export const TRANSPORTS = {
   [mainnet.id]: mainnetTransport,
