@@ -116,12 +116,21 @@ async function perfRun(browser, name, viewport, dpr) {
 // Screenshot the first tile's canvas and verify every sprite pixel renders as one
 // solid block of device pixels (no blended edges). Skips the 4 corner sprite pixels
 // (the canvas has a 4px border-radius).
-async function solidity(browser, page, dpr) {
-  const canvasEl = page.locator('.gallery-tile canvas').first();
-  await canvasEl.scrollIntoViewIfNeeded();
-  const buf = await canvasEl.screenshot();
+async function solidity(browser, page, dpr, tag = '') {
+  const idx = await page.evaluate(() => [...document.querySelectorAll('.gallery-tile canvas')].findIndex(c => {
+    const r = c.getBoundingClientRect();
+    return r.top >= 0 && r.bottom <= window.innerHeight;
+  }));
+  const canvasEl = page.locator('.gallery-tile canvas').nth(Math.max(0, idx));
+  const r = await canvasEl.evaluate(c => { const b = c.getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height }; });
+  // Page screenshots clip in whole CSS px, so capture an integer box around the
+  // canvas and find the canvas inside it in device px.
+  if (process.env.DEBUG_SOLIDITY) console.log('   canvas rect', JSON.stringify(r));
+  const cx = Math.floor(r.x), cy = Math.floor(r.y);
+  const clip = { x: cx, y: cy, width: Math.ceil(r.x + r.w) - cx, height: Math.ceil(r.y + r.h) - cy };
+  const buf = await page.screenshot({ clip });
   const b64 = buf.toString('base64');
-  const res = await page.evaluate(async ({ b64, dpr }) => {
+  const res = await page.evaluate(async ({ b64, dpr, offX, offY, size }) => {
     const img = new Image();
     img.src = 'data:image/png;base64,' + b64;
     await img.decode();
@@ -130,23 +139,55 @@ async function solidity(browser, page, dpr) {
     const g = c.getContext('2d', { willReadFrequently: true });
     g.drawImage(img, 0, 0);
     const N = 24;
-    const block = img.width / N;
+    const block = size / N;
+    // Chrome snaps a half-pixel layout position to a whole device pixel itself, so
+    // the canvas may sit up to 1 device px from where getBoundingClientRect says.
+    // Try those placements; the real test is that some placement gives uniform blocks.
     if (!Number.isInteger(block)) return { block, bad: -1 };
     const d = g.getImageData(0, 0, img.width, img.height).data;
-    let bad = 0;
-    for (let by = 0; by < N; by++) for (let bx = 0; bx < N; bx++) {
-      if ((bx === 0 || bx === N - 1) && (by === 0 || by === N - 1)) continue;
-      const first = ((by * block) * img.width + bx * block) * 4;
-      let ok = true;
-      for (let y = 0; y < block && ok; y++) for (let x = 0; x < block; x++) {
-        const i = ((by * block + y) * img.width + bx * block + x) * 4;
-        if (d[i] !== d[first] || d[i + 1] !== d[first + 1] || d[i + 2] !== d[first + 2] || d[i + 3] !== d[first + 3]) { ok = false; break; }
+    const count = (ox, oy) => {
+      const at = (x, y) => ((oy + y) * img.width + ox + x) * 4;
+      let bad = 0;
+      for (let by = 0; by < N; by++) for (let bx = 0; bx < N; bx++) {
+        if ((bx === 0 || bx === N - 1) && (by === 0 || by === N - 1)) continue;
+        const first = at(bx * block, by * block);
+        let ok = true;
+        for (let y = 0; y < block && ok; y++) for (let x = 0; x < block; x++) {
+          const i = at(bx * block + x, by * block + y);
+          if (d[i] !== d[first] || d[i + 1] !== d[first + 1] || d[i + 2] !== d[first + 2] || d[i + 3] !== d[first + 3]) { ok = false; break; }
+        }
+        if (!ok) bad++;
       }
-      if (!ok) bad++;
+      return bad;
+    };
+    let bad = Infinity;
+    for (const dx of [-1, 0, 1]) for (const dy of [-1, 0, 1]) {
+      const ox = Math.round(offX) + dx, oy = Math.round(offY) + dy;
+      if (ox < 0 || oy < 0 || ox + size > img.width || oy + size > img.height) continue;
+      bad = Math.min(bad, count(ox, oy));
     }
-    return { block, bad, dpr };
-  }, { b64, dpr });
-  check(`pixel solidity (dpr ${dpr}, ${res.block} device px per sprite px)`, res.bad === 0, `(${res.bad} blended blocks)`);
+    return { block, bad: bad === Infinity ? -1 : bad, dpr };
+  }, { b64, dpr, offX: (r.x - cx) * dpr, offY: (r.y - cy) * dpr, size: r.w * dpr });
+  check(`pixel solidity ${tag}(dpr ${dpr}, ${res.block} device px per sprite px)`, res.bad === 0, `(${res.bad} blended blocks)`);
+}
+
+// Odd viewport widths centre `.app` on a half pixel; the grid must still snap.
+async function oddWidths(browser) {
+  console.log('\n== pixel solidity at odd widths ==');
+  for (const [w, dpr] of [[1280, 2], [1281, 1], [1295, 2], [1229, 1]]) {
+    const ctx = await browser.newContext({ viewport: { width: w, height: 800 }, deviceScaleFactor: dpr });
+    const page = await ctx.newPage();
+    page.setDefaultTimeout(60000);
+    await page.goto(`${base}/#gallery`);
+    await page.waitForSelector('.gallery-tile canvas');
+    await page.waitForTimeout(500);
+    await solidity(browser, page, dpr, `${w}px `);
+    await page.mouse.move(100, 400);
+    await page.mouse.wheel(0, 1234);
+    await page.waitForTimeout(400);
+    await solidity(browser, page, dpr, `${w}px after scroll `);
+    await ctx.close();
+  }
 }
 
 async function deepLinks(browser) {
@@ -221,6 +262,7 @@ const browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath
 try {
   await perfRun(browser, 'mobile', { width: 390, height: 844 }, 3);
   await perfRun(browser, 'desktop', { width: 1280, height: 800 }, 1);
+  await oddWidths(browser);
   await deepLinks(browser);
   await traitsPage(browser);
 } finally {

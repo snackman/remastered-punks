@@ -18,7 +18,7 @@ const MAX_CHIPS = 3;
 
 // One punk tile. Only mounted while near the viewport (see useWindowedGrid), so it
 // draws straight from the tile cache; no per-tile IntersectionObserver.
-function PunkTile({ id, pixels, punk, onTrait }) {
+function PunkTile({ id, pixels, punk, onTrait, filterTrait }) {
   const canvasRef = useRef(null);
   const [retry, setRetry] = useState(0);
 
@@ -37,7 +37,10 @@ function PunkTile({ id, pixels, punk, onTrait }) {
     ctx.drawImage(tile, 0, 0);
   }, [punk, retry]);
 
-  const accessories = punk?.accessories || [];
+  // When filtering by a trait, list it first so the matching chip is always shown.
+  const raw = punk?.accessories || [];
+  const accessories = filterTrait && raw.includes(filterTrait)
+    ? [filterTrait, ...raw.filter(a => a !== filterTrait)] : raw;
   // Fixed row height: show up to 3 chips; with more, show 2 plus a "+N" link to
   // the punk page (which lists every trait).
   const overflow = accessories.length > MAX_CHIPS;
@@ -87,7 +90,7 @@ function Gallery({ punkData, filterTrait, onFilterTrait }) {
       || (punkData[c.id]?.accessories || []).includes(filterTrait)));
   }, [counts, filterTrait, punkData]);
 
-  const { containerRef, cols, totalHeight, startIndex, endIndex, offsetY } = useWindowedGrid({
+  const { containerRef, cols, totalHeight, startIndex, endIndex, offsetY, snapX, snapY } = useWindowedGrid({
     count: rows.length, colWidth: COL_WIDTH, gap: GAP, rowHeight: ROW_HEIGHT, rowGap: ROW_GAP,
   });
 
@@ -131,12 +134,15 @@ function Gallery({ punkData, filterTrait, onFilterTrait }) {
         <div
           className="gallery-grid-inner"
           style={{
-            transform: `translateY(${offsetY}px)`,
+            // Positioned with left/top (not transform): a fractional transform
+            // resamples the canvases and blends their last pixel row.
+            left: snapX,
+            top: offsetY + snapY,
             gridTemplateColumns: `repeat(${cols}, ${COL_WIDTH}px)`,
           }}
         >
           {rows.slice(startIndex, endIndex).map(c => (
-            <PunkTile key={c.id} id={c.id} pixels={c.pixels} punk={punkData[c.id]} onTrait={onFilterTrait} />
+            <PunkTile key={c.id} id={c.id} pixels={c.pixels} punk={punkData[c.id]} onTrait={onFilterTrait} filterTrait={filterTrait} />
           ))}
         </div>
       </div>

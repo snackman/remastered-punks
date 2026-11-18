@@ -588,13 +588,11 @@
 }
 .gallery-title {
   font-size: 24px;
-  line-height: 32px; /* integer px so the grid below lands on whole device pixels */
   margin: 0;
   color: var(--ink);
 }
 .gallery-sub {
   margin: 0;
-  line-height: 20px;
   color: var(--muted);
   font-size: 13px;
 }
@@ -605,7 +603,6 @@
   border-radius: 50px;
   padding: 4px 12px;
   font-size: 12px;
-  line-height: 18px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -618,6 +615,7 @@
   overflow-anchor: none;
 }
 .gallery-grid-inner {
+  position: absolute; /* left/top set inline by Gallery.jsx (window offset + pixel snap) */
   display: grid;
   /* grid-template-columns is set inline: repeat(cols, 96px). Integer px columns
      and gaps keep every sprite on the device-pixel grid (no 1fr / space-between). */
@@ -694,6 +692,11 @@
 }
 .gallery-tile-trait:hover {
   text-decoration: underline;
+}
+.gallery-tile-trait:focus-visible,
+.gallery-tile-id:focus-visible {
+  /* tiles clip their contents (overflow/contain), so draw the ring inside */
+  outline-offset: -2px;
 }
 .gallery-tile-more {
   color: var(--muted);
