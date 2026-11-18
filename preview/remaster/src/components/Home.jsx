@@ -3,6 +3,7 @@ import { SPRITE_SIZE } from '../lib/constants';
 import { extractPunk } from '../lib/sprites';
 import { compositePunk, remasterTraits } from '../lib/remaster';
 import { buildBuckets, isEligibleId, noRemasterCopy } from '../lib/eligibility';
+import HomeExplainer from './HomeExplainer';
 
 const ZOOM = 9;
 
@@ -252,6 +253,7 @@ function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
         <div className="hero-position">{pos + 1} / {count}</div>
       )}
 
+      <HomeExplainer onNavigate={onNavigate} onTrait={onTrait} />
     </section>
   );
 }
