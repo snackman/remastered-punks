@@ -78,14 +78,19 @@ function PunkTile({ id, pixels, punk, onTrait, filterTrait, onSelectPunk }) {
   );
 }
 
+// Kept across mounts so Back from a punk renders the grid at once and the browser can
+// restore the scroll position. A failed load isn't kept, so the next mount retries.
+let countsCache = null;
+
 function Gallery({ punkData, filterTrait, onFilterTrait, onSelectPunk }) {
-  const [counts, setCounts] = useState(null);
+  const [counts, setCounts] = useState(countsCache);
   const sectionRef = useRef(null);
 
   useEffect(() => {
+    if (countsCache) return;
     fetch(dataUrl('remaster-pixel-counts.json'))
       .then(res => res.json())
-      .then(setCounts)
+      .then(c => { countsCache = c; setCounts(c); })
       .catch(e => { console.error('pixel counts not loaded', e); setCounts([]); });
   }, []);
 

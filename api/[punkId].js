@@ -91,6 +91,8 @@ export default async function handler(req, res) {
     console.error('[api/punkId]', req.query?.punkId, err);
     if (res.headersSent) return undefined;
     res.setHeader('Cache-Control', 'no-store');
+    // The success path may already have set image/png.
+    res.setHeader('Content-Type', 'application/json');
     return res.status(500).json({ error: 'Internal error' });
   }
 }
