@@ -364,3 +364,9 @@ Vercel preview checks (`vercel-deploy`, then curl; if preview protection blocks 
   - Lookup: an eligible id gets a proof and can mint (Sepolia); an ineligible id shows no mint.
   - Deep links `#wallet` and `#lookup` load directly.
   - Mobile width, via /mobile-check.
+
+## Decisions (2026-11-18, orchestrator defaults under Snax's "merge"; easy to revisit)
+- Fonts: keep all 5 Montserrat weights; only make the stylesheet non-render-blocking.
+- Keep `/data/merkle-tree.json` publicly served (whitelist it in build-public-data) even though the app switches to per-punk proof shards.
+- Delete the stale Express dev server + helpers (old compositor) rather than moving them.
+- Sequencing: implement AFTER ux-states merges, on top of it (ux-states already moved loading/error UI and added the empty-state ConnectButton; carry those into src/wallet/*).
