@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, usePublicClient } from 'wagmi';
 import { useQueryClient } from '@tanstack/react-query';
+import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { isAddressEqual, zeroAddress } from 'viem';
 import { SPRITE_SIZE } from '../lib/constants';
 import { extractPunk } from '../lib/sprites';
@@ -22,6 +23,7 @@ function PunkCard({ punk, showRemastered = true, merkleProof, merkleStatus = 'lo
   const [syncSimulating, setSyncSimulating] = useState(false);
   const handledHashes = useRef(new Set());
   const queryClient = useQueryClient();
+  const { openConnectModal } = useConnectModal();
 
   const { address } = useAccount();
   const {
@@ -178,8 +180,7 @@ function PunkCard({ punk, showRemastered = true, merkleProof, merkleStatus = 'lo
   const buttonDisabled = !canMint || isPending || simulating || isConfirming;
 
   let buttonText = 'Mint Remaster';
-  if (!isConnected) buttonText = 'Connect Wallet';
-  else if (!isSupported) buttonText = 'Wrong Network';
+  if (!isSupported) buttonText = 'Wrong Network';
   else if (!contractAddress) buttonText = chainId === 1 ? 'Minting Soon' : 'Wrong Network';
   else if (isActivated) buttonText = 'Already Minted';
   else if (proofPending) buttonText = 'Loading proof…';
@@ -229,6 +230,8 @@ function PunkCard({ punk, showRemastered = true, merkleProof, merkleStatus = 'lo
         <div className="punk-image-wrapper">
           <canvas
             ref={originalRef}
+            role="img"
+            aria-label={`Punk #${punk.id}${eligible && showRemastered ? ', original' : ''}`}
             width={SPRITE_SIZE * ZOOM}
             height={SPRITE_SIZE * ZOOM}
           />
@@ -240,6 +243,8 @@ function PunkCard({ punk, showRemastered = true, merkleProof, merkleStatus = 'lo
             <div className="punk-image-wrapper">
               <canvas
                 ref={remasteredRef}
+                role="img"
+                aria-label={`Punk #${punk.id}, remastered`}
                 width={SPRITE_SIZE * ZOOM}
                 height={SPRITE_SIZE * ZOOM}
               />
@@ -270,6 +275,11 @@ function PunkCard({ punk, showRemastered = true, merkleProof, merkleStatus = 'lo
         <div className="mint-section">
           {isActivated ? (
             <div className="minted-badge">Minted</div>
+          ) : !isConnected ? (
+            <>
+              <button className="mint-button" onClick={openConnectModal} disabled={!openConnectModal}>Connect wallet to mint</button>
+              <p className="mint-hint">Only the punk&apos;s current owner can mint its remaster.</p>
+            </>
           ) : (
             <button
               className={`mint-button ${isSuccess ? 'success' : ''}`}
