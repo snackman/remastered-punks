@@ -180,3 +180,7 @@ Also add `"verify:render"` to the root package.json scripts. Optionally add a pl
    - In the app (Home/PunkCard/Gallery), punks 10 and 467 render the same as the API. The gallery sort still loads.
    - Mobile check per `/mobile-check` is not needed (pixel-only change).
 4. After merge and deploy: rerun the px.mjs sample against punksremastered.com; expect 40/40 to match the local renderer.
+
+## Decisions (Snax, 2026-11-18)
+- **D2: A** — keep the dictated (6,12) hair colour on Crazy Hair, Wild Blonde, Clown Hair Green. Expected verify counts 2070/2454 and 2144/2553.
+- **D1:** not yet answered; implement the default (frown NOT counted toward eligibility; eligible set stays 3434, root 0x9188c0…1324).
