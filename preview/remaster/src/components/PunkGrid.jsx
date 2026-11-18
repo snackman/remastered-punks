@@ -47,7 +47,7 @@ function PunkGrid({ address: connectedAddress, punkData, eligiblePunks, merklePr
     }),
     enabled: !!address && !!client && !!source.address && eligibleIds.length > 0,
     staleTime: 60_000,
-    retry: 2,
+    retry: 1,
     refetchOnWindowFocus: false,
   });
 

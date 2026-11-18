@@ -178,7 +178,6 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
               punkData={punkData}
               eligiblePunks={eligiblePunks}
               merkleProofs={merkleProofs}
-              isTestnet={isTestnet}
             />
           ) : (
             <div className="connect-prompt">

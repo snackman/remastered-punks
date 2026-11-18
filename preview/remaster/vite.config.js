@@ -15,7 +15,7 @@ export default defineConfig(({ command, mode }) => {
       throw new Error(`[network] invalid build config:\n  - ${errors.join('\n  - ')}`)
     }
     // Never log the full RPC URL: it contains the API key.
-    let rpcHost = '(public default)'
+    let rpcHost = '(publicnode → drpc)'
     try {
       if (env.VITE_MAINNET_RPC_URL) rpcHost = new URL(env.VITE_MAINNET_RPC_URL).host
     } catch { /* validated above in mainnet mode; ignore otherwise */ }
