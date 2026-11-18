@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { loadAssets } from './lib/sprites';
 import { loadPunkData, loadEligiblePunks } from './lib/data';
+import { initEligibility } from './lib/eligibility';
 import { initStacking } from './lib/remaster';
 import { wagmiConfig, IS_MAINNET, TARGET_CHAIN } from './lib/network';
 import { useNetwork } from './lib/useNetwork';
@@ -18,7 +19,7 @@ import './App.css';
 
 const queryClient = new QueryClient();
 
-function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
+function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs, merkleStatus }) {
   const { address, connector } = useAccount();
   const { isConnected, isSupported, isTestnet } = useNetwork();
   const { switchChain } = useSwitchChain();
@@ -178,6 +179,7 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
               punkData={punkData}
               eligiblePunks={eligiblePunks}
               merkleProofs={merkleProofs}
+              merkleStatus={merkleStatus}
             />
           ) : (
             <div className="connect-prompt">
@@ -186,7 +188,7 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
           )
         )}
         {activeTab === 'lookup' && (
-          <ManualLookup punkData={punkData} merkleProofs={merkleProofs} />
+          <ManualLookup punkData={punkData} merkleProofs={merkleProofs} merkleStatus={merkleStatus} />
         )}
       </main>
 
@@ -205,6 +207,7 @@ function App() {
   const [punkData, setPunkData] = useState({});
   const [eligiblePunks, setEligiblePunks] = useState([]);
   const [merkleProofs, setMerkleProofs] = useState({});
+  const [merkleStatus, setMerkleStatus] = useState('loading'); // 'loading' | 'ready' | 'error'
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [error, setError] = useState(null);
 
@@ -229,15 +232,25 @@ function App() {
 
         // Load eligible punks
         const eligible = await loadEligiblePunks(`${basePath}/data/all-eligible-punks.json`);
+        initEligibility(eligible);
         setEligiblePunks(eligible);
 
         setAssetsLoaded(true);
 
         // Load merkle proofs in background (large file, don't block UI)
         fetch(`${basePath}/data/merkle-tree.json`)
-          .then(res => res.json())
-          .then(merkleData => setMerkleProofs(merkleData.proofs || {}))
-          .catch(e => console.warn('Merkle tree not loaded:', e));
+          .then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+          })
+          .then(merkleData => {
+            setMerkleProofs(merkleData.proofs || {});
+            setMerkleStatus('ready');
+          })
+          .catch(e => {
+            console.warn('Merkle tree not loaded:', e);
+            setMerkleStatus('error');
+          });
       } catch (err) {
         console.error('Failed to load:', err);
         setError(err.message);
@@ -259,6 +272,7 @@ function App() {
             punkData={punkData}
             eligiblePunks={eligiblePunks}
             merkleProofs={merkleProofs}
+            merkleStatus={merkleStatus}
             assetsLoaded={assetsLoaded}
           />
         </RainbowKitProvider>

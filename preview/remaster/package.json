@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node ../../scripts/check-ui-eligibility.mjs && vite build",
     "build:win": "vite build && xcopy ..\\..\\data dist\\data /E /I /Y",
+    "check:eligibility": "node ../../scripts/check-ui-eligibility.mjs",
     "lint": "eslint .",
     "test": "node --test src/lib/*.test.mjs",
     "preview": "vite preview"

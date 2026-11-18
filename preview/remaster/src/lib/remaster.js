@@ -4,7 +4,7 @@ import { createStackCompositor } from '@lib/stack-compositor.js';
 import { getSpriteSheet } from './sprites';
 
 // Re-export shared remaster logic
-export { getRemasters, hasRemasters } from '@lib/remaster-logic.js';
+export { getRemasters, hasRemasters, remasterTraits } from '@lib/remaster-logic.js';
 
 const createCanvas = (w, h) => {
   const c = document.createElement('canvas');

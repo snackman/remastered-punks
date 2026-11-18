@@ -2,14 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
 import { SPRITE_SIZE } from '../lib/constants';
 import { extractPunk } from '../lib/sprites';
-import { compositePunk, getRemasters } from '../lib/remaster';
+import { compositePunk } from '../lib/remaster';
+import { remasterState, noRemasterCopy } from '../lib/eligibility';
 import { TARGET_CHAIN } from '../lib/network';
 import { useNetwork } from '../lib/useNetwork';
 import { REMASTERED_PUNKS_ABI, MOCK_CRYPTOPUNKS_ABI } from '../lib/contracts';
 
 const ZOOM = 4;
 
-function PunkCard({ punk, showRemastered = true, showEligibility = false, merkleProof }) {
+function PunkCard({ punk, showRemastered = true, showEligibility = false, merkleProof, merkleStatus = 'loading' }) {
   const originalRef = useRef(null);
   const remasteredRef = useRef(null);
   const [mintStatus, setMintStatus] = useState(null);
@@ -70,11 +71,8 @@ function PunkCard({ punk, showRemastered = true, showEligibility = false, merkle
     }
   }, [isPending, isConfirming, isSuccess, writeError, refetchActivated]);
 
-  // Only check remasters if punk is eligible (has full data)
-  const isEligible = punk.isEligible !== false && punk.accessories && punk.accessories.length > 0;
-  const remasters = isEligible ? getRemasters(punk) : [];
-  const hasRemasters = remasters.length > 0;
-  const hasMerkleProof = merkleProof && merkleProof.length > 0;
+  // Eligibility = membership in all-eligible-punks.json (same set as the server and merkle tree).
+  const { eligible, hasProof, proofPending, proofMissing } = remasterState(punk.id, merkleProof, merkleStatus);
 
   useEffect(() => {
     if (!originalRef.current) return;
@@ -87,14 +85,14 @@ function PunkCard({ punk, showRemastered = true, showEligibility = false, merkle
     origCtx.drawImage(originalCanvas, 0, 0, SPRITE_SIZE, SPRITE_SIZE, 0, 0, SPRITE_SIZE * ZOOM, SPRITE_SIZE * ZOOM);
 
     // Clear and draw remastered if applicable
-    if (hasRemasters && showRemastered && remasteredRef.current) {
+    if (eligible && showRemastered && remasteredRef.current) {
       const remCtx = remasteredRef.current.getContext('2d');
       remCtx.clearRect(0, 0, SPRITE_SIZE * ZOOM, SPRITE_SIZE * ZOOM);
       const remasteredCanvas = compositePunk(punk, true);
       remCtx.imageSmoothingEnabled = false;
       remCtx.drawImage(remasteredCanvas, 0, 0, SPRITE_SIZE, SPRITE_SIZE, 0, 0, SPRITE_SIZE * ZOOM, SPRITE_SIZE * ZOOM);
     }
-  }, [punk, hasRemasters, showRemastered]);
+  }, [punk, eligible, showRemastered]);
 
   const handleMint = () => {
     if (!contractAddress || !merkleProof) return;
@@ -109,10 +107,10 @@ function PunkCard({ punk, showRemastered = true, showEligibility = false, merkle
     });
   };
 
-  const cardClass = `punk-card${punk.isEligible === false ? ' not-eligible' : ''}`;
+  const cardClass = `punk-card${!eligible ? ' not-eligible' : ''}`;
 
   // Determine mint button state
-  const canMint = isConnected && isTarget && contractAddress && hasMerkleProof && hasRemasters && !isActivated && (!isTestnet || ownsPunkOnMock);
+  const canMint = isConnected && isTarget && contractAddress && eligible && hasProof && !isActivated && (!isTestnet || ownsPunkOnMock);
   const buttonDisabled = !canMint || isPending || isConfirming;
 
   let buttonText = 'Mint Remaster';
@@ -120,6 +118,8 @@ function PunkCard({ punk, showRemastered = true, showEligibility = false, merkle
   else if (!isSupported) buttonText = 'Wrong Network';
   else if (!contractAddress) buttonText = chainId === 1 ? 'Minting Soon' : 'Wrong Network';
   else if (isActivated) buttonText = 'Already Minted';
+  else if (proofPending) buttonText = 'Loading proof…';
+  else if (proofMissing) buttonText = 'Proof unavailable';
   else if (isTestnet && !ownsPunkOnMock) buttonText = 'Not Your Punk';
   else if (isPending) buttonText = 'Confirm in Wallet...';
   else if (isConfirming) buttonText = 'Minting...';
@@ -143,9 +143,9 @@ function PunkCard({ punk, showRemastered = true, showEligibility = false, merkle
             width={SPRITE_SIZE * ZOOM}
             height={SPRITE_SIZE * ZOOM}
           />
-          {hasRemasters && showRemastered && <span className="label">Original</span>}
+          {eligible && showRemastered && <span className="label">Original</span>}
         </div>
-        {hasRemasters && showRemastered && (
+        {eligible && showRemastered && (
           <>
             <span className="arrow">→</span>
             <div className="punk-image-wrapper">
@@ -172,15 +172,12 @@ function PunkCard({ punk, showRemastered = true, showEligibility = false, merkle
           ))}
         </div>
       )}
-      {showEligibility && punk.isEligible === false && (
-        <div className="not-eligible-badge">Not eligible for remaster</div>
-      )}
-      {isEligible && !hasRemasters && (
-        <div className="no-remaster">No remaster needed</div>
+      {!eligible && (
+        <div className="no-remaster">{noRemasterCopy(punk.id)}</div>
       )}
 
       {/* Mint Button */}
-      {hasRemasters && hasMerkleProof && (
+      {eligible && (
         <div className="mint-section">
           {isActivated ? (
             <div className="minted-badge">Minted</div>
