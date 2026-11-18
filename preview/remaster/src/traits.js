@@ -298,9 +298,10 @@ function wireToggles() {
       .filter(n => !(n.nodeType === 1 && n.matches('.trait-count, .trait-count-link')))
       .forEach(n => btn.appendChild(n));
     h2.insertBefore(btn, h2.firstChild);
-    btn.addEventListener('click', () => {
-      btn.setAttribute('aria-expanded', String(!sec.classList.toggle('collapsed')));
-    });
+    const toggle = () => btn.setAttribute('aria-expanded', String(!sec.classList.toggle('collapsed')));
+    btn.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
+    // Clicking the rest of the heading (not the count link) also toggles.
+    h2.addEventListener('click', (e) => { if (!e.target.closest('a')) toggle(); });
   });
 }
 

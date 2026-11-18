@@ -40,12 +40,12 @@ function pickRandomByType(buckets) {
   return bucket[Math.floor(Math.random() * bucket.length)];
 }
 
-function Home({ punkData, eligiblePunks, onTrait }) {
+function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
   const [punk, setPunk] = useState(null);
   const [pos, setPos] = useState(-1);     // index into the shuffle history
   const [count, setCount] = useState(0);  // history length
   const [reveal, setReveal] = useState(false);      // "can't see the difference?" overlay
-  const [revealShowing, setRevealShowing] = useState('remastered');
+  const [revealShowing, setRevealShowing] = useState({ id: null, v: 'remastered' });
   const originalRef = useRef(null);
   const remasteredRef = useRef(null);
   const overlayRef = useRef(null);
@@ -164,7 +164,7 @@ function Home({ punkData, eligiblePunks, onTrait }) {
     const flick = () => {
       if (cancelled) return;
       drawImg(showRem ? rem : orig);
-      setRevealShowing(showRem ? 'remastered' : 'original');
+      setRevealShowing({ id: punk.id, v: showRem ? 'remastered' : 'original' });
       showRem = !showRem;
       timer = setTimeout(flick, 380);
     };
@@ -194,7 +194,7 @@ function Home({ punkData, eligiblePunks, onTrait }) {
             height={SPRITE_SIZE * ZOOM}
           />
           <span className="hero-label">
-            {revealShowing === 'remastered'
+            {(revealShowing.id !== punk.id || revealShowing.v === 'remastered')
               ? `Remaster · ${revealData?.changed ?? 0} pixel${revealData?.changed === 1 ? '' : 's'} changed`
               : 'Original'}
           </span>
@@ -255,7 +255,7 @@ function Home({ punkData, eligiblePunks, onTrait }) {
       {punk && !eligible && <div className="no-remaster">{noRemasterCopy(punk.id)}</div>}
 
       {eligible && (
-        <button className="reveal-toggle" onClick={() => { setRevealShowing('remastered'); setReveal((v) => !v); }}>
+        <button className="reveal-toggle" onClick={() => { setRevealShowing({ id: null, v: 'remastered' }); setReveal((v) => !v); }}>
           {reveal ? 'Back to compare' : "Can't see the difference?"}
         </button>
       )}

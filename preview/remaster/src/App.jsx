@@ -73,6 +73,10 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs, merkl
   // buttons move between tabs. The query is rebuilt from scratch so a stale
   // ?trait= / ?punk= never survives a tab switch.
   const nav = (tab, trait = null) => {
+    if (tab === activeTab && (tab !== 'gallery' || trait === filterTrait)) {
+      window.scrollTo(0, 0);
+      return;
+    }
     setActiveTab(tab);
     setFilterTrait(trait);
     const loc = window.location;
@@ -186,6 +190,7 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs, merkl
           <Home
             punkData={punkData}
             eligiblePunks={eligiblePunks}
+            onNavigate={selectTab}
             onTrait={selectTrait}
           />
         )}

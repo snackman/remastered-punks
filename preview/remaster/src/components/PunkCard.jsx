@@ -277,7 +277,7 @@ function PunkCard({ punk, showRemastered = true, merkleProof, merkleStatus = 'lo
             <div className="minted-badge">Minted</div>
           ) : !isConnected ? (
             <>
-              <button className="mint-button" onClick={openConnectModal}>Connect wallet to mint</button>
+              <button className="mint-button" onClick={openConnectModal} disabled={!openConnectModal}>Connect wallet to mint</button>
               <p className="mint-hint">Only the punk&apos;s current owner can mint its remaster.</p>
             </>
           ) : (
