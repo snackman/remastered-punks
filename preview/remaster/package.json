@@ -8,6 +8,7 @@
     "build": "vite build",
     "build:win": "vite build && xcopy ..\\..\\data dist\\data /E /I /Y",
     "lint": "eslint .",
+    "test": "node --test src/lib/*.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

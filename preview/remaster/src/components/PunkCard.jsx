@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { useAccount, useChainId, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
 import { SPRITE_SIZE } from '../lib/constants';
 import { extractPunk } from '../lib/sprites';
 import { compositePunk, getRemasters } from '../lib/remaster';
-import { REMASTERED_PUNKS_ABI, MOCK_CRYPTOPUNKS_ABI, getContractAddress, getCryptoPunksAddress } from '../lib/contracts';
+import { TARGET_CHAIN } from '../lib/network';
+import { useNetwork } from '../lib/useNetwork';
+import { REMASTERED_PUNKS_ABI, MOCK_CRYPTOPUNKS_ABI } from '../lib/contracts';
 
 const ZOOM = 4;
 
@@ -12,11 +14,11 @@ function PunkCard({ punk, showRemastered = true, showEligibility = false, merkle
   const remasteredRef = useRef(null);
   const [mintStatus, setMintStatus] = useState(null);
 
-  const { address, isConnected } = useAccount();
-  const chainId = useChainId();
-  const contractAddress = getContractAddress(chainId);
-  const mockPunksAddress = getCryptoPunksAddress(chainId);
-  const isTestnet = chainId === 11155111;
+  const { address } = useAccount();
+  const {
+    chainId, isConnected, isSupported, isTarget, isTestnet,
+    contractAddress, cryptoPunksAddress: mockPunksAddress,
+  } = useNetwork();
 
   // Check if already activated
   const { data: isActivated, refetch: refetchActivated } = useReadContract({
@@ -24,6 +26,7 @@ function PunkCard({ punk, showRemastered = true, showEligibility = false, merkle
     abi: REMASTERED_PUNKS_ABI,
     functionName: 'activated',
     args: [BigInt(punk.id)],
+    chainId: TARGET_CHAIN.id,
     query: {
       enabled: !!contractAddress,
     },
@@ -36,6 +39,7 @@ function PunkCard({ punk, showRemastered = true, showEligibility = false, merkle
     abi: MOCK_CRYPTOPUNKS_ABI,
     functionName: 'punkIndexToAddress',
     args: [BigInt(punk.id)],
+    chainId: TARGET_CHAIN.id, // mock owner read only runs in sepolia mode (enabled below)
     query: {
       enabled: !!mockPunksAddress && isTestnet,
     },
@@ -101,17 +105,19 @@ function PunkCard({ punk, showRemastered = true, showEligibility = false, merkle
       abi: REMASTERED_PUNKS_ABI,
       functionName: 'activate',
       args: [BigInt(punk.id), merkleProof],
+      chainId: TARGET_CHAIN.id,
     });
   };
 
   const cardClass = `punk-card${punk.isEligible === false ? ' not-eligible' : ''}`;
 
   // Determine mint button state
-  const canMint = isConnected && contractAddress && hasMerkleProof && hasRemasters && !isActivated && (!isTestnet || ownsPunkOnMock);
+  const canMint = isConnected && isTarget && contractAddress && hasMerkleProof && hasRemasters && !isActivated && (!isTestnet || ownsPunkOnMock);
   const buttonDisabled = !canMint || isPending || isConfirming;
 
   let buttonText = 'Mint Remaster';
   if (!isConnected) buttonText = 'Connect Wallet';
+  else if (!isSupported) buttonText = 'Wrong Network';
   else if (!contractAddress) buttonText = chainId === 1 ? 'Minting Soon' : 'Wrong Network';
   else if (isActivated) buttonText = 'Already Minted';
   else if (isTestnet && !ownsPunkOnMock) buttonText = 'Not Your Punk';
