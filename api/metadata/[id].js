@@ -3,6 +3,7 @@
 // Returns OpenSea-style metadata; the image points at the remastered-image endpoint.
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { RENDER_VERSION } from '../../lib/constants.js';
 
 let punkData = null;
 let eligiblePunks = null;
@@ -76,7 +77,7 @@ export default async function handler(req, res) {
     name: `Remastered Punk #${id}`,
     description:
       'A remastered CryptoPunk. Ownership dynamically follows the original CryptoPunk onchain — soulbound, non-transferable (EIP-5192).',
-    image: `${origin}/api/${id}?size=480`,
+    image: `${origin}/api/${id}?size=480&v=${RENDER_VERSION}`,
     external_url: `${origin}/?punk=${id}#home`,
     attributes,
   };

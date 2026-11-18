@@ -4,7 +4,7 @@ import { join } from 'path';
 
 import { createCompositor } from '../lib/compositor.js';
 import { createStackCompositor } from '../lib/stack-compositor.js';
-import { SPRITE_SIZE } from '../lib/constants.js';
+import { SPRITE_SIZE, RENDER_VERSION } from '../lib/constants.js';
 
 // Cached data
 let spriteSheet = null;
@@ -129,6 +129,10 @@ export default async function handler(req, res) {
 
   // Send PNG
   res.setHeader('Content-Type', 'image/png');
-  res.setHeader('Cache-Control', 'public, max-age=315360000, immutable');
+  // Only the current versioned URL (?v=RENDER_VERSION) is immutable; unversioned/old-version
+  // URLs revalidate within hours so a render fix reaches wallets and marketplaces.
+  res.setHeader('Cache-Control', String(req.query.v) === String(RENDER_VERSION)
+    ? 'public, max-age=315360000, immutable'
+    : 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400');
   res.send(outputCanvas.toBuffer('image/png'));
 }

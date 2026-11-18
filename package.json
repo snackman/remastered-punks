@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "verify:render": "node scripts/verify-render.mjs"
+  },
   "dependencies": {
     "@napi-rs/canvas": "^0.1.66"
   },
