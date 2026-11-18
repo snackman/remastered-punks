@@ -7,13 +7,17 @@ import crypto from 'node:crypto'
 import { PUBLIC_DATA_FILES } from '../../scripts/build-public-data.mjs'
 import { validateNetworkEnv } from './src/lib/networkEnv.js'
 
-// First 10 hex chars of a sha256 over every public data file. Appended to /data fetches
-// as ?v= (see src/lib/dataUrl.js) so the long Cache-Control on /data/* is safe.
+// First 10 hex chars of a sha256 over every public data file plus the code that derives
+// punks-compact.json and proofs/*.json. Appended to /data fetches as ?v= (see
+// src/lib/dataUrl.js) so the long Cache-Control on /data/* is safe.
 function dataVersion() {
   const h = crypto.createHash('sha256')
   for (const f of PUBLIC_DATA_FILES) {
     h.update(f)
     h.update(fs.readFileSync(path.resolve(__dirname, '../../data', f)))
+  }
+  for (const f of ['src/lib/punkCodec.js', '../../scripts/build-public-data.mjs']) {
+    h.update(fs.readFileSync(path.resolve(__dirname, f)))
   }
   return h.digest('hex').slice(0, 10)
 }
