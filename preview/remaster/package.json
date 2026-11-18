@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "node ../../scripts/check-ui-eligibility.mjs && vite build",
-    "build:win": "vite build && xcopy ..\\..\\data dist\\data /E /I /Y",
+    "build:win": "vite build && node ../../scripts/build-public-data.mjs dist/data",
     "check:eligibility": "node ../../scripts/check-ui-eligibility.mjs",
     "lint": "eslint .",
     "test": "node --test src/lib/*.test.mjs",

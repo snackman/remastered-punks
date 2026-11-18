@@ -89,6 +89,7 @@ export default async function handler(req, res) {
 
   // Validate punk ID
   if (isNaN(id) || id < 0 || id > 9999) {
+    res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
     return res.status(400).json({ error: 'Invalid punk ID. Must be 0-9999.' });
   }
 
@@ -100,6 +101,7 @@ export default async function handler(req, res) {
 
   const punk = punkData[id];
   if (!punk) {
+    res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
     return res.status(404).json({ error: `Punk #${id} not found.` });
   }
 
@@ -114,6 +116,7 @@ export default async function handler(req, res) {
   // Check eligibility - only return images for punks that can be remastered
   const isEligible = eligiblePunks.has(id);
   if (!isEligible) {
+    res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
     return res.status(404).json({
       error: `Punk #${id} is not eligible for remastering.`,
       eligible: false,
