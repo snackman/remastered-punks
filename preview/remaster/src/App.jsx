@@ -9,6 +9,7 @@ import { loadPunkData, loadEligiblePunks } from './lib/data';
 import { initEligibility } from './lib/eligibility';
 import { initStacking } from './lib/remaster';
 import { wagmiConfig, IS_MAINNET, TARGET_CHAIN } from './lib/network';
+import { getContractAddress } from './lib/contracts';
 import { useNetwork } from './lib/useNetwork';
 import PunkGrid from './components/PunkGrid';
 import ManualLookup from './components/ManualLookup';
@@ -93,6 +94,16 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs, merkl
       window.history.replaceState(null, '', `${q}#gallery`);
     }
   };
+
+  // Per-tab document title (home string must match index.html's <title>).
+  useEffect(() => {
+    const SITE = 'Punks Remastered';
+    const page = { wallet: 'My Punks', lookup: 'Lookup', gallery: filterTrait ? `${filterTrait} remasters` : 'All Remasters' }[activeTab];
+    document.title = page ? `${page} \u00b7 ${SITE}` : `${SITE}: soulbound remasters of CryptoPunks`;
+  }, [activeTab, filterTrait]);
+
+  const contractAddress = getContractAddress(TARGET_CHAIN.id);
+  const explorer = TARGET_CHAIN.blockExplorers?.default?.url;
 
   const base = import.meta.env.BASE_URL;
   const traitsUrl = `${base}traits.html`;
@@ -193,10 +204,11 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs, merkl
       </main>
 
       <footer className="site-footer">
-        <button className="brand" onClick={() => selectTab('home')} style={{ font: 'inherit' }}>
-          <span className="brand-name" style={{ fontSize: '12px' }}>Punks Remastered</span>
-        </button>
-        <a href={traitsUrl}>All Traits</a>
+        {contractAddress && explorer
+          ? <a href={`${explorer}/address/${contractAddress}`} target="_blank" rel="noreferrer">
+              Contract on Etherscan{IS_MAINNET ? '' : ' (Sepolia)'}
+            </a>
+          : <span>Contract: coming soon</span>}
         <a href="https://cryptopunks.app" target="_blank" rel="noreferrer">CryptoPunks</a>
       </footer>
     </div>

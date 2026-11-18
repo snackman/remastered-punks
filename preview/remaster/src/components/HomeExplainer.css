@@ -1,0 +1,100 @@
+.explainer {
+  max-width: 760px;
+  margin: 56px auto 0;
+  text-align: left;
+}
+
+.explainer-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 16px;
+}
+
+.explainer-steps {
+  list-style: none;
+  counter-reset: step;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin: 0 0 22px;
+  padding: 0;
+}
+
+.explainer-step {
+  counter-increment: step;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.explainer-step::before {
+  content: counter(step);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.explainer-step strong {
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.explainer-cta {
+  text-align: center;
+  margin-bottom: 44px;
+}
+
+.explainer-note {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0 0 12px;
+}
+
+.explainer-faq {
+  border-top: 1px solid var(--line);
+}
+
+.explainer-faq details {
+  border-bottom: 1px solid var(--line);
+  padding: 14px 0;
+}
+
+.explainer-faq summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.explainer-faq p {
+  margin: 10px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.explainer-faq a {
+  color: var(--accent);
+}
+
+@media (max-width: 560px) {
+  .explainer-steps {
+    grid-template-columns: 1fr;
+  }
+}
