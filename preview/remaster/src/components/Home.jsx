@@ -1,26 +1,10 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { SPRITE_SIZE } from '../lib/constants';
 import { extractPunk } from '../lib/sprites';
-import { compositePunk, getRemasters } from '../lib/remaster';
+import { compositePunk, remasterTraits } from '../lib/remaster';
+import { buildBuckets, isEligibleId, noRemasterCopy } from '../lib/eligibility';
 
 const ZOOM = 9;
-
-// Bucket eligible punks by alteration type (the remaster trait: each hairstyle,
-// 'Bald', Regular Shades, Earring, Choker, Front Beard, Small Shades, ...).
-function buildBuckets(eligiblePunks, punkData) {
-  const ids = eligiblePunks && eligiblePunks.length
-    ? eligiblePunks
-    : Object.keys(punkData).map(Number);
-  const map = {};
-  for (const id of ids) {
-    const p = punkData[id];
-    if (!p) continue;
-    for (const r of getRemasters(p)) {
-      (map[r.trait] || (map[r.trait] = [])).push(id);
-    }
-  }
-  return { keys: Object.keys(map), map };
-}
 
 // Pick a random alteration type (equal chance each), then a random punk of that
 // type - so rare alterations show as often as common ones.
@@ -49,7 +33,7 @@ function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
   useEffect(() => { punkDataRef.current = punkData; }, [punkData]);
 
   // Alteration-type buckets for weighted shuffle (rebuilt when data changes).
-  const buckets = useMemo(() => buildBuckets(eligiblePunks, punkData), [eligiblePunks, punkData]);
+  const buckets = useMemo(() => buildBuckets(eligiblePunks, punkData, remasterTraits), [eligiblePunks, punkData]);
   const bucketsRef = useRef(buckets);
   useEffect(() => { bucketsRef.current = buckets; }, [buckets]);
 
@@ -102,9 +86,12 @@ function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
     }
   }, [punkData, buckets, goToNew]);
 
+  // A deep link can land on a non-eligible punk: show only the original.
+  const eligible = !!punk && isEligibleId(punk.id);
+
   // Draw both punks whenever the selection changes.
   useEffect(() => {
-    if (!punk || !originalRef.current || !remasteredRef.current) return;
+    if (!punk || !originalRef.current) return;
 
     const draw = (canvasEl, sourceCanvas) => {
       const ctx = canvasEl.getContext('2d');
@@ -118,14 +105,14 @@ function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
     };
 
     draw(originalRef.current, extractPunk(punk.id));
-    draw(remasteredRef.current, compositePunk(punk, true));
-  }, [punk, reveal]);
+    if (eligible && remasteredRef.current) draw(remasteredRef.current, compositePunk(punk, true));
+  }, [punk, reveal, eligible]);
 
   // Reveal mode: overlay the two images in one spot and flicker between them so
   // the changed pixels stand out. Both are drawn on the same background, so the
   // diff count reflects only real pixel changes (not the transparent-vs-grey bg).
   useEffect(() => {
-    if (!reveal || !punk || !overlayRef.current) return;
+    if (!reveal || !punk || !eligible || !overlayRef.current) return;
     const canvas = overlayRef.current;
     const ctx = canvas.getContext('2d');
     ctx.imageSmoothingEnabled = false;
@@ -172,7 +159,7 @@ function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [reveal, punk]);
+  }, [reveal, punk, eligible]);
 
   return (
     <section className="home">
@@ -181,7 +168,7 @@ function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
         Every eligible punk can mint a remaster that follows the original onchain.
       </p>
 
-      {reveal ? (
+      {reveal && eligible ? (
         <div className="hero-overlay">
           <canvas
             ref={overlayRef}
@@ -204,15 +191,19 @@ function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
             />
             <span className="hero-label">Original</span>
           </div>
-          <span className="hero-arrow">&rarr;</span>
-          <div className="hero-side">
-            <canvas
-              ref={remasteredRef}
-              width={SPRITE_SIZE * ZOOM}
-              height={SPRITE_SIZE * ZOOM}
-            />
-            <span className="hero-label">Remaster</span>
-          </div>
+          {eligible && (
+            <>
+              <span className="hero-arrow">&rarr;</span>
+              <div className="hero-side">
+                <canvas
+                  ref={remasteredRef}
+                  width={SPRITE_SIZE * ZOOM}
+                  height={SPRITE_SIZE * ZOOM}
+                />
+                <span className="hero-label">Remaster</span>
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -239,9 +230,13 @@ function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
         </div>
       )}
 
-      <button className="reveal-toggle" onClick={() => setReveal((v) => !v)}>
-        {reveal ? 'Back to compare' : "Can't see the difference?"}
-      </button>
+      {punk && !eligible && <div className="no-remaster">{noRemasterCopy(punk.id)}</div>}
+
+      {eligible && (
+        <button className="reveal-toggle" onClick={() => setReveal((v) => !v)}>
+          {reveal ? 'Back to compare' : "Can't see the difference?"}
+        </button>
+      )}
 
       <div className="hero-actions">
         <button className="btn btn-secondary" onClick={goBack} disabled={pos <= 0}>
