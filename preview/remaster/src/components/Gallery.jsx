@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { SPRITE_SIZE } from '../lib/constants';
-import { extractPunk } from '../lib/sprites';
 import { compositePunk } from '../lib/remaster';
+import { dataUrl } from '../lib/dataUrl';
 
 const ZOOM = 3;
 
@@ -52,8 +52,7 @@ function Gallery({ punkData, filterTrait, onFilterTrait }) {
   const [counts, setCounts] = useState(null);
 
   useEffect(() => {
-    const basePath = import.meta.env.DEV ? '../..' : '';
-    fetch(`${basePath}/data/remaster-pixel-counts.json`)
+    fetch(dataUrl('remaster-pixel-counts.json'))
       .then(res => res.json())
       .then(setCounts)
       .catch(e => { console.error('pixel counts not loaded', e); setCounts([]); });

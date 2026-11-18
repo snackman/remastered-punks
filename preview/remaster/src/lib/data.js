@@ -1,37 +1,21 @@
-// Load and parse punk CSV data
+import { parsePunkCsv, decodeCompact } from './punkCodec';
+
+// Load and parse punk CSV data (dev, traits/zero pages)
 export async function loadPunkData(csvPath) {
   const response = await fetch(csvPath);
-  const text = await response.text();
-  // Handle both \r\n and \n line endings
-  const lines = text.trim().replace(/\r\n/g, '\n').split('\n');
+  return parsePunkCsv(await response.text());
+}
 
-  const punkData = {};
-
-  // Skip header
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-
-    // Parse: id, type, gender, skin tone, count, accessories
-    // Skin tone can be empty for Zombie/Ape/Alien types
-    const match = line.match(/^(\d+),\s*(\w+),\s*(\w+),\s*(\w*),\s*(\d+),\s*(.*)$/);
-    if (match) {
-      const id = parseInt(match[1]);
-      const type = match[2];
-      const gender = match[3];
-      const skinTone = match[4] || null;
-      const accessoriesStr = match[6].trim();
-      const accessories = accessoriesStr ? accessoriesStr.split(' / ').map(a => a.trim()) : [];
-
-      punkData[id] = { id, type, gender, skinTone, accessories };
-    }
-  }
-
-  return punkData;
+// Load the compact punk JSON built by scripts/build-public-data.mjs (prod app).
+export async function loadPunkDataCompact(jsonPath) {
+  const response = await fetch(jsonPath);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return decodeCompact(await response.json());
 }
 
 // Load eligible punks list
 export async function loadEligiblePunks(jsonPath) {
   const response = await fetch(jsonPath);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return response.json();
 }

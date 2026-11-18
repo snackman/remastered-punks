@@ -3,6 +3,7 @@
 // changes). Uses the same shared compositor as the app.
 import { SPRITE_SIZE } from '@lib/constants.js';
 import { loadAssets, extractPunk } from './lib/sprites';
+import { dataUrl } from './lib/dataUrl';
 import { loadPunkData } from './lib/data';
 import { compositePunk, getRemasters } from './lib/remaster';
 
@@ -51,13 +52,12 @@ async function init() {
   const root = document.getElementById('root');
   const summary = document.getElementById('summary');
   try {
-    const basePath = import.meta.env.DEV ? '../..' : '';
     await loadAssets(
-      `${basePath}/data/cryptopunks-assets/punks/config/punks-24x24.png`,
-      `${basePath}/data/punks.png`
+      dataUrl('cryptopunks-assets/punks/config/punks-24x24.png'),
+      dataUrl('punks.png')
     );
-    const punkData = await loadPunkData(`${basePath}/data/punks-attributes/original/cryptopunks.csv`);
-    const counts = await fetch(`${basePath}/data/remaster-pixel-counts.json`).then(r => r.json());
+    const punkData = await loadPunkData(dataUrl('punks-attributes/original/cryptopunks.csv'));
+    const counts = await fetch(dataUrl('remaster-pixel-counts.json')).then(r => r.json());
 
     const zero = counts.filter(c => c.pixels === 0).map(c => punkData[c.id]).filter(Boolean);
 

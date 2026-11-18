@@ -4,8 +4,9 @@ import { RainbowKitProvider, ConnectButton } from '@rainbow-me/rainbowkit';
 import { WagmiProvider, useAccount, useSwitchChain } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-import { loadAssets } from './lib/sprites';
-import { loadPunkData, loadEligiblePunks } from './lib/data';
+import { loadSpriteSheet, loadPunksComposite, originalsLoaded } from './lib/sprites';
+import { loadPunkData, loadPunkDataCompact, loadEligiblePunks } from './lib/data';
+import { dataUrl } from './lib/dataUrl';
 import { initEligibility } from './lib/eligibility';
 import { initStacking } from './lib/remaster';
 import { parseUrl, buildUrl } from './lib/urlState';
@@ -21,7 +22,7 @@ import './App.css';
 
 const queryClient = new QueryClient();
 
-function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs, merkleStatus, loadError, onRetry }) {
+function AppContent({ punkData, eligiblePunks, assetsLoaded, loadError, onRetry }) {
   const { address, connector } = useAccount();
   const { isConnected, isSupported, isTestnet } = useNetwork();
   const { switchChain } = useSwitchChain();
@@ -207,8 +208,6 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs, merkl
               address={address}
               punkData={punkData}
               eligiblePunks={eligiblePunks}
-              merkleProofs={merkleProofs}
-              merkleStatus={merkleStatus}
             />
           ) : (
             <div className="connect-prompt">
@@ -223,7 +222,7 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs, merkl
           )
         )}
         {activeTab === 'lookup' && (
-          <ManualLookup punkData={punkData} eligiblePunks={eligiblePunks} merkleProofs={merkleProofs} merkleStatus={merkleStatus} />
+          <ManualLookup punkData={punkData} eligiblePunks={eligiblePunks} />
         )}
         </>)}
       </main>
@@ -243,8 +242,6 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs, merkl
 function App() {
   const [punkData, setPunkData] = useState({});
   const [eligiblePunks, setEligiblePunks] = useState([]);
-  const [merkleProofs, setMerkleProofs] = useState({});
-  const [merkleStatus, setMerkleStatus] = useState('loading'); // 'loading' | 'ready' | 'error'
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [error, setError] = useState(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -253,43 +250,28 @@ function App() {
   useEffect(() => {
     async function init() {
       try {
-        // Base path for assets
-        const basePath = import.meta.env.DEV ? '../..' : '';
+        // Originals (punks.png, 848 KB) are not on the critical path: Home/PunkCard draw
+        // them as soon as it arrives (see useOriginalsReady). A failure only leaves the
+        // original canvases blank.
+        if (!originalsLoaded()) loadPunksComposite(dataUrl('punks.png')).catch((e) => console.warn('punks.png not loaded:', e));
 
-        // Load assets
-        await loadAssets(
-          `${basePath}/data/cryptopunks-assets/punks/config/punks-24x24.png`,
-          `${basePath}/data/punks.png`
-        );
+        // Critical path, fetched in parallel: sprite sheet, punk attributes, eligible list.
+        // (DEV has no build step, so it reads the CSV instead of the compact JSON.)
+        const [, data, eligible] = await Promise.all([
+          loadSpriteSheet(dataUrl('cryptopunks-assets/punks/config/punks-24x24.png')),
+          import.meta.env.DEV
+            ? loadPunkData(dataUrl('punks-attributes/original/cryptopunks.csv'))
+            : loadPunkDataCompact(dataUrl('punks-compact.json')),
+          loadEligiblePunks(dataUrl('all-eligible-punks.json')),
+        ]);
 
-        // Load punk data
-        const data = await loadPunkData(`${basePath}/data/punks-attributes/original/cryptopunks.csv`);
         setPunkData(data);
-
         // Build the stacking compositor now that the sprite sheet + punk map exist.
         initStacking(data);
-
-        // Load eligible punks
-        const eligible = await loadEligiblePunks(`${basePath}/data/all-eligible-punks.json`);
         initEligibility(eligible);
         setEligiblePunks(eligible);
 
         setAssetsLoaded(true);
-
-        // Load merkle proofs in background (large file, don't block UI)
-        fetch(`${basePath}/data/merkle-tree.json`)
-          .then(res => {
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            return res.json();
-          })
-          .then(merkleData => {
-            setMerkleProofs(merkleData.proofs || {});
-            setMerkleStatus('ready');
-          })
-          .catch(e => {
-            console.warn('Merkle tree not loaded:', e);
-            setMerkleStatus('error');
-          });
       } catch (err) {
         console.error('Failed to load:', err);
         setError(err.message);
@@ -306,8 +288,6 @@ function App() {
           <AppContent
             punkData={punkData}
             eligiblePunks={eligiblePunks}
-            merkleProofs={merkleProofs}
-            merkleStatus={merkleStatus}
             assetsLoaded={assetsLoaded}
             loadError={error}
             onRetry={retry}

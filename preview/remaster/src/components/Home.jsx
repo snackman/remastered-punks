@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { SPRITE_SIZE } from '../lib/constants';
 import { extractPunk } from '../lib/sprites';
+import { useOriginalsReady } from '../lib/useOriginalsReady';
 import { compositePunk, remasterTraits } from '../lib/remaster';
 import { buildUrl } from '../lib/urlState';
 import { buildBuckets, isEligibleId, noRemasterCopy } from '../lib/eligibility';
@@ -49,6 +50,8 @@ function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
   const originalRef = useRef(null);
   const remasteredRef = useRef(null);
   const overlayRef = useRef(null);
+  // punks.png loads in the background; original canvases redraw when it arrives.
+  const originalsReady = useOriginalsReady();
 
   // Refs so callbacks always see current values.
   const historyRef = useRef([]);          // array of punk ids, in view order
@@ -132,13 +135,13 @@ function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
       );
     };
 
-    draw(originalRef.current, extractPunk(punk.id));
+    if (originalsReady) draw(originalRef.current, extractPunk(punk.id));
     if (eligible && remasteredRef.current) draw(remasteredRef.current, compositePunk(punk, true));
-  }, [punk, reveal, eligible]);
+  }, [punk, reveal, eligible, originalsReady]);
 
   const revealData = useMemo(
-    () => (reveal && eligible && punk ? countChangedPixels(punk) : null),
-    [reveal, eligible, punk],
+    () => (reveal && eligible && punk && originalsReady ? countChangedPixels(punk) : null),
+    [reveal, eligible, punk, originalsReady],
   );
 
   // Reveal mode: overlay the two images in one spot and flicker between them so
@@ -195,7 +198,9 @@ function Home({ punkData, eligiblePunks, onNavigate, onTrait }) {
           />
           <span className="hero-label">
             {(revealShowing.id !== punk.id || revealShowing.v === 'remastered')
-              ? `Remaster · ${revealData?.changed ?? 0} pixel${revealData?.changed === 1 ? '' : 's'} changed`
+              ? (revealData
+                ? `Remaster · ${revealData.changed} pixel${revealData.changed === 1 ? '' : 's'} changed`
+                : 'Remaster · …')
               : 'Original'}
           </span>
         </div>

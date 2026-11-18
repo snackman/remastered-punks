@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import PunkCard from './PunkCard';
 
-function ManualLookup({ punkData, eligiblePunks = [], merkleProofs = {}, merkleStatus = 'loading' }) {
+function ManualLookup({ punkData, eligiblePunks = [] }) {
   const [inputValue, setInputValue] = useState('');
   const [punk, setPunk] = useState(null);
   const [error, setError] = useState(null);
@@ -67,7 +67,7 @@ function ManualLookup({ punkData, eligiblePunks = [], merkleProofs = {}, merkleS
 
       {punk && (
         <div className="lookup-result">
-          <PunkCard key={punk.id} punk={punk} merkleProof={merkleProofs[punk.id]} merkleStatus={merkleStatus} />
+          <PunkCard key={punk.id} punk={punk} />
         </div>
       )}
     </div>
