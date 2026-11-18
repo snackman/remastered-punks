@@ -1,55 +1,76 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { SPRITE_SIZE } from '../lib/constants';
-import { compositePunk } from '../lib/remaster';
+import { getRemasterTile } from '../lib/tileCache';
+import { useWindowedGrid } from '../hooks/useWindowedGrid';
 import { dataUrl } from '../lib/dataUrl';
 
-const ZOOM = 3;
+// Layout constants (CSS px, all integers so sprites stay on the device-pixel grid;
+// keep in sync with .gallery-tile in App.css). The canvas backing store is the raw
+// 24x24 sprite, scaled 4x by CSS with image-rendering: pixelated, so it is an exact
+// multiple at dpr 1/1.25/1.5/2/3. (If some old browser blurs this, fall back to a
+// backing store of 24 * round(4 * devicePixelRatio) with imageSmoothingEnabled=false.)
+const COL_WIDTH = 96;
+const GAP = 12;
+const ROW_GAP = 16;
+// 96 canvas + 24 id/px line + 3 x 24 chip slots
+const ROW_HEIGHT = 192;
+const MAX_CHIPS = 3;
 
-// One punk tile - composites the remaster onto a canvas only once it scrolls
-// into view (there are thousands, so we can't render them all up front).
+// One punk tile. Only mounted while near the viewport (see useWindowedGrid), so it
+// draws straight from the tile cache; no per-tile IntersectionObserver.
 function PunkTile({ id, pixels, punk, onTrait }) {
-  const holderRef = useRef(null);
   const canvasRef = useRef(null);
-  const [visible, setVisible] = useState(false);
+  const [retry, setRetry] = useState(0);
 
-  useEffect(() => {
-    const el = holderRef.current;
-    if (!el || visible) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect(); } },
-      { rootMargin: '300px' }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [visible]);
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const tile = getRemasterTile(punk);
+    if (!tile) {
+      // Stacking compositor not ready yet: leave blank and try again shortly.
+      if (!punk) return;
+      const t = setTimeout(() => setRetry(n => n + 1), 250);
+      return () => clearTimeout(t);
+    }
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+    ctx.drawImage(tile, 0, 0);
+  }, [punk, retry]);
 
-  useEffect(() => {
-    if (!visible || !canvasRef.current || !punk) return;
-    const ctx = canvasRef.current.getContext('2d');
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(compositePunk(punk, true), 0, 0, SPRITE_SIZE, SPRITE_SIZE,
-      0, 0, SPRITE_SIZE * ZOOM, SPRITE_SIZE * ZOOM);
-  }, [visible, punk]);
+  const accessories = punk?.accessories || [];
+  // Fixed row height: show up to 3 chips; with more, show 2 plus a "+N" link to
+  // the punk page (which lists every trait).
+  const overflow = accessories.length > MAX_CHIPS;
+  const shown = overflow ? accessories.slice(0, MAX_CHIPS - 1) : accessories;
 
   return (
-    <div className="gallery-tile" ref={holderRef}>
+    <div className="gallery-tile">
       <canvas
-        width={SPRITE_SIZE * ZOOM}
-        height={SPRITE_SIZE * ZOOM}
+        width={SPRITE_SIZE}
+        height={SPRITE_SIZE}
         ref={canvasRef}
         title={`Punk #${id} - ${pixels} pixel${pixels === 1 ? '' : 's'} changed`}
       />
-      <a className="gallery-tile-id" href={`?punk=${id}#home`}>#{id}</a>
-      <div className="gallery-tile-px">{pixels}px</div>
-      {(punk?.accessories || []).map((a, i) => (
-        <button key={i} className="gallery-tile-trait" onClick={() => onTrait(a)}>{a}</button>
+      <div className="gallery-tile-meta">
+        <a className="gallery-tile-id" href={`?punk=${id}#home`}>#{id}</a>
+        <span className="gallery-tile-px">{pixels}px</span>
+      </div>
+      {shown.map((a, i) => (
+        <button key={i} className="gallery-tile-trait" title={a} onClick={() => onTrait(a)}>{a}</button>
       ))}
+      {overflow && (
+        <a className="gallery-tile-trait gallery-tile-more" href={`?punk=${id}#home`}
+          title={accessories.slice(MAX_CHIPS - 1).join(', ')}>
+          +{accessories.length - (MAX_CHIPS - 1)} more
+        </a>
+      )}
     </div>
   );
 }
 
 function Gallery({ punkData, filterTrait, onFilterTrait }) {
   const [counts, setCounts] = useState(null);
+  const sectionRef = useRef(null);
 
   useEffect(() => {
     fetch(dataUrl('remaster-pixel-counts.json'))
@@ -66,10 +87,27 @@ function Gallery({ punkData, filterTrait, onFilterTrait }) {
       || (punkData[c.id]?.accessories || []).includes(filterTrait)));
   }, [counts, filterTrait, punkData]);
 
+  const { containerRef, cols, totalHeight, startIndex, endIndex, offsetY } = useWindowedGrid({
+    count: rows.length, colWidth: COL_WIDTH, gap: GAP, rowHeight: ROW_HEIGHT, rowGap: ROW_GAP,
+  });
+
+  // A new filter shrinks/grows the list: if we were scrolled past the top of the
+  // gallery, bring the new list's start back into view instead of leaving the user
+  // stranded below it.
+  const lastFilter = useRef(filterTrait);
+  useLayoutEffect(() => {
+    if (lastFilter.current === filterTrait) return;
+    lastFilter.current = filterTrait;
+    const el = sectionRef.current;
+    if (el && el.getBoundingClientRect().top < 0) {
+      window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY });
+    }
+  }, [filterTrait]);
+
   if (!counts) return <div className="gallery"><p className="gallery-status">Loading remasters…</p></div>;
 
   return (
-    <section className="gallery">
+    <section className="gallery" ref={sectionRef}>
       <div className="gallery-head">
         <h1 className="gallery-title">All remasters</h1>
         <p className="gallery-sub">
@@ -82,10 +120,25 @@ function Gallery({ punkData, filterTrait, onFilterTrait }) {
           </button>
         )}
       </div>
-      <div className="gallery-grid">
-        {rows.map(c => (
-          <PunkTile key={c.id} id={c.id} pixels={c.pixels} punk={punkData[c.id]} onTrait={onFilterTrait} />
-        ))}
+      {/* Tab/focus into a tile that is near the window edge: scroll it into view so
+          the window advances and the next Tab target gets mounted. */}
+      <div
+        className="gallery-grid"
+        ref={containerRef}
+        style={{ height: totalHeight }}
+        onFocusCapture={e => e.target.scrollIntoView?.({ block: 'nearest' })}
+      >
+        <div
+          className="gallery-grid-inner"
+          style={{
+            transform: `translateY(${offsetY}px)`,
+            gridTemplateColumns: `repeat(${cols}, ${COL_WIDTH}px)`,
+          }}
+        >
+          {rows.slice(startIndex, endIndex).map(c => (
+            <PunkTile key={c.id} id={c.id} pixels={c.pixels} punk={punkData[c.id]} onTrait={onFilterTrait} />
+          ))}
+        </div>
       </div>
     </section>
   );
