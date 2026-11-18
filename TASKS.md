@@ -6,7 +6,7 @@ Stages: todo · doing · stuck · review · done · skip — Priority: P1 (highe
 
 | ID | Task | Stage | Priority | Due | Lead | Tags | Plan | PR | Notes |
 |----|------|-------|----------|-----|------|------|------|----|-------|
-| repo-cleanup | try/catch in API handlers; drop dev pages from prod (rest done in #2/#9) | todo | P3 | | Snax | cleanup | | | 2026-11-18 audit |
+| repo-cleanup | try/catch in API handlers; drop dev pages from prod; in-app gallery punk links | doing | P3 | | Snax | cleanup | plans/repo-cleanup.md | | 2026-11-18 audit |
 
 ## Done
 
