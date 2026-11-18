@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useReadContracts, useChainId, usePublicClient } from 'wagmi';
+import { useReadContracts, usePublicClient } from 'wagmi';
+import { TARGET_CHAIN } from '../lib/network';
+import { useNetwork } from '../lib/useNetwork';
 import { fetchOwnedPunks } from '../lib/ownedPunks';
 import { hasRemasters } from '../lib/remaster';
-import { REMASTERED_PUNKS_ABI, MOCK_CRYPTOPUNKS_ABI, getContractAddress, getCryptoPunksAddress } from '../lib/contracts';
+import { REMASTERED_PUNKS_ABI, MOCK_CRYPTOPUNKS_ABI, getCryptoPunksAddress } from '../lib/contracts';
 import PunkCard from './PunkCard';
 
 function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {}, isTestnet = false }) {
@@ -11,9 +13,8 @@ function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {}, isTestn
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all'); // 'all' or 'remastered'
 
-  const chainId = useChainId();
-  const contractAddress = getContractAddress(chainId);
-  const publicClient = usePublicClient();
+  const { chainId, readAddress } = useNetwork();
+  const publicClient = usePublicClient({ chainId: TARGET_CHAIN.id }) ; // only used on the Sepolia mock path
 
   // Create a Set for O(1) lookup
   const eligibleSet = new Set(eligiblePunks);
@@ -89,12 +90,13 @@ function PunkGrid({ address, punkData, eligiblePunks, merkleProofs = {}, isTestn
   // Of those, how many have actually been remastered (minted/activated on-chain).
   const { data: activatedResults } = useReadContracts({
     contracts: eligibleOwned.map(p => ({
-      address: contractAddress,
+      address: readAddress,
       abi: REMASTERED_PUNKS_ABI,
       functionName: 'activated',
       args: [BigInt(p.id)],
+      chainId: TARGET_CHAIN.id,
     })),
-    query: { enabled: !!contractAddress && eligibleOwned.length > 0 },
+    query: { enabled: !!readAddress && eligibleOwned.length > 0 },
   });
   const remasteredCount = activatedResults
     ? activatedResults.filter(r => r?.result === true).length

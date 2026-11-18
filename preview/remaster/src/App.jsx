@@ -1,17 +1,14 @@
 import { useState, useEffect } from 'react';
 import '@rainbow-me/rainbowkit/styles.css';
-import {
-  getDefaultConfig,
-  RainbowKitProvider,
-  ConnectButton,
-} from '@rainbow-me/rainbowkit';
-import { WagmiProvider, useAccount, useChainId } from 'wagmi';
-import { mainnet, sepolia } from 'wagmi/chains';
+import { RainbowKitProvider, ConnectButton } from '@rainbow-me/rainbowkit';
+import { WagmiProvider, useAccount, useSwitchChain } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { loadAssets } from './lib/sprites';
 import { loadPunkData, loadEligiblePunks } from './lib/data';
 import { initStacking } from './lib/remaster';
+import { wagmiConfig, IS_MAINNET, TARGET_CHAIN } from './lib/network';
+import { useNetwork } from './lib/useNetwork';
 import PunkGrid from './components/PunkGrid';
 import ManualLookup from './components/ManualLookup';
 import Home from './components/Home';
@@ -19,18 +16,12 @@ import Gallery from './components/Gallery';
 
 import './App.css';
 
-const config = getDefaultConfig({
-  appName: 'Remastered Punks',
-  projectId: 'c490ddb4e12e01e9e541522b7cde7452', // Get from cloud.walletconnect.com
-  chains: [mainnet, sepolia],
-});
-
 const queryClient = new QueryClient();
 
 function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
-  const { address, isConnected, connector } = useAccount();
-  const chainId = useChainId();
-  const isTestnet = chainId === 11155111;
+  const { address, connector } = useAccount();
+  const { isConnected, isSupported, isTestnet } = useNetwork();
+  const { switchChain } = useSwitchChain();
   const [testnetStatus, setTestnetStatus] = useState('');
 
   // Switch the wallet to Ethereum Sepolia. Try switch first (works for wallets
@@ -139,7 +130,7 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
           <a href={traitsUrl}>All Traits</a>
         </nav>
         <div className="connect-wrapper">
-          {isConnected && !isTestnet && (
+          {!IS_MAINNET && isConnected && !isTestnet && (
             <button
               className="testnet-switch"
               onClick={addTestnet}
@@ -149,6 +140,15 @@ function AppContent({ punkData, eligiblePunks, assetsLoaded, merkleProofs }) {
                 : 'Add the Sepolia test network to your wallet and switch to it'}
             >
               {testnetStatus === 'pending' ? 'Adding…' : 'Add Testnet'}
+            </button>
+          )}
+          {IS_MAINNET && isConnected && !isSupported && (
+            <button
+              className="testnet-switch"
+              onClick={() => switchChain({ chainId: TARGET_CHAIN.id })}
+              title={`Switch your wallet to ${TARGET_CHAIN.name}`}
+            >
+              Wrong network
             </button>
           )}
           <ConnectButton />
@@ -253,7 +253,7 @@ function App() {
   }
 
   return (
-    <WagmiProvider config={config}>
+    <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider>
           <AppContent

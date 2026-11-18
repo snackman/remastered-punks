@@ -91,7 +91,7 @@ Decided config:
 
 Deploy command (fires once wallet + key are provided):
 ```bash
-PRIVATE_KEY=<mainnet key> \
+PRIVATE_KEY="$(security find-generic-password -l remastered-mainnet -a remastered-punks -w)" \
 BASE_URI=https://punksremastered.com/api/metadata/ \
 ETHERSCAN_API_KEY="$(security find-generic-password -l etherscan -a remastered-punks -w)" \
 forge script script/Deploy.s.sol:DeployRemasteredPunks \
@@ -99,9 +99,40 @@ forge script script/Deploy.s.sol:DeployRemasteredPunks \
 ```
 (No `CRYPTOPUNKS_ADDRESS` override → defaults to real `0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB`.)
 
-Post-deploy checklist: verify root/owner/baseURI on-chain → update `contracts.js`
-mainnet address → deploy frontend → confirm `tokenURI` round-trips live (same steps the
-Sepolia rehearsal passed).
+### Launch-day cutover checklist (config: preview/remaster, see plans/mainnet-config.md)
+
+Every step that broadcasts needs Snax's explicit go/no-go first.
+
+0. **Before mainnet-config merges:** Vercel Production must have `VITE_NETWORK=sepolia`
+   (the build fails on Production when it is unset). Set it first, then deploy.
+1. **Wallet.** New, real, funded mainnet deployer (~0.02-0.05 ETH), NOT the Sepolia airdrop key
+   (`remastered-airdrop-sepolia` / 0x709C4b...). Store in keychain, e.g.
+   `security add-generic-password -l remastered-mainnet -a remastered-punks -w`. Never echo it.
+2. **Dry run.** From `contracts/`, run the deploy command above, dropping `--broadcast --verify`. Check the output shows
+   `BASE_URI=https://punksremastered.com/api/metadata/` (unset BASE_URI silently becomes
+   `ipfs://QmPlaceholder/`, Deploy.s.sol:22), CryptoPunks `0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB`,
+   and root `0x9188c058...1324`.
+3. **Deploy and verify.** Rerun with `--broadcast --verify` (`ETHERSCAN_API_KEY` from keychain
+   `-l etherscan -a remastered-punks`). Record address + tx hash here.
+4. **On-chain checks** (`cast call <addr> ... --rpc-url <mainnet rpc>`):
+   `merkleRoot()(bytes32)` == `0x9188c0...1324`; `cryptoPunks()(address)` == `0xb47e...BBB`;
+   `baseURI()(string)` == `https://punksremastered.com/api/metadata/`; `owner()(address)` == deployer;
+   `contractURI()(string)` resolves (curl 200); Etherscan shows source verified.
+5. **Vercel env, Production scope only:** `VITE_NETWORK=mainnet`,
+   `VITE_REMASTERED_PUNKS_MAINNET=<checksummed addr>`, `VITE_MAINNET_RPC_URL=<origin-restricted key URL>`;
+   confirm `VITE_WALLETCONNECT_PROJECT_ID` (or rely on the default). Leave Preview in sepolia mode.
+   The build fails if the address or RPC is missing/invalid.
+6. **Rehearse.** `vercel-deploy -b VITE_NETWORK=mainnet -b VITE_REMASTERED_PUNKS_MAINNET=<addr> -b VITE_MAINNET_RPC_URL=<rpc>`;
+   smoke-test the preview, then `vercel-deploy --prod` (Snax's OK). The build log must print
+   `[network] mode=mainnet address=<addr>`.
+7. **Smoke-test prod** (punksremastered.com): no Add Testnet; chain list shows Ethereum only; My Punks loads for a
+   punk-holding wallet; "Mint Remaster" enabled for an owned eligible punk; one real activation by Snax
+   (tx confirms, card shows Already Minted); `tokenURI(id)` returns
+   `https://punksremastered.com/api/metadata/<id>` (200 JSON + image); OpenSea/Etherscan pick up the token;
+   a wallet on Sepolia/Polygon shows Wrong network.
+8. **Rollback.** Set Production `VITE_NETWORK=sepolia`, redeploy (faster: promote the previous prod deployment in Vercel). Contract stays deployed; only the UI returns to pre-launch mode.
+9. **Afterwards.** Update memory/handoff with the mainnet address; optionally commit it as the in-code default;
+   mark the TASKS.md row done.
 
 ### Blocking (needs Snax)
 1. A separate, REAL funded mainnet wallet — **do NOT reuse the Sepolia airdrop key**
