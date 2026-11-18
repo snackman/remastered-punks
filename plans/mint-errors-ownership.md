@@ -172,3 +172,6 @@ Contract `0x7bfc1458fD8BC7D176b2D3B8020f07C335fe117B`, mock punks `0x6fCdfA445bF
   - Optional forced revert: mint the same punk from two tabs, send both, confirm the second. Expect "Transaction reverted" with an Etherscan link.
   - Optional `syncOwnership` UI, if built: needs a punk transfer on the mock (`setPunkOwner`, owner-only) and is the most invasive check. Skip unless Snax wants it.
 - Vercel preview: confirm the build is Ready and that the cases above behave the same on the preview URL. Deploy with `vercel-deploy` or `/ship`.
+
+## Decisions (Snax, 2026-11-18)
+- **syncOwnership "Sync to marketplaces" button: INCLUDE** (in this PR, not split out).

@@ -183,4 +183,4 @@ Also add `"verify:render"` to the root package.json scripts. Optionally add a pl
 
 ## Decisions (Snax, 2026-11-18)
 - **D2: A** — keep the dictated (6,12) hair colour on Crazy Hair, Wild Blonde, Clown Hair Green. Expected verify counts 2070/2454 and 2144/2553.
-- **D1:** not yet answered; implement the default (frown NOT counted toward eligibility; eligible set stays 3434, root 0x9188c0…1324).
+- **D1: leave out** — frown-only punks are NOT eligible; eligible set stays 3434, root 0x9188c0…1324.
