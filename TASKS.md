@@ -6,13 +6,13 @@ Stages: todo · doing · stuck · review · done · skip — Priority: P1 (highe
 
 | ID | Task | Stage | Priority | Due | Lead | Tags | Plan | PR | Notes |
 |----|------|-------|----------|-----|------|------|------|----|-------|
-| gallery-virtualize | Virtualize/paginate 3,434-tile gallery; integer pixel scaling + pixelated; bigger chips/captions | todo | P2 | | Snax | perf, ui | | | 2026-11-18 audit: froze renderer at 390px (Gallery.jsx:73-81) |
 | repo-cleanup | try/catch in API handlers; drop dev pages from prod (rest done in #2/#9) | todo | P3 | | Snax | cleanup | | | 2026-11-18 audit |
 
 ## Done
 
 | ID | Task | Priority | Done | PR | Notes |
 |----|------|----------|------|----|-------|
+| gallery-virtualize | Windowed gallery (23k→~200 nodes), pixel-even 4× sprites, readable chips; lazy traits canvases | P2 | 2026-11-18 | #10 | follow-up: id/+N links full-reload |
 | perf-caching-startup | Cache headers, parallel startup, per-punk proofs, lazy wallet stack (236→65 KB initial JS) | P2 | 2026-11-18 | #9 | also covered repo-cleanup stale merkle/api helpers/cached 404s/data copy |
 | ux-states | Back button, loading/Retry, Lookup validation, mobile header, a11y | P2 | 2026-11-18 | #8 | |
 | og-tags-copy | Share tags + og image, per-page titles, Home explainer/FAQ, contract footer, 404 | P2 | 2026-11-18 | #7 | |
