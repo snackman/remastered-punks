@@ -9,6 +9,13 @@ const MESSAGES = {
   TransferDisabled: 'Transfers are disabled',
 };
 
+// Wallets wrap rejections differently (EIP-1193 4001, MetaMask/Ledger -32603 + originalError,
+// WalletConnect plain-text errors), so check codes and messages along the cause chain.
+const REJECT_RE = /user (rejected|denied)|cancel/i;
+const isRejection = (e) =>
+  e instanceof UserRejectedRequestError || e?.code === 4001 || e?.data?.originalError?.code === 4001
+  || REJECT_RE.test(e?.details ?? '') || REJECT_RE.test(e?.message ?? '');
+
 export const REVERTED = { kind: 'revert', message: 'Transaction reverted' };
 
 // Turn a wagmi/viem error into { kind: 'cancelled' | 'revert' | 'other', errorName?, message }.
@@ -16,13 +23,13 @@ export const REVERTED = { kind: 'revert', message: 'Transaction reverted' };
 export function describeTxError(err) {
   if (!err) return null;
   if (err instanceof BaseError) {
-    const rejected = err.walk((e) => e instanceof UserRejectedRequestError || e?.code === 4001);
+    const rejected = err.walk(isRejection);
     if (rejected) return { kind: 'cancelled', message: 'Transaction cancelled' };
     const reverted = err.walk((e) => e instanceof ContractFunctionRevertedError);
     const errorName = reverted?.data?.errorName;
     if (errorName) return { kind: 'revert', errorName, message: MESSAGES[errorName] ?? errorName };
-  } else if (err.code === 4001) {
+  } else if (isRejection(err)) {
     return { kind: 'cancelled', message: 'Transaction cancelled' };
   }
-  return { kind: 'other', message: err.shortMessage ?? 'Something went wrong' };
+  return { kind: 'other', message: err.shortMessage?.split('\n')[0] ?? 'Something went wrong' };
 }

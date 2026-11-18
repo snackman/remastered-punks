@@ -59,7 +59,7 @@ function PunkCard({ punk, showRemastered = true, merkleProof, merkleStatus = 'lo
     args: [BigInt(punk.id)],
     chainId: TARGET_CHAIN.id,
     query: {
-      enabled: !!punksAddress && isConnected && eligible,
+      enabled: !!punksAddress && isConnected && isTarget && eligible,
     },
   });
 
@@ -81,7 +81,7 @@ function PunkCard({ punk, showRemastered = true, merkleProof, merkleStatus = 'lo
   const { writeContract, data: hash, isPending, error: writeError, reset } = useWriteContract();
   const {
     isLoading: isConfirming, isSuccess, isError: receiptFailed,
-  } = useWaitForTransactionReceipt({ hash, chainId: TARGET_CHAIN.id });
+  } = useWaitForTransactionReceipt({ hash, chainId: TARGET_CHAIN.id, query: { retry: 1 } });
 
   // Sync tx
   const {
@@ -138,7 +138,7 @@ function PunkCard({ punk, showRemastered = true, merkleProof, merkleStatus = 'lo
         args: [BigInt(punk.id), merkleProof],
         account: address,
       });
-      writeContract({ ...request, chainId: TARGET_CHAIN.id });
+      writeContract({ ...request, abi: REMASTERED_PUNKS_ABI, chainId: TARGET_CHAIN.id });
     } catch (e) {
       setTxError(describeTxError(e));
       refetchActivated();
@@ -161,7 +161,7 @@ function PunkCard({ punk, showRemastered = true, merkleProof, merkleStatus = 'lo
         args: [BigInt(punk.id)],
         account: address,
       });
-      writeSync({ ...request, chainId: TARGET_CHAIN.id });
+      writeSync({ ...request, abi: REMASTERED_PUNKS_ABI, chainId: TARGET_CHAIN.id });
     } catch (e) {
       setSyncTxError(describeTxError(e));
       refetchAnnounced();

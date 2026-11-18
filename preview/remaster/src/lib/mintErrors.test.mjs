@@ -44,3 +44,15 @@ test('unknown errors are generic', () => {
   assert.equal(describeTxError(new BaseError('boom')).kind, 'other');
   assert.equal(describeTxError(new Error('multi\nline')).message, 'Something went wrong');
 });
+
+test('wrapped and plain-text wallet rejections map to cancelled', () => {
+  assert.equal(describeTxError({ code: -32603, data: { originalError: { code: 4001 } } }).kind, 'cancelled');
+  assert.equal(describeTxError(new Error('User rejected methods.')).kind, 'cancelled');
+  assert.equal(describeTxError(new BaseError('x', { cause: new Error('User denied transaction signature') })).kind, 'cancelled');
+});
+
+test('other errors show only the first line', () => {
+  const e = new BaseError('boom');
+  e.shortMessage = 'first line\nsecond line';
+  assert.equal(describeTxError(e).message, 'first line');
+});

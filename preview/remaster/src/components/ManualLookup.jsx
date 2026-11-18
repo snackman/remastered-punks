@@ -47,7 +47,7 @@ function ManualLookup({ punkData, merkleProofs = {}, merkleStatus = 'loading' })
 
       {punk && (
         <div className="lookup-result">
-          <PunkCard punk={punk} merkleProof={merkleProofs[punk.id]} merkleStatus={merkleStatus} />
+          <PunkCard key={punk.id} punk={punk} merkleProof={merkleProofs[punk.id]} merkleStatus={merkleStatus} />
         </div>
       )}
     </div>
