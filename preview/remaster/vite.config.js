@@ -88,13 +88,11 @@ export default defineConfig(({ command, mode }) => {
             return undefined
           },
         },
+        // Prod ships only the app + traits page. zero/leaks/remaster-sprites/stacking-compare
+        // are dev pages: `vite dev` serves any root html file, so they need no entry.
         input: {
           main: path.resolve(__dirname, 'index.html'),
           traits: path.resolve(__dirname, 'traits.html'),
-          zero: path.resolve(__dirname, 'zero.html'),
-          leaks: path.resolve(__dirname, 'leaks.html'),
-          remasterSprites: path.resolve(__dirname, 'remaster-sprites.html'),
-          stackingCompare: path.resolve(__dirname, 'stacking-compare.html'),
         },
       },
     },

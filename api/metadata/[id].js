@@ -13,7 +13,7 @@ function loadPunkData(csvPath) {
   if (punkData) return punkData;
   const text = readFileSync(csvPath, 'utf-8');
   const lines = text.trim().replace(/\r\n/g, '\n').split('\n');
-  punkData = {};
+  const parsed = {};
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i].trim();
     if (!line) continue;
@@ -21,7 +21,7 @@ function loadPunkData(csvPath) {
     if (m) {
       const id = parseInt(m[1]);
       const accessoriesStr = m[6].trim();
-      punkData[id] = {
+      parsed[id] = {
         id,
         type: m[2],
         gender: m[3],
@@ -30,6 +30,7 @@ function loadPunkData(csvPath) {
       };
     }
   }
+  punkData = parsed;
   return punkData;
 }
 
@@ -41,12 +42,24 @@ function loadEligiblePunks(jsonPath) {
 
 function loadPixelCounts(jsonPath) {
   if (pixelCounts) return pixelCounts;
-  pixelCounts = {};
-  for (const { id, pixels } of JSON.parse(readFileSync(jsonPath, 'utf-8'))) pixelCounts[id] = pixels;
+  const parsed = {};
+  for (const { id, pixels } of JSON.parse(readFileSync(jsonPath, 'utf-8'))) parsed[id] = pixels;
+  pixelCounts = parsed;
   return pixelCounts;
 }
 
 export default async function handler(req, res) {
+  try {
+    return await render(req, res);
+  } catch (err) {
+    console.error('[api/metadata/id]', req.query?.id, err);
+    if (res.headersSent) return undefined;
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(500).json({ error: 'Internal error' });
+  }
+}
+
+async function render(req, res) {
   const raw = String(req.query.id ?? '').replace(/\.json$/i, '');
   const id = parseInt(raw, 10);
   if (isNaN(id) || id < 0 || id > 9999) {
