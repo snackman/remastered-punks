@@ -78,11 +78,33 @@ function traitSprite(spriteId, traitName) {
 }
 
 function drawZoomed(sourceCanvas, targetCanvas) {
-  targetCanvas.width = CROPPED_SIZE * ZOOM;
-  targetCanvas.height = CROPPED_SIZE * ZOOM;
   const ctx = targetCanvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(sourceCanvas, CROP_LEFT, CROP_TOP, CROPPED_SIZE, CROPPED_SIZE, 0, 0, CROPPED_SIZE * ZOOM, CROPPED_SIZE * ZOOM);
+}
+
+// The page has ~200 zoomed canvases, most off-screen or in collapsed sections. The
+// cheap 24x24 composites stay eager (pixel counts need them); the zoomed draw is
+// deferred until the canvas nears the viewport, via one shared observer. Hidden
+// (display: none) canvases never intersect, so collapsed sections draw on expand.
+const pendingDraws = new WeakMap(); // canvas -> source canvas
+let lazyObserver = null;
+function getLazyObserver() {
+  if (!lazyObserver) {
+    lazyObserver = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const canvas = entry.target;
+        const source = pendingDraws.get(canvas);
+        lazyObserver.unobserve(canvas);
+        if (!source) continue;
+        pendingDraws.delete(canvas);
+        drawZoomed(source, canvas);
+        canvas.dataset.drawn = '1';
+      }
+    }, { rootMargin: '400px' });
+  }
+  return lazyObserver;
 }
 
 function createPunkBox(label, sourceCanvas) {
@@ -98,8 +120,11 @@ function createPunkBox(label, sourceCanvas) {
   container.className = 'canvas-container';
 
   const canvas = document.createElement('canvas');
-  drawZoomed(sourceCanvas, canvas);
+  canvas.width = CROPPED_SIZE * ZOOM;   // final size up front so layout is stable
+  canvas.height = CROPPED_SIZE * ZOOM;
+  pendingDraws.set(canvas, sourceCanvas);
   container.appendChild(canvas);
+  getLazyObserver().observe(canvas);
   box.appendChild(container);
 
   return box;
