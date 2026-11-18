@@ -6,9 +6,6 @@ Stages: todo · doing · stuck · review · done · skip — Priority: P1 (highe
 
 | ID | Task | Stage | Priority | Due | Lead | Tags | Plan | PR | Notes |
 |----|------|-------|----------|-----|------|------|------|----|-------|
-| gate-ui-on-eligible | Gate remaster display, Mint button and Home shuffle on eligible set/merkle proof, not getRemasters | review | P1 | | Snax | frontend, pre-mainnet | plans/gate-ui-on-eligible.md | #5 | 2026-11-18 audit: 78 eligible unmintable (e.g. #13), 31 non-eligible show a remaster (PunkCard.jsx:72,110,177) |
-| owned-punks-multicall | Replace Alchemy demo key + dead Reservoir fallback with punkIndexToAddress multicall over eligible ids (fixes >100-punk wallets) | review | P1 | | Snax | frontend, pre-mainnet | plans/owned-punks-multicall.md | #4 | 2026-11-18 audit: ownedPunks.js:5,44,79 |
-| mint-errors-ownership | Add custom errors to ABI, handle wallet reject, surface reverted receipts, check punk ownership on mainnet too | review | P1 | | Snax | frontend, pre-mainnet | plans/mint-errors-ownership.md | #6 | 2026-11-18 audit: contracts.js:16-55, PunkCard.jsx:51,110,192 |
 | wallet-state-bugs | Surface merkle-load failure (stale-fetch race, post-mint refetch, account chainId now covered by P1 plans) | todo | P2 | | Snax | frontend | | | 2026-11-18 audit: PunkGrid.jsx:21-101, App.jsx:238 |
 | og-tags-copy | Add OG/twitter tags + og:image + per-page titles; Home explainer (soulbound, eligibility, cost) and one verb (Mint vs Activate) | todo | P2 | | Snax | ux, launch | | | 2026-11-18 audit |
 | ux-states | Connect button in My Punks empty state, loading spinner + retry, clear eligible/non-eligible lookup copy, compact mobile header, pushState tabs, clear ?trait on reset | todo | P2 | | Snax | ux | | | 2026-11-18 audit |
@@ -20,5 +17,8 @@ Stages: todo · doing · stuck · review · done · skip — Priority: P1 (highe
 
 | ID | Task | Priority | Done | PR | Notes |
 |----|------|----------|------|----|-------|
+| gate-ui-on-eligible | Gate remaster/Mint/Home shuffle on the eligible set | P1 | 2026-11-18 | #5 | |
+| owned-punks-multicall | My Punks via onchain ownership multicall (no Alchemy/Reservoir, no 100 cap, wrapped notice) | P1 | 2026-11-18 | #4 | |
+| mint-errors-ownership | Readable mint errors, mainnet ownership check, Sync to marketplaces | P1 | 2026-11-18 | #6 | |
 | fix-612-outline | Restore (6,12) head outline + layer-order fixes; version image URL | P1 | 2026-11-18 | #2 | |
 | mainnet-config | VITE_NETWORK launch flag, build guards, RPC transports, wallet-chain gating | P1 | 2026-11-18 | #3 | |
