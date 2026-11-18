@@ -6,13 +6,13 @@ Stages: todo · doing · stuck · review · done · skip — Priority: P1 (highe
 
 | ID | Task | Stage | Priority | Due | Lead | Tags | Plan | PR | Notes |
 |----|------|-------|----------|-----|------|------|------|----|-------|
-| repo-cleanup | try/catch in API handlers; drop dev pages from prod; in-app gallery punk links | review | P3 | | Snax | cleanup | plans/repo-cleanup.md | #11 | 2026-11-18 audit |
 
 ## Done
 
 | ID | Task | Priority | Done | PR | Notes |
 |----|------|----------|------|----|-------|
-| gallery-virtualize | Windowed gallery (23k→~200 nodes), pixel-even 4× sprites, readable chips; lazy traits canvases | P2 | 2026-11-18 | #10 | follow-up: id/+N links full-reload |
+| repo-cleanup | API error handling (500 + no-store), dev pages out of prod, in-app gallery punk links, untrack settings.local.json | P3 | 2026-11-18 | #11 | |
+| gallery-virtualize | Windowed gallery (23k→~200 nodes), pixel-even 4× sprites, readable chips; lazy traits canvases | P2 | 2026-11-18 | #10 | id/+N links made in-app in #11 |
 | perf-caching-startup | Cache headers, parallel startup, per-punk proofs, lazy wallet stack (236→65 KB initial JS) | P2 | 2026-11-18 | #9 | also covered repo-cleanup stale merkle/api helpers/cached 404s/data copy |
 | ux-states | Back button, loading/Retry, Lookup validation, mobile header, a11y | P2 | 2026-11-18 | #8 | |
 | og-tags-copy | Share tags + og image, per-page titles, Home explainer/FAQ, contract footer, 404 | P2 | 2026-11-18 | #7 | |
