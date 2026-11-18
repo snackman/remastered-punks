@@ -10,7 +10,7 @@ import { REMASTERED_PUNKS_ABI, MOCK_CRYPTOPUNKS_ABI } from '../lib/contracts';
 
 const ZOOM = 4;
 
-function PunkCard({ punk, showRemastered = true, showEligibility = false, merkleProof, merkleStatus = 'loading' }) {
+function PunkCard({ punk, showRemastered = true, merkleProof, merkleStatus = 'loading' }) {
   const originalRef = useRef(null);
   const remasteredRef = useRef(null);
   const [mintStatus, setMintStatus] = useState(null);
